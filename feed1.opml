@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<opml version="1.0"> 
+ <head> 
+  <title>Exported from feeeed</title> 
+ </head> 
+ <body> 
+  <outline type="rss" xmlUrl="http://feeds.feedburner.com/TheAtlantic" text="The Atlantic" title="The Atlantic"></outline>
+  <outline type="rss" xmlUrl="http://9to5mac.com/feed/" text="9to5Mac" title="9to5Mac"></outline>
+  <outline type="rss" xmlUrl="http://feeds.bbci.co.uk/news/world/rss.xml" text="BBC News - World – bbci.co.uk" title="BBC News - World – bbci.co.uk"></outline>
+  <outline type="rss" xmlUrl="http://www.economist.com/rss/finance_and_economics_rss.xml" text="The Economist" title="The Economist"></outline>
+  <outline type="rss" xmlUrl="https://www.techemails.com/feed" text="Internal Tech Emails" title="Internal Tech Emails"></outline>
+  <outline type="rss" xmlUrl="https://www.proceso.com.mx/rss/feed.html" text="Nacional - Proceso" title="Nacional - Proceso"></outline>
+  <outline type="rss" xmlUrl="http://feeds.newscientist.com/today-on-ns" text="New Scientist - Home" title="New Scientist - Home"></outline>
+  <outline type="rss" xmlUrl="https://www.eleconomista.com.mx/rss/ultimas-noticias" text="El Economista" title="El Economista"></outline>
+  <outline type="rss" xmlUrl="http://www.jornada.unam.mx/rss/edicion.xml" text="La Jornada" title="La Jornada"></outline>
+  <outline type="rss" xmlUrl="https://www.popsci.com/feed/" text="Popular Science" title="Popular Science"></outline>
+  <outline type="rss" xmlUrl="http://www.theverge.com/rss/full.xml" text="The Verge" title="The Verge"></outline>
+  <outline type="rss" xmlUrl="https://techcrunch.com/feed/" text="TechCrunch" title="TechCrunch"></outline>
+  <outline type="rss" xmlUrl="https://wwwhatsnew.com/feed/" text="WWWhat's new" title="WWWhat's new"></outline>
+  <outline type="rss" xmlUrl="https://finance.yahoo.com/rss/topstories" text="Yahoo Finance" title="Yahoo Finance"></outline>
+  <outline type="rss" xmlUrl="https://hnrss.org/frontpage" text="Hacker News Front Page" title="Hacker News Front Page"></outline>
+  <outline type="rss" xmlUrl="https://reddit.com/r/horror.rss" text="rhorror on Reddit" title="rhorror on Reddit"></outline>
+  <outline type="rss" xmlUrl="https://reddit.com/r/mexico.rss" text="rmexico on Reddit" title="rmexico on Reddit"></outline>
+  <outline type="rss" xmlUrl="https://reddit.com/r/science.rss" text="rscience on Reddit" title="rscience on Reddit"></outline>
+  <outline type="rss" xmlUrl="https://reddit.com/r/technology.rss" text="rtechnology on Reddit" title="rtechnology on Reddit"></outline>
+  <outline type="rss" xmlUrl="http://www.independent.co.uk/rss" text="The Independent" title="The Independent"></outline>
+  <outline type="rss" xmlUrl="https://reddit.com/r/worldnews.rss" text="rworldnews on Reddit" title="rworldnews on Reddit"></outline>
+  <outline type="rss" xmlUrl="https://www.economist.com/business/rss.xml" text="Business – economist.com" title="Business – economist.com"></outline>
+  <outline type="rss" xmlUrl="https://www.propublica.org/feeds/propublica/main" text="ProPublica" title="ProPublica"></outline>
+  <outline type="rss" xmlUrl="http://feeds.arstechnica.com/arstechnica/index/" text="Ars Technica" title="Ars Technica"></outline>
+  <outline type="rss" xmlUrl="http://newsrss.bbc.co.uk/rss/newsonline_world_edition/front_page/rss.xml" text="BBC News - Home" title="BBC News - Home"></outline>
+  <outline type="rss" xmlUrl="https://www.jornada.com.mx/ultimas/news/RSS" text="La Jornada" title="La Jornada"></outline>
+  <outline type="rss" xmlUrl="http://www.guardian.co.uk/rssfeed/0,,1,00.xml" text="The Guardian" title="The Guardian"></outline>
+  <outline type="rss" xmlUrl="http://www.newyorker.com/services/mrss/feeds/everything.xml" text="New Yorker" title="New Yorker"></outline>
+  <outline type="rss" xmlUrl="http://cnnespanol.cnn.com/author/cnn-espanol/feed/" text="CNN Español, Author at CNN" title="CNN Español, Author at CNN"></outline>
+  <outline type="rss" xmlUrl="http://asia.nikkei.com/rss/feed/nar" text="Nikkei Asia" title="Nikkei Asia"></outline>
+  <outline type="rss" xmlUrl="https://www.bloomberglinea.com/arc/outboundfeeds/rss.xml" text="Bloomberg Línea" title="Bloomberg Línea"></outline>
+  <outline type="rss" xmlUrl="http://www.techmeme.com/index.xml" text="Techmeme" title="Techmeme"></outline>
+  <outline type="rss" xmlUrl="https://hnrss.org/frontpage" text="Hacker News Front Page" title="Hacker News Front Page"></outline>
+  <outline type="rss" xmlUrl="http://www.reforma.com/rss/portada.xml" text="Reforma" title="Reforma"></outline>
+  <outline type="rss" xmlUrl="https://letraslibres.com/feed/" text="Letras Libres" title="Letras Libres"></outline>
+  <outline type="rss" xmlUrl="https://reddit.com/r/TodayILearned.rss" text="rTodayILearned on Reddit" title="rTodayILearned on Reddit"></outline>
+  <outline type="rss" xmlUrl="https://www.vox.com/rss/recode/index.xml" text="Recode" title="Recode"></outline>
+  <outline type="rss" xmlUrl="http://feeds.wired.com/wired/index" text="Wired" title="Wired"></outline>
+  <outline type="rss" xmlUrl="http://feeds.feedburner.com/com/whWa" text="El Financiero" title="El Financiero"></outline>
+  <outline type="rss" xmlUrl="http://www.nytimes.com/services/xml/rss/nyt/HomePage.xml" text="New York Times – nytimes.com" title="New York Times – nytimes.com"></outline>
+ </body> 
+</opml>

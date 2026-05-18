@@ -1,0 +1,66 @@
+Render CLI v2.17.0
+
+Interact with resources on Render
+
+USAGE
+  render <subcommand> [flags]
+
+SUBCOMMANDS
+Core
+  deploys              List, create, and cancel deploys
+  jobs                 Create and manage one-off jobs
+  logs                 View logs for services and datastores
+  restart              Restart a service by resource ID
+  services             List services and datastores for the active workspace
+  workflows            Manage Render Workflows in your workspace
+  workspaces           List workspaces available to your account
+
+Auth
+  login                Log in to Render using the Render Dashboard
+  logout               Log out of Render
+  whoami               Display information about the current user
+  workspace            Manage the CLI's active workspace
+
+Session
+  kv-cli               Open a session for a Render Key Value instance
+  pgcli                Open a pgcli session to a Render Postgres database instance
+  psql                 Open a psql session to a Render Postgres database
+  ssh                  SSH into a service instance
+
+Management
+  blueprints           Manage Blueprints, which define your infrastructure as code
+  environments         List project environments by project ID
+  projects             List projects in the active workspace
+
+Additional Commands:
+  docs                 Open the Render docs in your browser
+  ea                   Use early access commands
+  help                 Help about any command
+  skills               Manage Render agent skills for AI coding tools
+
+FLAGS
+      --confirm           Skip all confirmation prompts
+  -h, --help              Show help for this command
+  -o, --output <FORMAT>   Set output format to interactive, json, yaml, or text. Auto-switches to text on non-TTY (default: "interactive")
+  -v, --version           version for render
+
+EXAMPLES
+  # List services in the active workspace
+  render services
+
+  # Output services as JSON
+  render services --output json
+
+DETAILS
+Welcome! Use the Render CLI to manage your services, datastores, and
+environments directly from the command line. Trigger deploys, view logs, start
+psql/SSH sessions, and more.
+
+The CLI's default interactive mode provides intuitive, menu-based navigation.
+
+To use in non-interactive mode (such as in a script), set each command's
+--output option to either json or yaml for structured responses. The CLI also
+detects non-TTY stdout and automatically switches to text output.
+
+
+Use "render <subcommand> --help" for more information about a command.

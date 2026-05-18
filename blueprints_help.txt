@@ -1,0 +1,23 @@
+Render CLI v2.17.0
+
+Manage Blueprints, which define your infrastructure as code
+
+USAGE
+  render blueprints <subcommand> [flags]
+
+SUBCOMMANDS
+  validate             Validate a YAML file for a Blueprint
+
+FLAGS
+  -h, --help              Show help for this command
+      --confirm           Skip all confirmation prompts
+  -o, --output <FORMAT>   Set output format to interactive, json, yaml, or text. Auto-switches to text on non-TTY (default: "interactive")
+
+EXAMPLES
+  # Validate a blueprint file
+  render blueprints validate ./render.yaml
+
+DETAILS
+Manage Blueprint files (render.yaml) including validation.
+
+Use "render blueprints <subcommand> --help" for more information about a command.

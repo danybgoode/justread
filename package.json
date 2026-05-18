@@ -1,0 +1,16 @@
+{
+  "name": "fluxonline",
+  "version": "1.0.0",
+  "description": "This directory contains the deployment configurations and scripts for hosting a Miniflux personal RSS service permanently using the free tiers of Render and Neon PostgreSQL.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "axios": "^1.16.1"
+  }
+}
