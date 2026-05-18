@@ -3,7 +3,7 @@ services:
     name: miniflux-rss-app
     env: docker
     dockerContext: ./panfleto-core
-    dockerfilePath: ./packaging/docker/alpine/Dockerfile
+    dockerfilePath: ./panfleto-core/packaging/docker/alpine/Dockerfile
     plan: free
     region: oregon
     envVars:
