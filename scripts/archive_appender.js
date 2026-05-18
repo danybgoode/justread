@@ -16,8 +16,8 @@ const api = axios.create({
   },
 });
 
-// Feeds that frequently have hard paywalls where native Miniflux 'fetch original content' might fail
-const PAYWALLED_FEEDS = ['economist', 'bloomberg', 'nytimes', 'wired', 'the atlantic', 'business'];
+// No longer restricting to specific feeds, it will apply to all unread entries
+
 
 async function run() {
   try {
@@ -30,12 +30,8 @@ async function run() {
     for (const entry of entries) {
       const feedTitle = entry.feed.title.toLowerCase();
       
-      // Check if it's from a notoriously paywalled feed
-      const isPaywalled = PAYWALLED_FEEDS.some(kw => feedTitle.includes(kw));
-      
-      if (isPaywalled) {
-        // Ensure we haven't already appended the link
-        if (!entry.content.includes("archive.ph")) {
+      // Ensure we haven't already appended the link
+      if (!entry.content.includes("archive.ph")) {
           const archiveUrl = `https://archive.ph/newest/${entry.url}`;
           const appendHtml = `<hr/><p><strong>Paywall Bypass:</strong> <a href="${archiveUrl}" target="_blank" rel="noopener noreferrer">Read on Archive.ph</a></p>`;
           
@@ -52,7 +48,7 @@ async function run() {
       }
     }
 
-    console.log(`✅ Process complete. Appended archive.ph links to ${updatedCount} paywalled entries.`);
+    console.log(`✅ Process complete. Appended archive.ph links to ${updatedCount} entries.`);
 
   } catch (error) {
     console.error("Error appending archive links:", error.response ? error.response.data : error.message);
