@@ -31,7 +31,7 @@ export default function Home() {
       
       // Give a tiny delay so they see the success message, then redirect
       setTimeout(() => {
-        window.location.href = "https://miniflux-rss-app.onrender.com";
+        window.location.href = "https://app.panfleto.win";
       }, 1000);
 
     } catch (err: any) {
@@ -102,7 +102,7 @@ export default function Home() {
               </button>
               
               <div className="text-center mt-4 text-sm text-gray-600">
-                Already have an account? <a href="https://miniflux-rss-app.onrender.com" className="text-blue-600 hover:underline">Log in</a>
+                Already have an account? <a href="https://app.panfleto.win" className="text-blue-600 hover:underline">Log in</a>
               </div>
             </form>
           </div>
