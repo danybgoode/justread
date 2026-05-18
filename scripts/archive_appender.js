@@ -44,7 +44,6 @@ async function run() {
           });
           
           updatedCount++;
-        }
       }
     }
 
