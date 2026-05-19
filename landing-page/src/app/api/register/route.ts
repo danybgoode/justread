@@ -83,35 +83,21 @@ export async function POST(req: Request) {
 
       // Add feed
       if (categoryMap[feed.category]) {
-        await fetch(`${MINIFLUX_API_URL}/discover`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: userAuthHeader,
-          },
-          body: JSON.stringify({
-            url: feed.url,
-            category_id: categoryMap[feed.category],
-          }),
-        }).then(async (res) => {
-          if (res.ok) {
-            const subscriptions = await res.json();
-            if (subscriptions.length > 0) {
-              // Subscribe to the first discovered feed
-               await fetch(`${MINIFLUX_API_URL}/subscriptions`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: userAuthHeader,
-                },
-                body: JSON.stringify({
-                  url: subscriptions[0].url,
-                  category_id: categoryMap[feed.category],
-                }),
-              });
-            }
-          }
-        });
+        try {
+          await fetch(`${MINIFLUX_API_URL}/feeds`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: userAuthHeader,
+            },
+            body: JSON.stringify({
+              feed_url: feed.url,
+              category_id: categoryMap[feed.category],
+            }),
+          });
+        } catch (e) {
+          console.error(`Failed to add feed ${feed.url}:`, e);
+        }
       }
     }
 
@@ -154,16 +140,29 @@ export async function POST(req: Request) {
             to: [email],
             subject: "Welcome to Panfleto! 📰",
             html: `
-              <div style="font-family: sans-serif; max-w-xl; margin: 0 auto; color: #333;">
+                <div style="font-family: sans-serif; max-w-xl; margin: 0 auto; color: #333;">
                 <img src="https://panfleto.win/panflo.png" alt="Panflo Mascot" style="width: 80px; border-radius: 50%; margin-bottom: 20px;" />
                 <h1 style="color: #111;">Welcome to Panfleto! 🎉</h1>
                 <p>Hello there,</p>
                 <p>Thank you for signing up! Your account is ready, and we've pre-loaded some starter feeds to get you going.</p>
-                <p>Panfleto is built differently. Here, you get to enjoy your reading <strong>100% free of ads, tracking, and manipulative algorithms</strong>. Just pure, chronological feeds.</p>
+                <p>You can check out your new feeds right away at: <a href="https://app.panfleto.win/feeds" style="color: #3b82f6; text-decoration: none; font-weight: bold;">app.panfleto.win/feeds</a></p>
                 <br/>
+                <p>Panfleto is built differently. Here, you get to enjoy your reading <strong>100% free of ads, tracking, and manipulative algorithms</strong>. Just pure, chronological feeds.</p>
+                
+                <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #eaeaea;">
+                  <h3 style="margin-top: 0;">⚡ Quick Cheat Sheet</h3>
+                  <ul style="margin-bottom: 0; padding-left: 20px; line-height: 1.6;">
+                    <li><strong>Spacebar:</strong> Scroll down (and to next article)</li>
+                    <li><strong>Enter / o:</strong> Open focused article</li>
+                    <li><strong>m:</strong> Toggle read/unread</li>
+                    <li><strong>v:</strong> Open original site</li>
+                    <li><strong>? :</strong> View all shortcuts!</li>
+                  </ul>
+                </div>
+                
                 <p><strong>A quick favor:</strong></p>
                 <p>Panfleto is run entirely out of pocket by a single developer. If you enjoy the distraction-free experience, please consider chipping in to keep the servers running and the project ad-free.</p>
-                <p>You can find the "Save Panflo" options at the bottom of any article or on our homepage.</p>
+                <p>You can find the "Save Panflo" options at the bottom of any article or simply via our <a href="https://buymeacoffee.com/savepanflo" style="color: #BD5FFF; font-weight: bold; text-decoration: none;">Buy Me A Coffee</a>.</p>
                 <br/>
                 <p>Happy reading!</p>
                 <p><em>— Panflo</em></p>
