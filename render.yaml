@@ -21,6 +21,20 @@ services:
         sync: false
       - key: ADMIN_PASSWORD
         sync: false
+      - key: OAUTH2_PROVIDER
+        value: "oidc"
+      - key: OAUTH2_CLIENT_ID
+        sync: false
+      - key: OAUTH2_CLIENT_SECRET
+        sync: false
+      - key: OAUTH2_REDIRECT_URL
+        value: "https://app.panfleto.win/oauth2/oidc/callback"
+      - key: OAUTH2_OIDC_DISCOVERY_ENDPOINT
+        sync: false
+      - key: OAUTH2_OIDC_PROVIDER_NAME
+        value: "Auth0"
+      - key: OAUTH2_USER_CREATION
+        value: "1"
 
   - type: web
     name: panfleto-landing
