@@ -1,8 +1,6 @@
 services:
   - type: web
     name: miniflux-rss-app
-    customDomains:
-      - app.panfleto.win
     env: docker
     dockerContext: ./panfleto-core
     dockerfilePath: ./panfleto-core/packaging/docker/alpine/Dockerfile
@@ -38,9 +36,6 @@ services:
 
   - type: web
     name: panfleto-landing
-    customDomains:
-      - panfleto.win
-      - www.panfleto.win
     env: node
     buildCommand: cd landing-page && npm install && npm run build
     startCommand: cd landing-page && npm run start
