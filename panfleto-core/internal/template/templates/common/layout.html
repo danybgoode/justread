@@ -129,6 +129,228 @@
     <main id="main">
         {{template "content" .}}
     </main>
+
+    <!-- Save Panflo Custom Floating Widget -->
+    <style>
+        .panflo-widget-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 9999;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        
+        .panflo-fab {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background-color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            cursor: pointer;
+            overflow: hidden;
+            border: 2px solid white;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .panflo-fab:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+        }
+        
+        .panflo-fab img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .panflo-popover {
+            position: absolute;
+            bottom: 72px;
+            right: 0;
+            width: 320px;
+            background: var(--bg-color, white);
+            border: 1px solid var(--border-color, #eaeaea);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 20px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            color: var(--text-color, #333);
+        }
+
+        .panflo-widget-container.open .panflo-popover {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .panflo-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .panflo-header img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+
+        .panflo-title {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
+        }
+        
+        .panflo-subtitle {
+            margin: 4px 0 0 0;
+            font-size: 13px;
+            opacity: 0.7;
+            line-height: 1.4;
+        }
+
+        .panflo-copy-box {
+            background: var(--bg-color-secondary, #f9f9f9);
+            border: 1px solid var(--border-color, #eaeaea);
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .panflo-copy-box:hover {
+            border-color: #3b82f6;
+        }
+
+        .panflo-copy-info h4 {
+            margin: 0 0 2px 0;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .panflo-copy-info p {
+            margin: 0;
+            font-size: 12px;
+            font-family: monospace;
+            opacity: 0.8;
+        }
+
+        .panflo-copy-btn {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            pointer-events: none;
+        }
+
+        .panflo-bmc-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            background-color: #FFDD00;
+            color: #000000;
+            text-decoration: none;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            margin-top: 16px;
+            transition: opacity 0.2s;
+        }
+
+        .panflo-bmc-btn:hover {
+            opacity: 0.9;
+        }
+
+        .panflo-bmc-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+    </style>
+
+    <div class="panflo-widget-container" id="panfloWidget">
+        <div class="panflo-popover" id="panfloPopover">
+            <div class="panflo-header">
+                <img src="https://panfleto.win/panflo.png" alt="Panflo">
+                <div>
+                    <h3 class="panflo-title">Save Panflo</h3>
+                    <p class="panflo-subtitle">Chip in to help keep the panfleto servers running ad-free!</p>
+                </div>
+            </div>
+
+            <div class="panflo-copy-box" onclick="copyPanfloText('5573971352', 'phoneCopyBtn')">
+                <div class="panflo-copy-info">
+                    <h4>🇲🇽 DiMo / Phone</h4>
+                    <p>55 7397 1352</p>
+                </div>
+                <button class="panflo-copy-btn" id="phoneCopyBtn">Copy</button>
+            </div>
+
+            <div class="panflo-copy-box" onclick="copyPanfloText('021180064223664702', 'clabeCopyBtn')">
+                <div class="panflo-copy-info">
+                    <h4>🇲🇽 CLABE Transfer</h4>
+                    <p>021 180 0642 2366 4702</p>
+                </div>
+                <button class="panflo-copy-btn" id="clabeCopyBtn">Copy</button>
+            </div>
+
+            <a href="https://buymeacoffee.com/savepanflo" target="_blank" class="panflo-bmc-btn">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.216 1.884l-.5 2.502h2.082a.834.834 0 0 1 .834.834v3.332a4.167 4.167 0 0 1-4.167 4.167H17.5l-1.84 9.196a.833.833 0 0 1-.818.669H2.498a.833.833 0 0 1-.818-.997L4.68 1.884a.834.834 0 0 1 .818-.669h13.9a.834.834 0 0 1 .818.669zm-13.43 19.16h11.166l1.506-7.528H6.286l-1.505 7.528zm10.748-9.196h.933a2.5 2.5 0 0 0 2.5-2.5V3.385h-1.393l-2.04 10.203z"/></svg>
+                Buy me a coffee
+            </a>
+        </div>
+
+        <div class="panflo-fab" id="panfloFab">
+            <img src="https://panfleto.win/panflo.png" alt="Donate to Panflo">
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('panfloFab').addEventListener('click', function(e) {
+            document.getElementById('panfloWidget').classList.toggle('open');
+            e.stopPropagation();
+        });
+
+        document.addEventListener('click', function(e) {
+            const widget = document.getElementById('panfloWidget');
+            if (widget.classList.contains('open') && !widget.contains(e.target)) {
+                widget.classList.remove('open');
+            }
+        });
+
+        function copyPanfloText(text, btnId) {
+            navigator.clipboard.writeText(text).then(function() {
+                const btn = document.getElementById(btnId);
+                const originalText = btn.innerText;
+                btn.innerText = 'Copied!';
+                btn.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+                btn.style.color = '#10b981';
+                
+                setTimeout(function() {
+                    btn.innerText = originalText;
+                    btn.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+                    btn.style.color = '#3b82f6';
+                }, 2000);
+            });
+        }
+    </script>
+
     <dialog id="keyboard-shortcuts-modal" closedby="any">
         <form method="dialog">
             <button class="btn-close-modal" aria-label="Close" autofocus>x</button>
