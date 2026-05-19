@@ -117,22 +117,65 @@ export async function POST(req: Request) {
 
     // 3. Send Telegram Notification
     try {
-      const telegramToken = "8856582611:AAHb4zdDOwRGX0kU27aWA3haomN5SzfP46s";
+      const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
       const chatId = "1517743559";
       const message = `🎉 YEEHAW! A new reader just joined Panfleto! 🎉\n\nEmail: ${email}\n\nKeep on pushing, Panflo! 🚀`;
 
-      await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: message,
-        }),
-      });
+      if (telegramToken) {
+        await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: message,
+          }),
+        });
+      } else {
+        console.warn("TELEGRAM_BOT_TOKEN is not set in environment variables");
+      }
     } catch (tgError) {
       console.error("Failed to send Telegram notification:", tgError);
+    }
+
+    // 4. Send Welcome Email via Resend
+    try {
+      const resendApiKey = process.env.RESEND_API_KEY;
+      if (resendApiKey) {
+        await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${resendApiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: "Panflo <hello@panfleto.win>",
+            to: [email],
+            subject: "Welcome to Panfleto! 📰",
+            html: `
+              <div style="font-family: sans-serif; max-w-xl; margin: 0 auto; color: #333;">
+                <img src="https://panfleto.win/panflo.png" alt="Panflo Mascot" style="width: 80px; border-radius: 50%; margin-bottom: 20px;" />
+                <h1 style="color: #111;">Welcome to Panfleto! 🎉</h1>
+                <p>Hello there,</p>
+                <p>Thank you for signing up! Your account is ready, and we've pre-loaded some starter feeds to get you going.</p>
+                <p>Panfleto is built differently. Here, you get to enjoy your reading <strong>100% free of ads, tracking, and manipulative algorithms</strong>. Just pure, chronological feeds.</p>
+                <br/>
+                <p><strong>A quick favor:</strong></p>
+                <p>Panfleto is run entirely out of pocket by a single developer. If you enjoy the distraction-free experience, please consider chipping in to keep the servers running and the project ad-free.</p>
+                <p>You can find the "Save Panflo" options at the bottom of any article or on our homepage.</p>
+                <br/>
+                <p>Happy reading!</p>
+                <p><em>— Panflo</em></p>
+              </div>
+            `,
+          }),
+        });
+      } else {
+         console.warn("RESEND_API_KEY is not set in environment variables");
+      }
+    } catch (emailError) {
+      console.error("Failed to send Welcome email:", emailError);
     }
 
     return NextResponse.json({ success: true, userId: user.id }, { status: 200 });
