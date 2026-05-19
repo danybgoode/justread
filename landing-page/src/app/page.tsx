@@ -118,7 +118,7 @@ export default function Home() {
           <div className="bg-blue-50/50 border border-blue-100 p-8 rounded-lg shadow-sm flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-4 mb-4">
-                <img src="/panflo.png" alt="Panflo Mascot" className="w-16 h-16 rounded-full border-2 border-white shadow-sm object-cover" />
+                <img src="/panflo.png" alt="Panflo Mascot" className="w-24 h-24 object-contain" />
                 <h2 className="text-2xl font-bold text-gray-800">
                   Save Panflo
                 </h2>
