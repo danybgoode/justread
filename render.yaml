@@ -33,6 +33,10 @@ services:
         value: "Auth0"
       - key: OAUTH2_USER_CREATION
         value: "1"
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
 
   - type: web
     name: panfleto-landing
