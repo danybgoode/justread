@@ -115,6 +115,26 @@ export async function POST(req: Request) {
       }
     }
 
+    // 3. Send Telegram Notification
+    try {
+      const telegramToken = "8856582611:AAHb4zdDOwRGX0kU27aWA3haomN5SzfP46s";
+      const chatId = "1517743559";
+      const message = `🎉 YEEHAW! A new reader just joined Panfleto! 🎉\n\nEmail: ${email}\n\nKeep on pushing, Panflo! 🚀`;
+
+      await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: message,
+        }),
+      });
+    } catch (tgError) {
+      console.error("Failed to send Telegram notification:", tgError);
+    }
+
     return NextResponse.json({ success: true, userId: user.id }, { status: 200 });
   } catch (error: any) {
     console.error("Registration error:", error);

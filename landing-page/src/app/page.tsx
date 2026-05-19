@@ -144,12 +144,12 @@ export default function Home() {
 
                 {/* CLABE */}
                 <div 
-                  onClick={() => copyToClipboard('021180064223664702', setCopiedClabe)}
+                  onClick={() => copyToClipboard('638180000153447394', setCopiedClabe)}
                   className="group p-3 bg-white border border-gray-200 rounded-md shadow-sm cursor-pointer hover:border-blue-300 transition-colors flex items-center justify-between"
                 >
                   <div>
                     <h3 className="font-semibold text-gray-800 text-sm">🇲🇽 CLABE Bank Transfer</h3>
-                    <p className="text-gray-500 text-xs mt-0.5">021 180 0642 2366 4702</p>
+                    <p className="text-gray-500 text-xs mt-0.5">638 180 0001 5344 7394</p>
                   </div>
                   <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
                     {copiedClabe ? 'Copied!' : 'Copy'}
