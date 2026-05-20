@@ -32,7 +32,7 @@ export default function Home() {
       setMessage("Success! Redirecting you to panfleto...");
       
       setTimeout(() => {
-        window.location.href = "https://app.panfleto.win";
+        window.location.href = "https://app.panfleto.win/feeds";
       }, 1000);
 
     } catch (err: any) {

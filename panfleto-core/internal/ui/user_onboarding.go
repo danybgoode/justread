@@ -27,10 +27,16 @@ func provisionUserOnboarding(store *storage.Storage, userID int64, username stri
 		{url: "https://news.ycombinator.com/rss", category: "Tech"},
 		{url: "https://www.theverge.com/rss/index.xml", category: "Tech"},
 		{url: "https://wwwhatsnew.com/feed/", category: "Tech"},
+		{url: "https://feeds.arstechnica.com/arstechnica/index", category: "Tech"},
+		{url: "https://daringfireball.net/feeds/main", category: "Tech"},
 		{url: "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml", category: "News"},
 		{url: "https://www.jornada.com.mx/rss/edicion.xml", category: "News"},
 		{url: "https://www.proceso.com.mx/rss/", category: "News"},
+		{url: "https://feeds.bbci.co.uk/news/rss.xml", category: "News"},
+		{url: "https://www.economist.com/printedition/covers.xml", category: "Business"},
+		{url: "https://www.bloomberg.com/feeds/bview/rss", category: "Business"},
 		{url: "https://xkcd.com/rss.xml", category: "Comics"},
+		{url: "https://www.newyorker.com/feed/everything", category: "Culture"},
 	}
 
 	categoryMap := make(map[string]int64)
@@ -108,7 +114,7 @@ func sendWelcomeEmail(email string) {
 
 	htmlBody := `
         <div style="font-family: sans-serif; max-w-xl; margin: 0 auto; color: #333;">
-        <img src="https://panfleto.win/panflo.png" alt="Panflo Mascot" style="width: 80px; border-radius: 50%; margin-bottom: 20px;" />
+        <img src="https://panfleto.win/panflo.png" alt="Panflo Mascot" style="width: 120px; height: auto; margin-bottom: 20px; display: block;" />
         <h1 style="color: #111;">Welcome to Panfleto! 🎉</h1>
         <p>Hello there,</p>
         <p>Thank you for signing up! Your account is ready, and we've pre-loaded some starter feeds to get you going.</p>

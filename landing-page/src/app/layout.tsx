@@ -22,20 +22,20 @@ export const metadata: Metadata = {
     siteName: "Panfleto",
     images: [
       {
-        url: "https://panfleto.win/article.png",
-        width: 1200,
-        height: 630,
-        alt: "Panfleto minimalist article reading view",
+        url: "https://panfleto.win/panflo.png",
+        width: 512,
+        height: 512,
+        alt: "Panflo Mascot Logo",
       },
     ],
     locale: "en_US",
     type: "website",
   },
   twitter: {
-    card: "summary_large_image",
+    card: "summary",
     title: "Panfleto - Distraction-Free RSS Reader",
     description: "Stay updated without the noise. Zero algorithms, zero ads, zero distractions.",
-    images: ["https://panfleto.win/article.png"],
+    images: ["https://panfleto.win/panflo.png"],
   },
 };
 

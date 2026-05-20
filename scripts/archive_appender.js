@@ -32,8 +32,7 @@ async function run() {
       
       // Ensure we haven't already appended the link
       if (!entry.content.includes("archive.ph")) {
-          const archiveUrl = `https://archive.ph/newest/${entry.url}`;
-          const appendHtml = `<hr/><p><strong>Paywall Bypass:</strong> <a href="${archiveUrl}" target="_blank" rel="noopener noreferrer">Read on Archive.ph</a></p>`;
+          const appendHtml = `<hr/><p><strong>🔓 Paywall Bypass:</strong> <a href="https://archive.ph/newest/${entry.url}" target="_blank" rel="noopener noreferrer">Archive.ph</a> • <a href="https://archive.is/newest/${entry.url}" target="_blank" rel="noopener noreferrer">Archive.is</a> • <a href="https://txtify.it/replace?url=${entry.url}" target="_blank" rel="noopener noreferrer">Txtify.it</a> • <a href="https://web.archive.org/web/2/${entry.url}" target="_blank" rel="noopener noreferrer">Wayback</a></p>`;
           
           const newContent = entry.content + appendHtml;
 

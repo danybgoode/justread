@@ -145,6 +145,194 @@
             <button type="submit" class="button button-primary" data-label-loading="{{ t "form.submit.loading" }}">{{ t "page.add_feed.submit" }}</button>
         </div>
     </form>
+
+    <br>
+    <h3>💡 Suggested Feeds</h3>
+    <p>Discover popular feeds and subscribe with a single click, or load them into the form to customize advanced options first.</p>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 20%;">Category</th>
+                <th style="width: 50%;">Feed</th>
+                <th style="width: 30%;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Tech</strong></td>
+                <td>
+                    Hacker News
+                    <div style="font-size: 0.85em; color: var(--text-color-muted, #666);">https://news.ycombinator.com/rss</div>
+                </td>
+                <td>
+                    <a href="#" onclick="quickAddFeed('https://news.ycombinator.com/rss'); return false;">Quick Add</a> • 
+                    <a href="#" onclick="reviewFeed('https://news.ycombinator.com/rss'); return false;">Review</a>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Tech</strong></td>
+                <td>
+                    The Verge
+                    <div style="font-size: 0.85em; color: var(--text-color-muted, #666);">https://www.theverge.com/rss/index.xml</div>
+                </td>
+                <td>
+                    <a href="#" onclick="quickAddFeed('https://www.theverge.com/rss/index.xml'); return false;">Quick Add</a> • 
+                    <a href="#" onclick="reviewFeed('https://www.theverge.com/rss/index.xml'); return false;">Review</a>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Tech</strong></td>
+                <td>
+                    Wwwhatsnew
+                    <div style="font-size: 0.85em; color: var(--text-color-muted, #666);">https://wwwhatsnew.com/feed/</div>
+                </td>
+                <td>
+                    <a href="#" onclick="quickAddFeed('https://wwwhatsnew.com/feed/'); return false;">Quick Add</a> • 
+                    <a href="#" onclick="reviewFeed('https://wwwhatsnew.com/feed/'); return false;">Review</a>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Tech</strong></td>
+                <td>
+                    Ars Technica
+                    <div style="font-size: 0.85em; color: var(--text-color-muted, #666);">https://feeds.arstechnica.com/arstechnica/index</div>
+                </td>
+                <td>
+                    <a href="#" onclick="quickAddFeed('https://feeds.arstechnica.com/arstechnica/index'); return false;">Quick Add</a> • 
+                    <a href="#" onclick="reviewFeed('https://feeds.arstechnica.com/arstechnica/index'); return false;">Review</a>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Tech</strong></td>
+                <td>
+                    Daring Fireball
+                    <div style="font-size: 0.85em; color: var(--text-color-muted, #666);">https://daringfireball.net/feeds/main</div>
+                </td>
+                <td>
+                    <a href="#" onclick="quickAddFeed('https://daringfireball.net/feeds/main'); return false;">Quick Add</a> • 
+                    <a href="#" onclick="reviewFeed('https://daringfireball.net/feeds/main'); return false;">Review</a>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>News</strong></td>
+                <td>
+                    New York Times
+                    <div style="font-size: 0.85em; color: var(--text-color-muted, #666);">https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml</div>
+                </td>
+                <td>
+                    <a href="#" onclick="quickAddFeed('https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml'); return false;">Quick Add</a> • 
+                    <a href="#" onclick="reviewFeed('https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml'); return false;">Review</a>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>News</strong></td>
+                <td>
+                    La Jornada
+                    <div style="font-size: 0.85em; color: var(--text-color-muted, #666);">https://www.jornada.com.mx/rss/edicion.xml</div>
+                </td>
+                <td>
+                    <a href="#" onclick="quickAddFeed('https://www.jornada.com.mx/rss/edicion.xml'); return false;">Quick Add</a> • 
+                    <a href="#" onclick="reviewFeed('https://www.jornada.com.mx/rss/edicion.xml'); return false;">Review</a>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>News</strong></td>
+                <td>
+                    Proceso
+                    <div style="font-size: 0.85em; color: var(--text-color-muted, #666);">https://www.proceso.com.mx/rss/</div>
+                </td>
+                <td>
+                    <a href="#" onclick="quickAddFeed('https://www.proceso.com.mx/rss/'); return false;">Quick Add</a> • 
+                    <a href="#" onclick="reviewFeed('https://www.proceso.com.mx/rss/'); return false;">Review</a>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>News</strong></td>
+                <td>
+                    BBC News
+                    <div style="font-size: 0.85em; color: var(--text-color-muted, #666);">https://feeds.bbci.co.uk/news/rss.xml</div>
+                </td>
+                <td>
+                    <a href="#" onclick="quickAddFeed('https://feeds.bbci.co.uk/news/rss.xml'); return false;">Quick Add</a> • 
+                    <a href="#" onclick="reviewFeed('https://feeds.bbci.co.uk/news/rss.xml'); return false;">Review</a>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Business</strong></td>
+                <td>
+                    The Economist
+                    <div style="font-size: 0.85em; color: var(--text-color-muted, #666);">https://www.economist.com/printedition/covers.xml</div>
+                </td>
+                <td>
+                    <a href="#" onclick="quickAddFeed('https://www.economist.com/printedition/covers.xml'); return false;">Quick Add</a> • 
+                    <a href="#" onclick="reviewFeed('https://www.economist.com/printedition/covers.xml'); return false;">Review</a>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Business</strong></td>
+                <td>
+                    Bloomberg
+                    <div style="font-size: 0.85em; color: var(--text-color-muted, #666);">https://www.bloomberg.com/feeds/bview/rss</div>
+                </td>
+                <td>
+                    <a href="#" onclick="quickAddFeed('https://www.bloomberg.com/feeds/bview/rss'); return false;">Quick Add</a> • 
+                    <a href="#" onclick="reviewFeed('https://www.bloomberg.com/feeds/bview/rss'); return false;">Review</a>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Comics</strong></td>
+                <td>
+                    xkcd
+                    <div style="font-size: 0.85em; color: var(--text-color-muted, #666);">https://xkcd.com/rss.xml</div>
+                </td>
+                <td>
+                    <a href="#" onclick="quickAddFeed('https://xkcd.com/rss.xml'); return false;">Quick Add</a> • 
+                    <a href="#" onclick="reviewFeed('https://xkcd.com/rss.xml'); return false;">Review</a>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Culture</strong></td>
+                <td>
+                    The New Yorker
+                    <div style="font-size: 0.85em; color: var(--text-color-muted, #666);">https://www.newyorker.com/feed/everything</div>
+                </td>
+                <td>
+                    <a href="#" onclick="quickAddFeed('https://www.newyorker.com/feed/everything'); return false;">Quick Add</a> • 
+                    <a href="#" onclick="reviewFeed('https://www.newyorker.com/feed/everything'); return false;">Review</a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+        function quickAddFeed(url) {
+            const urlInput = document.getElementById('form-url');
+            if (urlInput) {
+                urlInput.value = url;
+                const form = urlInput.closest('form');
+                if (form) {
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        const loadingText = submitBtn.getAttribute('data-label-loading');
+                        if (loadingText) {
+                            submitBtn.textContent = loadingText;
+                        }
+                        submitBtn.disabled = true;
+                    }
+                    form.submit();
+                }
+            }
+        }
+
+        function reviewFeed(url) {
+            const urlInput = document.getElementById('form-url');
+            if (urlInput) {
+                urlInput.value = url;
+                urlInput.focus();
+                urlInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    </script>
 {{ end }}
 
 {{ end }}
