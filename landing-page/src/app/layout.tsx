@@ -15,6 +15,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Panfleto - Distraction-Free RSS Reader",
   description: "The minimalist, distraction-free RSS reader. Stay updated without the noise. Zero algorithms, zero ads, zero distractions.",
+  icons: {
+    icon: [
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/panflo.png", sizes: "any", type: "image/png" },
+    ],
+    apple: [
+      { url: "/favicon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+  },
   openGraph: {
     title: "Panfleto - Distraction-Free RSS Reader",
     description: "Stay updated without the noise. Zero algorithms, zero ads, zero distractions. Just you and your feeds in chronological order.",

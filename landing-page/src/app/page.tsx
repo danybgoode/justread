@@ -10,6 +10,13 @@ export default function Home() {
   const [error, setError] = useState(false);
   const [copiedPhone, setCopiedPhone] = useState(false);
   const [copiedClabe, setCopiedClabe] = useState(false);
+  const [mcpApiKey, setMcpApiKey] = useState("");
+  const [copiedMcp, setCopiedMcp] = useState(false);
+
+  const mcpUrl = mcpApiKey.trim()
+    ? `https://panfleto.win/api/mcp?token=${mcpApiKey.trim()}`
+    : "";
+
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -236,6 +243,104 @@ export default function Home() {
               <div>
                 <h3 className="font-semibold text-lg text-gray-900">Your Feeds, Your Rules</h3>
                 <p className="text-gray-600 text-sm">Easily discover, import, and manage RSS feeds across the entire web.</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* AI Assistant / MCP Section */}
+        <div className="w-full pt-16 mt-4 border-t border-gray-100">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Your feeds, in your AI assistant.</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Connect Panfleto to any MCP-compatible AI client — Claude, Cursor, Continue, and more. Ask for your daily digest, search your feeds, or get a brief. One URL, zero setup.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 w-full">
+
+            {/* URL Builder */}
+            <div className="bg-white border border-gray-200 p-8 rounded-lg shadow-sm">
+              <h3 className="text-lg font-bold text-gray-800 mb-1">Get your MCP URL</h3>
+              <p className="text-sm text-gray-500 mb-5">
+                Generate your API key at{" "}
+                <a href="https://app.panfleto.win/settings/api-keys" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                  app.panfleto.win → Settings → API Keys
+                </a>
+                , then paste it below.
+              </p>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="mcp-api-key">
+                    Your Panfleto API Key
+                  </label>
+                  <input
+                    id="mcp-api-key"
+                    type="password"
+                    value={mcpApiKey}
+                    onChange={(e) => setMcpApiKey(e.target.value)}
+                    placeholder="Paste your API key here..."
+                    className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-gray-900 placeholder-gray-400 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                {mcpUrl && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Your MCP URL</label>
+                    <div
+                      onClick={() => copyToClipboard(mcpUrl, setCopiedMcp)}
+                      className="group flex items-center justify-between gap-2 p-3 bg-gray-50 border border-gray-200 rounded-md cursor-pointer hover:border-blue-300 transition-colors"
+                    >
+                      <span className="font-mono text-xs text-gray-600 truncate">
+                        {mcpUrl}
+                      </span>
+                      <span className="shrink-0 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                        {copiedMcp ? "Copied!" : "Copy"}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {!mcpUrl && (
+                  <div className="p-3 bg-gray-50 border border-dashed border-gray-200 rounded-md text-center">
+                    <span className="text-xs text-gray-400 font-mono">https://panfleto.win/api/mcp?token=...</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Setup Instructions */}
+            <div className="bg-white border border-gray-200 p-8 rounded-lg shadow-sm">
+              <h3 className="text-lg font-bold text-gray-800 mb-5">Connect your AI client</h3>
+              <div className="space-y-5">
+
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-1.5">Claude.ai</h4>
+                  <p className="text-sm text-gray-500 leading-relaxed">
+                    Go to <span className="font-medium text-gray-700">Settings → Connectors</span> → Add MCP Server → paste your URL.
+                  </p>
+                </div>
+
+                <div className="border-t border-gray-100 pt-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-1.5">Claude Code / CLI</h4>
+                  <div className="bg-gray-50 rounded-md p-3 font-mono text-xs text-gray-600 select-all">
+                    claude mcp add --transport http panfleto https://panfleto.win/api/mcp?token=YOUR_KEY
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-100 pt-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">What you can ask</h4>
+                  <ul className="space-y-1.5 text-sm text-gray-500">
+                    <li className="flex gap-2"><span className="text-gray-300">—</span>"Give me today's digest from my feeds"</li>
+                    <li className="flex gap-2"><span className="text-gray-300">—</span>"How many unread articles do I have?"</li>
+                    <li className="flex gap-2"><span className="text-gray-300">—</span>"Search my feeds for anything about AI"</li>
+                    <li className="flex gap-2"><span className="text-gray-300">—</span>"Read me my starred articles"</li>
+                    <li className="flex gap-2"><span className="text-gray-300">—</span>"Summarize my unread tech news"</li>
+                  </ul>
+                </div>
+
               </div>
             </div>
 
