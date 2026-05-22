@@ -25,6 +25,38 @@ async function miniflux(token: string, path: string, options?: RequestInit) {
 
 const TOOLS = [
   {
+    name: "get_categories",
+    description: "Lists all feed categories with their IDs and titles.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  },
+  {
+    name: "manage_categories",
+    description: "Create, update, or delete a feed category.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        action: { type: "string", enum: ["create", "update", "delete"] },
+        category_id: { type: "number", description: "Required for update and delete" },
+        title: { type: "string", description: "Required for create and update" },
+      },
+      required: ["action"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "add_feed",
+    description: "Subscribes the user to a new RSS feed. Requires a feed_url and a category_id (use get_categories first).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        feed_url: { type: "string" },
+        category_id: { type: "number" },
+      },
+      required: ["feed_url", "category_id"],
+      additionalProperties: false,
+    },
+  },
+  {
     name: "get_unread_summary",
     description:
       "Returns the total number of unread entries and a breakdown by feed category. Use this first to understand what's waiting to be read.",
@@ -156,6 +188,46 @@ async function callTool(
   args: Record<string, unknown>
 ): Promise<string> {
   switch (toolName) {
+    case "get_categories": {
+      const categories: any[] = await miniflux(token, "/categories");
+      if (!categories || !categories.length) return "No categories found.";
+      return categories.map((c: any) => `[ID: ${c.id}] ${c.title}`).join("\n");
+    }
+
+    case "manage_categories": {
+      const { action, category_id, title } = args;
+      if (action === "create") {
+        if (!title) throw new Error("title is required for create");
+        const res = await miniflux(token, "/categories", {
+          method: "POST",
+          body: JSON.stringify({ title }),
+        });
+        return `Category created with ID ${res.id}`;
+      } else if (action === "update") {
+        if (!category_id || !title) throw new Error("category_id and title required for update");
+        await miniflux(token, `/categories/${category_id}`, {
+          method: "PUT",
+          body: JSON.stringify({ title }),
+        });
+        return `Category ${category_id} updated`;
+      } else if (action === "delete") {
+        if (!category_id) throw new Error("category_id required for delete");
+        await miniflux(token, `/categories/${category_id}`, { method: "DELETE" });
+        return `Category ${category_id} deleted`;
+      }
+      throw new Error(`Unknown action: ${action}`);
+    }
+
+    case "add_feed": {
+      const { feed_url, category_id } = args;
+      if (!feed_url || !category_id) throw new Error("feed_url and category_id are required");
+      const res = await miniflux(token, "/feeds", {
+        method: "POST",
+        body: JSON.stringify({ feed_url, category_id }),
+      });
+      return `Feed added successfully! Feed ID: ${res.feed_id}`;
+    }
+
     case "get_unread_summary": {
       const counters = await miniflux(token, "/feeds/counters");
       const feeds: any[] = await miniflux(token, "/feeds");

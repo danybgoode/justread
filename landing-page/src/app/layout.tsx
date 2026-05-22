@@ -24,6 +24,7 @@ export const metadata: Metadata = {
       { url: "/favicon-192.png", sizes: "192x192", type: "image/png" },
     ],
   },
+  manifest: "/manifest.json",
   openGraph: {
     title: "Panfleto - Distraction-Free RSS Reader",
     description: "Stay updated without the noise. Zero algorithms, zero ads, zero distractions. Just you and your feeds in chronological order.",

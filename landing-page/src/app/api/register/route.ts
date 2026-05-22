@@ -19,8 +19,8 @@ const STARTER_FEEDS = [
   { url: "https://xkcd.com/rss.xml", category: "Comics" },
   { url: "https://www.newyorker.com/feed/everything", category: "Culture" },
   { url: "https://feeds.simplecast.com/dCXMIpJz", category: "Podcasts" },
-  { url: "https://feeds.simplecast.com/Y1jH5rQ1", category: "Podcasts" },
-  { url: "https://feeds.simplecast.com/71234937-2384-4809-906f-71280872652e", category: "Podcasts" },
+  { url: "https://feeds.simplecast.com/Y8lFbOT4", category: "Podcasts" },
+  { url: "https://podcast.darknetdiaries.com/", category: "Podcasts" },
 ];
 
 export async function POST(req: Request) {
