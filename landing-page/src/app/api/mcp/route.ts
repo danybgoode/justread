@@ -178,6 +178,107 @@ const TOOLS = [
       additionalProperties: false,
     },
   },
+  {
+    name: "update_feed",
+    description: "Updates an existing feed's title or category.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        feed_id: { type: "number" },
+        title: { type: "string" },
+        category_id: { type: "number" },
+      },
+      required: ["feed_id"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "remove_feed",
+    description: "Unsubscribes from a feed and deletes it.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        feed_id: { type: "number" },
+      },
+      required: ["feed_id"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "discover_feed",
+    description: "Discovers an RSS feed from a website URL. Use this to automatically find the feed URL for a site before adding it.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        url: { type: "string" },
+      },
+      required: ["url"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "toggle_bookmark",
+    description: "Stars or unstars an article by its entry ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        entry_id: { type: "number" },
+      },
+      required: ["entry_id"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "mark_feed_as_read",
+    description: "Marks all entries in a specific feed as read.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        feed_id: { type: "number" },
+      },
+      required: ["feed_id"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "mark_category_as_read",
+    description: "Marks all entries in a specific category as read.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        category_id: { type: "number" },
+      },
+      required: ["category_id"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "update_enclosure",
+    description: "Updates media progression (playback tracking) for a podcast enclosure.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        enclosure_id: { type: "number" },
+        media_progression: { type: "number", description: "The playback position in seconds" },
+      },
+      required: ["enclosure_id", "media_progression"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "get_feed_entries",
+    description: "Fetches entries scoped to a specific feed.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        feed_id: { type: "number" },
+        limit: { type: "number", description: "Default 20" },
+        status: { type: "string", description: "unread, read, or all", enum: ["unread", "read", "all"] },
+      },
+      required: ["feed_id"],
+      additionalProperties: false,
+    },
+  },
 ];
 
 // ─── Tool implementations ────────────────────────────────────────────────────
@@ -393,6 +494,91 @@ async function callTool(
         .map(
           (e: any) =>
             `[${e.id}] ${e.title}\n  Feed: ${e.feed?.title ?? "?"}\n  URL: ${e.url}`
+        )
+        .join("\n\n");
+    }
+
+    case "update_feed": {
+      const { feed_id, title, category_id } = args;
+      if (!feed_id) throw new Error("feed_id is required");
+      const payload: any = {};
+      if (title !== undefined) payload.title = title;
+      if (category_id !== undefined) payload.category_id = category_id;
+      await miniflux(token, `/feeds/${feed_id}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
+      return `Feed ${feed_id} updated successfully.`;
+    }
+
+    case "remove_feed": {
+      const { feed_id } = args;
+      if (!feed_id) throw new Error("feed_id is required");
+      await miniflux(token, `/feeds/${feed_id}`, { method: "DELETE" });
+      return `Feed ${feed_id} deleted successfully.`;
+    }
+
+    case "discover_feed": {
+      const { url } = args;
+      if (!url) throw new Error("url is required");
+      const res: any[] = await miniflux(token, "/discover", {
+        method: "POST",
+        body: JSON.stringify({ url: String(url) }),
+      });
+      if (!res || !res.length) return `No feeds discovered for ${url}.`;
+      return res.map((f: any) => `Title: ${f.title}\nURL: ${f.url}\nType: ${f.type}`).join("\n\n");
+    }
+
+    case "toggle_bookmark": {
+      const { entry_id } = args;
+      if (!entry_id) throw new Error("entry_id is required");
+      await miniflux(token, `/entries/${entry_id}/star`, { method: "PUT" });
+      return `Entry ${entry_id} bookmark toggled.`;
+    }
+
+    case "mark_feed_as_read": {
+      const { feed_id } = args;
+      if (!feed_id) throw new Error("feed_id is required");
+      await miniflux(token, `/feeds/${feed_id}/mark-all-as-read`, { method: "PUT" });
+      return `All entries in feed ${feed_id} marked as read.`;
+    }
+
+    case "mark_category_as_read": {
+      const { category_id } = args;
+      if (!category_id) throw new Error("category_id is required");
+      await miniflux(token, `/categories/${category_id}/mark-all-as-read`, { method: "PUT" });
+      return `All entries in category ${category_id} marked as read.`;
+    }
+
+    case "update_enclosure": {
+      const { enclosure_id, media_progression } = args;
+      if (!enclosure_id || media_progression === undefined) throw new Error("enclosure_id and media_progression required");
+      await miniflux(token, `/enclosures/${enclosure_id}`, {
+        method: "PUT",
+        body: JSON.stringify({ media_progression: Number(media_progression) }),
+      });
+      return `Enclosure ${enclosure_id} progression updated to ${media_progression}s.`;
+    }
+
+    case "get_feed_entries": {
+      const { feed_id, limit, status } = args;
+      if (!feed_id) throw new Error("feed_id is required");
+      const numLimit = Math.min(50, Math.max(1, Number(limit ?? 20)));
+      const params = new URLSearchParams({
+        limit: String(numLimit),
+        order: "published_at",
+        direction: "desc",
+      });
+      if (status && status !== "all") {
+        params.set("status", String(status));
+      }
+      const data = await miniflux(token, `/feeds/${feed_id}/entries?${params}`);
+      const entries: any[] = data?.entries ?? [];
+      if (!entries.length) return "No entries found for this feed.";
+      return entries
+        .map(
+          (e: any) =>
+            `[${e.id}] ${e.title}\n  Published: ${new Date(e.published_at).toLocaleDateString()}\n  URL: ${e.url}`
         )
         .join("\n\n");
     }
