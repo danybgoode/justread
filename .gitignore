@@ -2,3 +2,7 @@ node_modules/
 deploy_output.json
 .env
 .DS_Store
+
+# Filled-in deployment secrets (only the .example files are tracked)
+deploy/.env
+deploy/oauth.env

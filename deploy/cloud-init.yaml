@@ -1,0 +1,90 @@
+#cloud-config
+#
+# First-boot bootstrap for the panfleto host.
+#
+# Two things here are easy to get wrong on Oracle's Ubuntu images:
+#   1. The image ships iptables rules that DROP everything except SSH, so
+#      opening 80/443 in the OCI security list alone is not enough.
+#   2. The block volume is attached after the instance is already RUNNING, so
+#      cloud-init's `disk_setup` module runs too early to see it. /data is set
+#      up in runcmd with a wait loop instead.
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - ca-certificates
+  - curl
+  - gnupg
+  - git
+  - jq
+  - postgresql-client-16
+  - unzip
+
+write_files:
+  # Loosen the inherited firewall for the web ports only.
+  - path: /usr/local/sbin/panfleto-firewall
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      set -e
+      for port in 80 443; do
+        # -C tests for the rule; only insert when it is absent, so this is
+        # safe to re-run.
+        iptables -C INPUT -p tcp --dport "$port" -m conntrack --ctstate NEW -j ACCEPT 2>/dev/null \
+          || iptables -I INPUT 1 -p tcp --dport "$port" -m conntrack --ctstate NEW -j ACCEPT
+      done
+      netfilter-persistent save
+
+  # Mount the block volume, formatting it only if it has no filesystem yet.
+  - path: /usr/local/sbin/panfleto-mount-data
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      set -e
+      DEV=""
+      for i in $(seq 1 60); do
+        for candidate in /dev/oracleoci/oraclevdb /dev/sdb /dev/nvme1n1; do
+          if [ -b "$candidate" ]; then DEV="$candidate"; break 2; fi
+        done
+        sleep 5
+      done
+      if [ -z "$DEV" ]; then
+        echo "panfleto: block volume never appeared" >&2
+        exit 1
+      fi
+      if ! blkid "$DEV" >/dev/null 2>&1; then
+        mkfs.ext4 -L panfleto-data "$DEV"
+      fi
+      mkdir -p /data
+      grep -q 'LABEL=panfleto-data' /etc/fstab \
+        || echo 'LABEL=panfleto-data /data ext4 defaults,_netdev,nofail 0 2' >> /etc/fstab
+      mountpoint -q /data || mount /data
+      mkdir -p /data/panfleto/postgres /data/panfleto/caddy /data/panfleto/backups
+      chown -R ubuntu:ubuntu /data/panfleto
+
+runcmd:
+  - /usr/local/sbin/panfleto-firewall
+  - /usr/local/sbin/panfleto-mount-data
+
+  # Docker CE from the official repository - Ubuntu's packaged docker.io lags
+  # and does not ship the compose v2 plugin consistently.
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  - chmod a+r /etc/apt/keyrings/docker.asc
+  - echo "deb [arch=arm64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu noble stable" > /etc/apt/sources.list.d/docker.list
+  - apt-get update
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  - usermod -aG docker ubuntu
+  - systemctl enable --now docker
+
+  # OCI CLI, used by the backup job via instance principal auth.
+  - curl -fsSL https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh -o /tmp/oci-install.sh
+  - bash /tmp/oci-install.sh --accept-all-defaults --install-dir /opt/oci-cli --exec-dir /usr/local/bin --script-dir /opt/oci-cli/scripts
+
+  - git clone https://github.com/danybgoode/justread.git /opt/panfleto || true
+  - chown -R ubuntu:ubuntu /opt/panfleto
+
+  - touch /var/lib/cloud/panfleto-bootstrap-complete
+
+final_message: "panfleto host ready after $UPTIME seconds"

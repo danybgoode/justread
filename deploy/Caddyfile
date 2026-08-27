@@ -1,0 +1,24 @@
+{
+	email despachobonsai@gmail.com
+}
+
+# Landing page + registration/MCP API routes.
+panfleto.win, www.panfleto.win {
+	encode zstd gzip
+	reverse_proxy landing:3000
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+}
+
+# Miniflux itself.
+app.panfleto.win {
+	encode zstd gzip
+	reverse_proxy miniflux:8080
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+	}
+}

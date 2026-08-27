@@ -1,0 +1,9 @@
+[Unit]
+Description=panfleto Postgres backup to Object Storage
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/panfleto/deploy/backup.sh
+User=root
