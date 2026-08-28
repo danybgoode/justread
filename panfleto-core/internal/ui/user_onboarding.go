@@ -31,10 +31,10 @@ func provisionUserOnboarding(store *storage.Storage, userID int64, username stri
 		{url: "https://daringfireball.net/feeds/main", category: "Tech"},
 		{url: "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml", category: "News"},
 		{url: "https://www.jornada.com.mx/rss/edicion.xml", category: "News"},
-		{url: "https://www.proceso.com.mx/rss/", category: "News"},
+		{url: "https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/section/mexico/portada", category: "News"},
 		{url: "https://feeds.bbci.co.uk/news/rss.xml", category: "News"},
-		{url: "https://www.economist.com/printedition/covers.xml", category: "Business"},
-		{url: "https://www.bloomberg.com/feeds/bview/rss", category: "Business"},
+		{url: "https://www.ft.com/rss/home", category: "Business"},
+		{url: "https://feeds.content.dowjones.io/public/rss/mw_topstories", category: "Business"},
 		{url: "https://xkcd.com/rss.xml", category: "Comics"},
 		{url: "https://www.newyorker.com/feed/everything", category: "Culture"},
 	}
