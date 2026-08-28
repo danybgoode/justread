@@ -1,16 +1,27 @@
 {
-  "name": "fluxonline",
+  "name": "panfleto",
   "version": "1.0.0",
-  "description": "This directory contains the deployment configurations and scripts for hosting a Miniflux personal RSS service permanently using the free tiers of Render and Neon PostgreSQL.",
+  "description": "A minimalist, distraction-free RSS reader. Self-hosted Miniflux with a landing page, signup flow, and MCP server, running on Oracle Cloud's Always Free tier.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": [
+    "rss",
+    "miniflux",
+    "feed-reader",
+    "mcp",
+    "oracle-cloud",
+    "self-hosted"
+  ],
   "author": "",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "type": "commonjs",
   "dependencies": {
     "axios": "^1.16.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danybgoode/justread"
   }
 }

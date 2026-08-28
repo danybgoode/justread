@@ -1,86 +1,122 @@
-# Miniflux Deployment & Enhancements
+<div align="center">
 
-This directory contains the deployment configurations and scripts for hosting a Miniflux personal RSS service permanently using the free tiers of Render and Neon PostgreSQL. It also contains scripts to programmatically enhance your feeds.
+<img src="landing-page/public/panflo.png" alt="Panflo" width="120">
 
-## Public Deployment
-- **URL:** [https://miniflux-rss-app.onrender.com](https://miniflux-rss-app.onrender.com)
-- **Admin Username:** `admin`
-- **Admin Password:** `X2PVcPa2Q7SW3TMQ` (Please change this after your first login)
+# panfleto
 
-## Enhancements Implemented
-We have implemented several quality-of-life enhancements via the Miniflux API:
+**A minimalist, distraction-free RSS reader.**
+Zero algorithms. Zero ads. Zero distractions. Just your feeds, in the order they happened.
 
-1. **Auto-Categorization:** 
-   Feeds are automatically mapped to logical categories (News, Tech, Business, Science, Reddit) using `scripts/enhance_miniflux.js`.
-2. **Ad-Blocking:**
-   A global regex block rule `(?i)(sponsor|sponsored|ad|promotion|deal|sale|discount|oferta)` is applied to all feeds to keep your Unread tab clean.
-3. **Paywall Bypass & Archive.is Fallback:**
-   - Soft paywalls: The native "Fetch original content" option is enabled automatically for all feeds.
-   - Hard paywalls: The script `scripts/archive_appender.js` searches for notorious paywall feeds (NYT, Economist, Bloomberg, etc.) and injects a clickable `Archive.ph` link at the bottom of the article body. This preserves the original URL at the top but gives you a quick fallback link if the native fetch fails.
+[panfleto.win](https://panfleto.win) · [app.panfleto.win](https://app.panfleto.win)
 
-### Running the Enhancement Scripts
-To run the categorizer/ad-blocker again (if you add new feeds):
-```bash
-node scripts/enhance_miniflux.js
+</div>
+
+---
+
+## What this is
+
+panfleto is a hosted [Miniflux](https://miniflux.app) fork with a landing page, a
+one-click signup flow, and an MCP server that puts your feeds inside any AI
+assistant. It runs entirely on Oracle Cloud's Always Free tier — one small ARM
+VM, no monthly bill, no cold starts.
+
+| | |
+|---|---|
+| **Reader** | `app.panfleto.win` — Miniflux, built from `panfleto-core` |
+| **Landing & signup** | `panfleto.win` — Next.js 16, Auth0 SSO or email registration |
+| **MCP endpoint** | `panfleto.win/api/mcp?token=…` — feeds in Claude, Cursor, and friends |
+
+### What it does beyond stock Miniflux
+
+- **Auto-categorisation** — new feeds are sorted into News, Tech, Business,
+  Science and Reddit rather than landing in one flat list.
+- **Ad filtering** — a global block rule keeps sponsored posts out of Unread.
+- **Paywall handling** — original-content fetching is enabled everywhere, and
+  known hard-paywall feeds get an `archive.ph` fallback link appended.
+- **Starter feeds on signup** — a new account arrives with 16 curated feeds
+  already categorised, not an empty screen.
+
+## Architecture
+
+```
+Cloudflare (proxied, Full Strict)
+   │  panfleto.win, www  →  landing
+   │  app.panfleto.win   →  miniflux
+   ▼
+VM.Standard.A1.Flex · 2 OCPU / 12 GB · Ubuntu 24.04 ARM · mx-queretaro-1
+   │
+   └── Docker Compose
+       ├── caddy      :80/:443   automatic Let's Encrypt
+       ├── landing    :3000      Next.js 16
+       ├── miniflux   :8080      built from ./panfleto-core
+       └── postgres              /data block volume
+                │
+                └── nightly pg_dump → OCI Object Storage
 ```
 
-To run the Archive.is link injector for new unread articles:
-```bash
-node scripts/archive_appender.js
+Only Caddy publishes ports; everything else lives on the internal compose
+network. State sits on a separate block volume, so the VM itself is disposable.
+
+Everything is sized to the Always Free ceiling — **2 OCPU / 12 GB**, halved from
+4 / 24 when Oracle changed the Ampere allowance in June 2026 — so the stack
+keeps running unchanged once the introductory trial expires. **Total cost: $0.**
+
+## Repository layout
+
 ```
-*(Note: Because you are on a free tier, you can run this script manually from your computer whenever you open Miniflux and hit a paywall, or you can set it up on a free GitHub Action cron job to run hourly.)*
-
-## Architecture Overview
-- **Hosting:** Render Web Service (Free Tier)
-- **Database:** Neon Serverless PostgreSQL (Free Tier)
-- **Image:** `miniflux/miniflux:latest` (Official Upstream Docker Image)
-
-## Required Environment Variables
-
-The Render deployment depends on the following environment variables. If you ever need to recreate or modify the deployment, ensure these are set:
-
-- `DATABASE_URL`: Connection string from your Neon Dashboard. Note that `sslmode=require` is appended to ensure a secure connection.
-- `RUN_MIGRATIONS`: Set to `1` so Miniflux automatically applies database schemas when booting.
-- `CREATE_ADMIN`: Set to `1` so it creates an admin user if none exists.
-- `ADMIN_USERNAME`: Your chosen admin username.
-- `ADMIN_PASSWORD`: Your chosen admin password.
-- `PORT`: Set to `8080`.
-
-## Deployment Scripts
-
-A script `scripts/deploy-miniflux.sh` has been provided which uses the Render CLI to create the web service.
-
-To run it manually in the future:
-```bash
-render workspace set <your-workspace-id>
-./scripts/deploy-miniflux.sh
+deploy/           Oracle Cloud provisioning + the running stack (see deploy/README.md)
+panfleto-core/    Miniflux fork — the reader itself
+landing-page/     Next.js landing page, signup API, and MCP server
+scripts/          Feed enhancement utilities
 ```
 
-## Future Maintenance
+## Deploying
 
-### Updating Miniflux
-Since we use the official `miniflux/miniflux:latest` Docker image, your Render service will not automatically deploy on new Miniflux releases. To pull the latest update:
-1. Go to your [Render Dashboard](https://dashboard.render.com/).
-2. Select your `miniflux-rss-app` Web Service.
-3. Click **Manual Deploy** -> **Deploy latest commit** (or "Clear build cache & deploy" if Render supports pulling the latest `miniflux:latest` image).
-   
-Alternatively, you can trigger a restart using the CLI:
+Infrastructure and the full runbook live in **[`deploy/README.md`](deploy/README.md)**.
+The short version:
+
 ```bash
-render restart --resources srv-d84uobh9rddc739u0g90
+./deploy/provision.sh                    # creates every OCI resource; idempotent
+
+ssh -i ~/.ssh/panfleto_oci ubuntu@<ip>
+cd /opt/panfleto/deploy
+cp .env.example .env && vi .env          # secrets; never committed
+sudo ./install-host.sh                   # permissions + nightly backup timer
+docker compose up -d
 ```
 
-### Cold Starts
-Since this is running on Render's free tier, the service will go to sleep after 15 minutes of inactivity. When you visit the app or a background sync happens while asleep, the first request will take ~50 seconds as the container spins up. 
+Auth0 SSO is opt-in via `deploy/oauth.env` — see `oauth.env.example`. Without
+it, panfleto runs on password login.
 
-If this becomes a problem, you can either:
-1. Upgrade to a paid Render tier ($7/month).
-2. Set up a free cron job via a service like cron-job.org to ping the health endpoint every 14 minutes:
-   `https://miniflux-rss-app.onrender.com/healthcheck`
+## Operating
 
-### Custom Domains & HTTPS
-Render automatically provides HTTPS for the `.onrender.com` subdomain. If you want a custom domain:
-1. Go to your Render Dashboard -> `miniflux-rss-app` -> **Settings**.
-2. Scroll to **Custom Domains** and add your domain (e.g., `rss.yourdomain.com`).
-3. Render will provide you with a CNAME record.
-4. Go to your DNS provider (e.g., Cloudflare) and add the CNAME record pointing to `miniflux-rss-app.onrender.com`. If using Cloudflare, make sure the proxy status is **DNS Only** (grey cloud) during the certificate issuance, or strictly **Full (Strict)** if you proxy it, to avoid redirect loops.
-5. Once DNS propagates, Render will automatically issue a free Let's Encrypt SSL certificate for your custom domain.
+```bash
+/opt/panfleto/deploy/update.sh     # pull main, rebuild, restart
+/opt/panfleto/deploy/backup.sh     # manual backup (also nightly at 04:30 UTC)
+./deploy/allow-my-ip.sh            # re-point the SSH rule when your IP rotates
+```
+
+Backups land in the `panfleto-backups` bucket under `db/`, authenticated by the
+instance principal — no API keys on the host — and expire after 30 days.
+
+## Feed enhancement scripts
+
+```bash
+node scripts/enhance_miniflux.js    # re-run categorisation and ad-block rules
+node scripts/archive_appender.js    # inject archive.ph fallbacks (also runs
+                                    # every 3h via GitHub Actions)
+```
+
+Both read `MINIFLUX_URL` and `MINIFLUX_API_KEY` from the environment. Generate
+a key at **app.panfleto.win → Settings → API Keys**.
+
+## Credentials
+
+No secrets live in this repository. Runtime configuration is read from
+`deploy/.env` and `deploy/oauth.env` on the host — both `600`, both git-ignored.
+`deploy/.env.example` documents every value.
+
+## License
+
+`panfleto-core` is derived from Miniflux and remains under the Apache 2.0
+license. See `panfleto-core/LICENSE`.
