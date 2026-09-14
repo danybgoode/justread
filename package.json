@@ -4,7 +4,10 @@
   "description": "A minimalist, distraction-free RSS reader. Self-hosted Miniflux with a landing page, signup flow, and MCP server, running on Oracle Cloud's Always Free tier.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "git config core.hooksPath .githooks",
+    "test:e2e": "playwright test --project=api",
+    "test:e2e:browser": "playwright test --project=browser"
   },
   "keywords": [
     "rss",

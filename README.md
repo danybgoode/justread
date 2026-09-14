@@ -70,6 +70,22 @@ landing-page/     Next.js landing page, signup API, and MCP server
 scripts/          Feed enhancement utilities
 ```
 
+## How we work
+
+Planning, cadence and the rules an agent must not violate live in three files — read them before
+touching anything:
+
+| File | What it is |
+|---|---|
+| [`AGENTS.md`](AGENTS.md) | Orientation for any agent, and the five cannot-be-violated rules |
+| [`Roadmap/README.md`](Roadmap/README.md) | The product poster — every feature by domain, with status |
+| [`Roadmap/WAYS-OF-WORKING.md`](Roadmap/WAYS-OF-WORKING.md) | The cadence, risk tiers, review policy, Definition of Done |
+
+The idea funnel and the generated build order are under
+[`Roadmap/00-ideas/`](Roadmap/00-ideas/README.md). This operating system comes from
+[`dobby-foundation`](https://github.com/danybgoode/dobby-foundation) via the `ways-of-work` plugin —
+the plugin is pull-based and versioned, the `Roadmap/` skeleton was copied once.
+
 ## Deploying
 
 Infrastructure and the full runbook live in **[`deploy/README.md`](deploy/README.md)**.

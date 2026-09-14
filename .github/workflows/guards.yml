@@ -1,0 +1,69 @@
+# Consolidated fast guards — one job, one checkout, one setup-node, several `--check`/`node --test`
+# steps. Formerly 2 separate workflows (build-order-guard, scripts-guard) in earlier projects spawned
+# from this template; consolidated 2026-07-16 as part of a GitHub Actions minutes offload learned the
+# hard way in the origin project (see its Roadmap/09-platform-infra/github-actions-local-first/). Each
+# separate workflow ran in ~10-20 real seconds but still billed a GitHub Actions minimum of 1 minute
+# per job — up to N billed minutes for one PR touching several areas. One job with several steps bills
+# ~1 minute total instead.
+#
+# PR-only (no `push` trigger) — see this project's own AGENTS.md/WAYS-OF-WORKING.md for whether
+# direct-to-main commits are your convention for low-risk doc/tooling work; if so, `.githooks/pre-commit`
+# is the local-first equivalent of these same checks, run for free before the commit even lands.
+#
+# IMPORTANT — visibility vs Actions minutes: GitHub Actions minutes are only METERED for PRIVATE
+# repos (a shared monthly pool across your whole account); PUBLIC repos get unlimited free minutes.
+# If this project ends up public, none of this local-first work is a cost necessity here — it's still
+# fine to keep for faster local feedback, but don't assume every future template-spawned repo needs
+# the same urgency this consolidation was built to fix. Check `gh repo view --json isPrivate` if unsure.
+name: guards
+
+on:
+  pull_request:
+    paths:
+      - 'Roadmap/**'
+      - 'scripts/**'
+      - 'e2e/**'
+      - 'playwright.config.ts'
+      # Deliberately NOT here: panfleto-core/** and deploy/**. The reader is built and tested
+      # locally (there is no per-branch preview to build against — WAYS-OF-WORKING § Deploy rail),
+      # and a Go build on a hosted runner would duplicate the local gate at Actions-minute cost on
+      # a private repo. Add them if/when a real CI build pipeline lands
+      # (Roadmap/00-ideas/seeds/ci-build-pipeline.md).
+
+concurrency:
+  group: guards-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  guards:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # build-order's extractor derives dates from git history
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Detect changed areas
+        id: areas
+        run: |
+          base="${{ github.event.pull_request.base.sha }}"
+          changed=$(git diff --name-only "$base"...HEAD)
+          echo "roadmap=$(echo "$changed" | grep -qE '^(Roadmap/|scripts/(build-order|roadmap-to-notion)\.mjs)' && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "scripts=$(echo "$changed" | grep -qE '^scripts/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: build-order — status board is fresh
+        if: steps.areas.outputs.roadmap == 'true'
+        run: node scripts/build-order.mjs --check
+
+      - name: scripts/ — CLI/tooling node:test
+        if: steps.areas.outputs.scripts == 'true'
+        run: |
+          shopt -s nullglob
+          files=(scripts/lib/*.test.mjs scripts/*.test.mjs)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No scripts/**/*.test.mjs files yet — nothing to run."
+            exit 0
+          fi
+          node --test "${files[@]}"
