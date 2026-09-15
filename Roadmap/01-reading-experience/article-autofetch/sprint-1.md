@@ -9,6 +9,13 @@
 > - **No new Go files.** This is a default change plus a config option — `AGENTS.md` rule 1.
 > - **D4's kill-switch mechanism must be decided before 1.1**, because the config option added here
 >   is probably it.
+> - **Locked 2026-09-15:** D4 is the env-var seam (`FORCE_CRAWLER`, read at startup, killed in
+>   `deploy/.env`). D6: it ORs into creation, and per-feed off happens in feed settings. **1.2's
+>   clobber question is answered by D5:** no feed has ever had `crawler` on, so "deliberately off" can't
+>   be told apart from the default. The backfill therefore picks the 27 teaser feeds by data (14-day
+>   p90 under 2,000 chars, minus Reddit, xkcd and podcasts), runs as SQL on the VM because production
+>   has no API keys, and records every ID for a one-line reversal. Story 1.2's "a script under
+>   `scripts/`" becomes that recorded SQL, for the same reason.
 > - **Watch the VM after 1.2.** Turning the crawler on for every existing feed makes the next poll
 >   cycle scrape everything new across all of them at once. That is the first real load test.
 

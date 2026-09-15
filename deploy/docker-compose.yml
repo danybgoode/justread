@@ -61,6 +61,15 @@ services:
       LISTEN_ADDR: "0.0.0.0:8080"
       POLLING_FREQUENCY: "60"
       BATCH_SIZE: "100"
+      # Article autofetch (Roadmap/01-reading-experience/article-autofetch, D4). On by default here and
+      # killed in deploy/.env, then `docker compose up -d miniflux`: FORCE_CRAWLER=0 stops new feeds
+      # crawling, FETCH_FALLBACK_CHAIN= (empty) stops calling unwall.app, PREFETCH_WORKERS=0 puts
+      # scraping back on the poll path. Every one of them at 0/empty is upstream Miniflux's behaviour.
+      FORCE_CRAWLER: ${FORCE_CRAWLER:-1}
+      FETCH_FALLBACK_CHAIN: ${FETCH_FALLBACK_CHAIN-unwall}
+      FETCH_THIN_CONTENT_THRESHOLD: ${FETCH_THIN_CONTENT_THRESHOLD:-2000}
+      PREFETCH_WORKERS: ${PREFETCH_WORKERS:-2}
+      PREFETCH_HOST_DELAY: ${PREFETCH_HOST_DELAY:-2}
     # Auth0 SSO is opt-in and lives in its own file. Miniflux rejects
     # OAUTH2_PROVIDER when it is set but empty - not just when it is invalid -
     # so the variable has to be genuinely absent, which `environment:` cannot
