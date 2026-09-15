@@ -1,6 +1,6 @@
 # Put panfleto-core back on upstream's timeline — Sprint 2: Rebase forward to main
 
-**Status:** 🚧 in progress — 2.1 ✅ · 2.2 ✅ deployed (#2, `6c53c96`) + soaked · 2.3 built + rehearsed + reviewed, deploying (#3)
+**Status:** 🚧 in progress — 2.1 ✅ · ✅ complete — 2.1 ✅ · 2.2 ✅ (#2, `6c53c96`, soaked) · 2.3 ✅ (#3, `02e065c`)
 
 > **Build contract (locked by the architect before the builder started)**
 >
@@ -146,6 +146,17 @@ sync in S3 has zero backlog to work through on its first run.
   `/healthcheck` 200.
 - **Deploy step not to forget:** move `panfleto` on the fork to `2ee92c9b` (force-with-lease from `e219eb3d`),
   so `.gitmodules`' `branch = panfleto` and S3's sync start from hop 2.
+
+**Deployed to production (2026-09-15 02:39 UTC, merge `02e065c`):**
+- The fork's `panfleto` moved `e219eb3d` → `2ee92c9b` (force-with-lease). **The proof:** `git rev-list --count
+  origin/panfleto..upstream/main` = **0**, and `git log --oneline upstream/main..origin/panfleto` lists exactly the five
+  topic commits.
+- `update.sh`: 62 s. Boot log `current_version=132 latest_version=134` → `Starting HTTP server`, no error.
+  `schema_version` **134**; `enclosures_user_entry_url_unique_idx` on `sha256((url)::bytea)`;
+  `entries_user_status_changed_idx` gone; `git submodule status` → `2ee92c9b (resync-hop2-main)`.
+- `reader-health` against `https://app.panfleto.win` → **6/6**.
+- Enclosure writes under the raw-digest index are confirmed at the next hourly refresh (recorded in sprint-3's
+  deploy notes, since S3 deploys within the same hour and touches no storage code).
 
 **Risk:** high
 
