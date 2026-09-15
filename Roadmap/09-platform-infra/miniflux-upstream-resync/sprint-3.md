@@ -1,6 +1,6 @@
 # Put panfleto-core back on upstream's timeline — Sprint 3: Shrink the delta and automate the sync
 
-**Status:** ✅ deployed — #4 (`26400f3`), final pin `fa1046df` (tag `resync-done`) in the close-out PR
+**Status:** ✅ deployed — #4 (`26400f3`), final pin `804e6dfc` (tag `resync-done`) in the close-out PR
 
 > **Architect's correction (2026-09-15):** this sprint's scaffold was written from the tree before the S2
 > rebases, and four of its claims don't hold. The corrected shape is **README D13**, and the stories below
@@ -139,8 +139,14 @@ skipping.
 
 The exercise surfaced one more gap, now fixed: after a *manual* conflict resolution there is no sync PR carrying a
 `sync-base`, so the conflict issue now spells out the PR-with-marker step before `accept`. The test branches,
-tag, PR and issue are deleted or closed. Final fork tip **`fa1046df`**, which differs from the deployed `0f4bbb68`
-only in the workflow file; the close-out PR pins it and deploys.
+tag, PR and issue are deleted or closed. The close-out's fresh review then found two more small workflow issues,
+both fixed and re-exercised (runs `34923238409` sync → PR #11, `34923274846` accept → success): `accept` now comments
+before a tolerant close, because GitHub auto-marks the PR merged within a second of the force-push and a strict
+close raced it; and the conflict issue says to use the marker for the *current* base tip, editing an existing PR
+if there is one. **While doing this, the fork's `panfleto` was force-pushed four times** (`0f4bbb68` → `5cca1a72` →
+`ff677ff4` → `fa1046df` → `804e6dfc`), each an amend of the sixth commit. Only `0f4bbb68` was ever pinned or
+deployed, and it stays reachable as tag `resync-s3`. Final fork tip **`804e6dfc`** (tag `resync-done`) differs from
+the deployed `0f4bbb68` only in the workflow file; the close-out PR pins it and deploys.
 
 ## Sprint QA
 - **api spec(s):** `e2e/subscribe-suggestions.spec.ts` — anonymous where possible: assert the
