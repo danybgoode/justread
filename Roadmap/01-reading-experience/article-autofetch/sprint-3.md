@@ -1,6 +1,6 @@
 # Click an article and the content is already there — Sprint 3: Prefetch off the poll path
 
-**Status:** ⬜ not started
+**Status:** ✅ shipped 2026-09-15 · stories 3.1–3.3 in fork `fa8e46a2`, PR #10 · prefetch on 20:58 UTC · restart + kill-switch tested 21:05–21:08 UTC
 
 > **Build contract (locked by the architect before the builder started)**
 >
@@ -72,20 +72,38 @@ not staring at a teaser wondering if it's broken.
   freshly polled article, which an API call can't observe.
 - **deterministic gate:** `go build` + `go vet` + `go test` + `docker compose build`.
 
-## Sprint 3 — Smoke walkthrough (do these in order)
-Env: production · `https://app.panfleto.win`
+## Results — recorded in production, 2026-09-15
 
-1. On the VM, time a full poll cycle from the container log.
-   → It is back to roughly its pre-autofetch duration.
-2. **(auth path — owed to the product owner by name)** Sign in and open Unread immediately after a poll.
-   → Some articles show "fetching…" rather than a Download button.
-3. Wait a minute and reload.
-   → Those articles now have full text.
-4. Find an article whose fetch failed (check the log for an all-steps-empty entry) and open it.
-   → It shows the Download button and a note that automatic fetching found nothing, plus the paywall rail.
-5. Run `docker stats` on the VM during a drain.
-   → The reader answers requests normally throughout; Postgres is not being starved.
-6. Restart the miniflux container mid-drain, then check the log.
-   → The queue recovers; no entries are permanently stuck.
+- **3.1, the poll stays fast.** The poll path no longer scrapes when `PREFETCH_WORKERS` > 0. Locally, subscribing to NYT
+  Technology returned in **0.39 s**, where inline scraping would have taken about a minute. In production the inline S1
+  poll had finished within one sample anyway, at 135 crawled entries. `POLLING_FREQUENCY` 60 and `BATCH_SIZE` 100 are
+  **left as they are**: the drain never raised load above 0.10.
+- **3.2, the bounded worker.** 2 workers, 1 request per host 2 s apart, a queue of 1,000. During the drain, Miniflux CPU
+  peaked at **8.6%**, Postgres at **2.7%** and load at **0.10**. `https://app.panfleto.win/healthcheck` answered in
+  **37–88 ms** throughout.
+- **Restart mid-drain (21:05 UTC).** Before the restart the database held **215** thin unread entries in the window.
+  Recovery re-queued **215**, with 0 skipped, and the drain resumed: 63 stored and 52 "not longer" in the next 4 minutes.
+- **Kill switch (21:08 UTC).** With `FETCH_FALLBACK_CHAIN=` and `PREFETCH_WORKERS=0` set, the container read them, and
+  there was no prefetcher and no unwall.app call. With the lines removed, the prefetcher restarted and re-queued 213.
+- **3.3, fetch state.** It's derived from memory with no migration. Locally, a failed entry rendered "Automatic fetching
+  found nothing. Try the paywall links below." next to Download, and a fetched entry showed only Download.
+- **Known cost:** each restart re-queues the thin unread entries of the last 6 hours, including ones already tried (BBC),
+  because the fetch state lives only in memory (A3). About 200 calls per restart, well inside unwall.app's limit.
+
+## Sprint 3 — Smoke walkthrough (do these in order)
+Env: production · `https://app.panfleto.win` and the VM
+
+1. On the VM: `docker compose logs miniflux | grep -E "Prefetch (started|recovered)"`.
+   → `workers=2 queue_size=1000 host_delay=2s`, and a recovered count.
+2. **(auth path — owed to the product owner by name)** Sign in and open Unread within a minute of a poll.
+   → Some articles show **Loading…** in place of the Download button.
+3. Wait a minute and reload one of them.
+   → Full text, and the Download button is back.
+4. Open a **BBC** article that was tried and came back empty.
+   → Download, plus the note "Automatic fetching found nothing. Try the paywall links below."
+5. During a drain, run `docker stats --no-stream`.
+   → Miniflux in single-digit CPU, and the reader answers normally.
+6. Run `docker compose restart miniflux`, then check `grep "Prefetch recovered"` in the log.
+   → The recovered count matches the thin unread entries. Nothing is stuck.
 
 If any step fails, note the step number + what you saw — that's the bug report.

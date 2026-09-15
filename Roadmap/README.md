@@ -53,9 +53,9 @@ independently shippable slice of value.
 - ✅ New accounts read newest-first and land on Feeds, not Unread
 - ✅ Paywall-bypass link rail on every article (archive.ph · archive.is · unwall.app), told once, by the template
 - ✅ **Ad filtering** — every feed that existed on 2026-09-15 carries a block rule that matches ad *labels* ("Sponsored:", "Contenido patrocinado", `/sponsored/`), not ad words; on stored entries it blocks 4 of 32,499, all genuine deal posts
-- 🚧 **Original-content fetching** — works per-feed when "fetch original content" is enabled; most feeds still need the reader to press Download. *(The repo README has claimed this was "enabled everywhere" since 2026-05; it is not. Tracked in `00-ideas/seeds/article-autofetch.md`.)*
-- 🚧 **Comments** — an article's comments URL is parsed and stored, but only rendered as an outbound link
-- ❌ No reader-facing way to tell that content failed to fetch
+- ✅ **Original-content fetching** — new feeds fetch the full article by default, and the 26 teaser feeds that existed on 2026-09-15 were switched on. When the site refuses panfleto, unwall.app is tried next. It runs off the poll path, one request per host, and every piece switches off in `deploy/.env`. BBC and FT still arrive as teasers, and the rail covers them
+- ✅ **Comments** — a Hacker News article opens its thread inside the reader: lazy, nested 5 deep, sanitized, cached 10 minutes. Other sites keep the outbound link, and Reddit was cut (it blocks panfleto's IP)
+- ✅ The entry page says when an article is still being fetched ("Loading…"), or when automatic fetching found nothing and the paywall rail is the way in
 
 ### 02 · Onboarding & signup
 - ✅ Landing page and one-click signup at `panfleto.win`
@@ -85,6 +85,9 @@ independently shippable slice of value.
 ---
 
 ## Recent highlights
+
+- **2026-09-15** — `article-autofetch` + `spike-unwall-app`: click an article and the text is already there. The spike ran from the production VM. It showed unwall.app works as a server-side API and archive.ph is unreachable, so the chain became direct → unwall.app. After a staged rollout by env var, the first poll brought in 135 full articles at load 0.18, and a 327-entry backlog drained through unwall.app with no rate limit. The kill switch was tested live, off and on.
+- **2026-09-15** — `inline-comments`: Hacker News threads open inside the reader, sanitized and cached, with no migration. Reddit was cut because it blocks panfleto's IP and its entries carry no comments URL.
 
 - **2026-09-15** — `paywall-rail-single-source`: the paywall rail is told once, by the template, and now links archive.ph, archive.is and unwall.app. The cron job that appended link blocks into stored articles is deleted, and a guard stops any script doing it again. The feared production cleanup had nothing to clean: 0 affected rows, because the job had stopped before the current database existed.
 - **2026-09-15** — `adblock-rule-false-positives`: panfleto filters ads for the first time. The old rule had never reached a feed (the script wrote a field the API ignores), and it would have hidden 43% of stored articles, every La Jornada story among them. The new rule matches ad labels, not words, and is live on all 52 feeds; on the same data it blocks 4 deal posts.

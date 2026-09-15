@@ -1,6 +1,6 @@
 # Click an article and the content is already there — Sprint 2: The fallback chain
 
-**Status:** ⬜ not started
+**Status:** ✅ shipped 2026-09-15 · stories 2.1 + 2.2 in fork `fa8e46a2`, PR #10 · fallback on 20:58 UTC · story 2.3 cut (archive.ph unreachable)
 
 > **Build contract (locked by the architect before the builder started)**
 >
@@ -85,20 +85,33 @@ single VM IP doesn't get blocked and take the fallback down for everyone.
   confirming readable text arrives without pressing anything.
 - **deterministic gate:** `go build` + `go vet` + `go test` (including the new chain tests) + `docker compose build`.
 
-## Sprint 2 — Smoke walkthrough (do these in order)
-Env: production · `https://app.panfleto.win`
+## Results — recorded in production, 2026-09-15
 
-1. **(auth path — owed to the product owner by name)** Sign in and open a **New York Times** article from the starter feeds.
+**A4, answered with production numbers.** The estimate was **47.6 fallback-eligible entries/hour** (14 days, 27 feeds)
+against unwall.app's 120/minute. The restart at 20:58 UTC queued a 6-hour backlog of **327** teasers. In the first
+7 minutes the drain produced **94 articles by direct scrape and 111 through unwall.app**. It had **2 misses**,
+**29 "not longer"** results (D7 kept the feed's content), and **0** 429s or cooldowns. A backlog at roughly 4× steady
+state never touched the limit, so **the chain stays wide**.
+
+**Per publisher, median text after the fallback:** NYT 3,530 (direct 403s; unwall.app gets it), El País 5,833,
+The Guardian 5,663, Ars 4,293, 9to5Mac 2,377, TechCrunch 2,229. **BBC stays at 132:** it refuses the VM directly
+and unwall.app returns no more, so BBC readers still use the rail. FT gets only a teaser even through unwall.app
+(spike finding 4).
+
+## Sprint 2 — Smoke walkthrough (do these in order)
+Env: production · `https://app.panfleto.win` and the VM
+
+1. **(auth path — owed to the product owner by name)** Sign in and open a **New York Times** article from the last day.
    → Readable article text, without pressing Download.
-2. Open an **FT** article.
+2. Open a **Guardian** or **El País** article.
    → Same.
-3. Open an article from a feed that already delivered full content before this sprint (e.g. Daring Fireball).
-   → Unchanged. No regression, and no fallback was called — confirm in the log.
-4. Find an article whose link is dead or 404s.
-   → The entry still shows its original feed teaser. Nothing errored, nothing blank.
-5. On the VM, `docker compose logs miniflux | grep -i fallback | tail -50`.
-   → You can see which step produced content for each fetch.
-6. Check the recorded A4 number in this sprint file.
-   → It exists, and someone has decided whether the chain stays wide or narrows.
+3. Open a **Daring Fireball** article. It's a full-content feed, left out of the backfill.
+   → Unchanged.
+4. Open a **BBC** article.
+   → Still a teaser, with the paywall rail below. Known: BBC refuses both the direct fetch and unwall.app.
+5. On the VM, `docker compose logs miniflux | grep "Fetch fallback chain" | tail -20`.
+   → Each line names `source=direct`, `source=unwall` or `source=none`.
+6. Press **Download** on any article.
+   → It completes quickly. It never waits behind the background workers: calls are paced, with no lock held across a request.
 
 If any step fails, note the step number + what you saw — that's the bug report.

@@ -141,6 +141,9 @@ to any project carrying someone else's codebase.*
   article came from a JSON API found in its bundle), archive.ph was refused by the VCN resolver and timed out by IP,
   and Reddit answered 403/429 within three calls. From a laptop all three looked different. Test DNS (`getent`
   vs `dig @8.8.8.8`) and TCP separately, or you misread which layer said no. It cut two stories before they were built.
+- **Judge a rollout by what it stored, not by a median going up.** (2026-09-15, article-autofetch) The first crawler
+  poll's medians looked like a clean win, but Techmeme's was 105K characters: its item links are anchors into its
+  front page, so every entry stored the whole river. Read the outliers in the first cycle before calling it healthy.
 - **Moving work off a hot path breaks every caller that relied on it running inline.** (2026-09-15, article-autofetch)
   With scraping deferred to a queue, a forced feed refresh still rewrote stored content from RSS but no longer
   re-scraped it, so fetched articles silently reverted to teasers. The after-scrape filter pass and integrations also
