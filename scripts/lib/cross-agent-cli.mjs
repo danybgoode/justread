@@ -64,10 +64,10 @@ export const AGENT_BIN = { codex: 'codex', antigravity: 'agy', vibe: 'vibe', cla
 // Harmless here since AGY_MODEL/AGY_FALLBACK_MODEL below are always valid, listed model names (checked via
 // `agy models`), but it means a future typo in either constant would silently review with the WRONG model
 // instead of failing loud — watch for that if either constant is ever edited.
-// agy-doctor: last verified 2026-07-17 against 1.1.3.
+// agy-doctor: last verified 2026-09-14 against 1.2.2.
 //   ^ machine-managed marker — `node scripts/agy-doctor.mjs --fix` rewrites it (with the constant
 //   below) after a green live contract probe. Don't hand-edit the marker's shape.
-export const AGY_PINNED = '1.1.3';
+export const AGY_PINNED = '1.2.2';
 
 // agy's `--print` mode prints NOTHING unless `--model` names a model — and, crucially, it ALSO prints
 // nothing (exit 0, empty stdout — the error lands only in agy's log, see --log-file) when the model is
@@ -109,7 +109,7 @@ export const AGY_ARG_LIMIT = 256 * 1024;
 // A green probe prints real findings. An EMPTY result is a FAILURE, not a pass — see runVibe below, which
 // treats empty stdout as an error exactly like the agy path does, for the same reason (a quota-capped or
 // misconfigured CLI can exit 0 with nothing).
-// vibe-probe: NOT YET VERIFIED — replace this line with `vibe-probe: verified <date> against <version>`.
+// vibe-probe: verified 2026-09-14 against 2.24.5 (`--prompt … --agent plan --output text --trust` → real stdout, exit 0).
 //
 // `vibe-acp` is the WRONG entry point for this use case and is deliberately not wired: it starts a
 // JSON-RPC server that speaks the Agent Client Protocol over stdio for IDE extensions (Zed et al.). It

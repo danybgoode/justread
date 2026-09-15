@@ -32,7 +32,7 @@ route, no migration — see `AGENTS.md` rule 3, which this epic exists partly to
 - **`deploy/docker-compose.yml`** `build.context: ../panfleto-core` — unchanged by the submodule move
 - **`panfleto-core/packaging/docker/alpine/Dockerfile`** — the build, already correct
 - **`deploy/update.sh`**, **`deploy/backup.sh`**, the `panfleto-backups` bucket, the nightly 04:30 UTC timer
-- **Upstream's `nonce` template function** (`internal/template/functions.go:99`) — still there, waiting to be used again in S3
+- **Upstream's `nonce` template function** (`internal/template/functions.go:93`) — still there, waiting to be used again in S3
 - **Three existing starter-feed lists** — `internal/ui/user_onboarding.go`, `add_subscription.html`, `scripts/enhance_miniflux.js` — consolidated, not rewritten, in S3
 
 ## Architecture decisions — to be LOCKED by the orchestrator before any builder starts
@@ -101,6 +101,12 @@ reader production ran before this epic. To roll back:
 `git -C panfleto-core checkout bdf23f75 && git add panfleto-core && git commit`, merge, `update.sh`.
 The S2 rebases rewrite the `panfleto` branch, so this SHA is kept reachable by the tag
 **`pre-resync`** on `panfleto-core` — a pin to an unreachable commit would not survive a fresh clone.
+
+**Every commit `main` ever pins is tagged before the branch moves again** (fresh-review finding on
+PR #1): a rebased-away pin still works on the VM, which has the object locally, but a fresh clone or a
+rebuilt VM at that `main` commit fails with `not our ref`. Tags: `pre-resync` (S1, `bdf23f75`),
+`resync-hop1-v2.3.3` (S2.2), `resync-hop2-main` (S2.3). S3.3's weekly sync inherits the rule — see
+sprint-3.
 
 That mechanism only holds if the database can come back too, which is why S2.1 exists and blocks
 everything after it.

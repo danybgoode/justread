@@ -104,6 +104,16 @@ local checkout with release binaries in it does need it. Production confirmation
 
 **Risk:** high
 
+### Deploy note — the first `update.sh` run after this merge (fresh-review finding)
+
+`git reset --hard` replaces `deploy/update.sh` with a new inode while bash is still reading the **old**
+one, so the first run executes the pre-submodule script: it empties `panfleto-core/`, skips the
+submodule init, and fails at `docker compose build`. That failure is safe — `up -d` is never reached,
+so the running containers keep serving — but it is a failure. **For this one deploy, reset first and
+then run the new script:**
+`cd /opt/panfleto && git fetch origin && git reset --hard origin/main && deploy/update.sh`.
+Every later run is normal.
+
 ## Sprint QA
 - **api spec(s):** none new — this sprint changes no behaviour, so a spec asserting behaviour would
   assert nothing. The gate here is the **build from a fresh submodule clone**, which is the thing
