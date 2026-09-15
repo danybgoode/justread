@@ -11,11 +11,12 @@ const title = (t) => ({ title: t, url: 'https://example.com/story', author: '', 
 
 const BLOCKED = [
   'Sponsored: the best laptops of 2026',
+  '[Sponsored] Five reasons to switch banks',
   'Contenido patrocinado por Banco X',
   'Advertisement',
   'PUBLIRREPORTAJE: conoce el nuevo fraccionamiento',
-  'Advertorial — why this mattress changed my life',
-  'Promoted: try our new app',
+  'Why this mattress changed my life (advertorial)',
+  'Paid Post: How cloud computing is changing retail',
 ];
 
 const NOT_BLOCKED = [
@@ -30,6 +31,12 @@ const NOT_BLOCKED = [
   'Idealism in foreign policy',
   'Sponsorship deal collapses', // a news story about sponsorship, not a sponsored post
   'Promotion for the club after a 3-1 win',
+  // A word boundary is not enough: these are news about sponsorship and promotion, not ads.
+  'State-sponsored hackers breach utility',
+  'Leeds promoted to the Premier League',
+  'What counts as sponsored content? FTC rules',
+  'Evento patrocinado por el gobierno',
+  'Advertisements that changed history',
 ];
 
 for (const t of BLOCKED) {
@@ -49,7 +56,9 @@ test('matches the URL as well as the title, like filter.go — a whole feed is n
   assert.equal(isBlocked(OLD_RULE, jornada), true, 'old rule: "jornada" contains "ad"');
   assert.equal(isBlocked(BLOCK_RULE, jornada), false);
   assert.equal(isBlocked(BLOCK_RULE, { ...jornada, url: 'https://example.com/sponsored/story' }), true);
+  assert.equal(isBlocked(BLOCK_RULE, { ...jornada, url: 'https://example.com/news/state-sponsored-hackers' }), false);
   assert.equal(isBlocked(BLOCK_RULE, { ...jornada, tags: ['Patrocinado'] }), true);
+  assert.equal(isBlocked(BLOCK_RULE, { ...jornada, author: 'Advertisement Feature' }), true);
 });
 
 test('a feed with no rule, or a rule this script wrote before, gets the new rule', () => {
@@ -57,6 +66,7 @@ test('a feed with no rule, or a rule this script wrote before, gets the new rule
   assert.equal(desiredBlockRule(undefined), BLOCK_RULE);
   assert.equal(desiredBlockRule(OLD_RULE), BLOCK_RULE);
   assert.equal(desiredBlockRule(BLOCK_RULE), BLOCK_RULE);
+  assert.equal(desiredBlockRule(`${OLD_RULE}\n`), BLOCK_RULE, 'trailing whitespace is not hand-tuning');
 });
 
 test('a hand-tuned rule is never clobbered', () => {
@@ -78,9 +88,15 @@ test('a hand-tuned feed still gets its category and crawler, but not a rule', ()
   assert.deepEqual(feedChanges(feed, { categoryId: 2, blockRule: null }), { category_id: 2, crawler: true });
 });
 
+test('--rules-only never moves a feed or flips its crawler', () => {
+  const feed = { category: { id: 7 }, blocklist_rules: OLD_RULE, crawler: false };
+  assert.deepEqual(feedChanges(feed, { categoryId: 1, blockRule: BLOCK_RULE, rulesOnly: true }), { blocklist_rules: BLOCK_RULE });
+  assert.equal(feedChanges({ ...feed, blocklist_rules: BLOCK_RULE }, { categoryId: undefined, blockRule: BLOCK_RULE, rulesOnly: true }), null);
+});
+
 test('arguments', () => {
-  assert.deepEqual(parseArgs([]), { dryRun: false, feedId: null });
-  assert.deepEqual(parseArgs(['--dry-run', '--feed', '42']), { dryRun: true, feedId: 42 });
+  assert.deepEqual(parseArgs([]), { dryRun: false, feedId: null, rulesOnly: false });
+  assert.deepEqual(parseArgs(['--dry-run', '--rules-only', '--feed', '42']), { dryRun: true, feedId: 42, rulesOnly: true });
   assert.throws(() => parseArgs(['--feed', 'bbc']));
   assert.throws(() => parseArgs(['--all']));
 });
