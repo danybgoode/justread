@@ -10,10 +10,9 @@
 > funnel), then run `node scripts/build-order.mjs`. This board and the Notion "Marketplace Roadmap"
 > DB are both *derived views* — never hand-edit the board.
 
-## 🏗️ Building now (2)
+## 🏗️ Building now (1)
 
-- [Click an article and the content is already there](../../01-reading-experience/article-autofetch/README.md) — 01 Reading experience · 0/7 stories · risk: High · wave-2026-09-panfleto
-- [Read the comments without leaving the reader](../../01-reading-experience/inline-comments/README.md) — 01 Reading experience · 0/3 stories · risk: High · wave-2026-09-panfleto
+- [Read the comments without leaving the reader ✅](../../01-reading-experience/inline-comments/README.md) — 01 Reading experience · 3/3 stories · risk: High · wave-2026-09-panfleto
 
 ## 📋 Ready to build (scaffolded, not started) (3)
 
@@ -21,8 +20,9 @@
 - [MCP tokens shouldn't travel in query strings](../../03-agent-surface/mcp-token-handling/README.md) — 03 Agent surface · 0/4 stories · risk: High
 - [Stop compiling Go on the production VM](../../09-platform-infra/ci-build-pipeline/README.md) — 09 Platform & Infra · 0/4 stories · risk: High
 
-## ✅ Shipped (4)
+## ✅ Shipped (5)
 
+- [Click an article and the content is already there ✅](../../01-reading-experience/article-autofetch/README.md) — 01 Reading experience · 7/7 stories · risk: High · wave-2026-09-panfleto
 - [How should unwall.app reach the reader? ✅](../../01-reading-experience/spike-unwall-app/README.md) — 01 Reading experience · 2/2 stories · risk: Low · wave-2026-09-panfleto
 - [Tell the paywall rail once, in the template, correctly ✅](../../01-reading-experience/paywall-rail-single-source/README.md) — 01 Reading experience · 5/5 stories · risk: High · wave-2026-09-panfleto
 - [The ad-block rule is silently dropping real articles ✅](../../01-reading-experience/adblock-rule-false-positives/README.md) — 01 Reading experience · 2/2 stories · risk: Low · wave-2026-09-panfleto
@@ -32,7 +32,7 @@
 
 _None._
 
-## ⚠️ Status drift — README frontmatter vs sprint/retro-derived (2)
+## ⚠️ Status drift — README frontmatter vs sprint/retro-derived (1)
 
 These epics’ authoritative README-frontmatter `status:` disagrees with what the sprint/retro
 derivation infers. The board trusts the **frontmatter**; a mismatch usually means a close-out
@@ -40,8 +40,7 @@ forgot to set `status:` (or the README is stale). Reconcile the README, then thi
 
 | Epic | frontmatter (used) | sprint/retro-derived |
 |---|---|---|
-| Click an article and the content is already there | In progress | Scaffolded |
-| Read the comments without leaving the reader | In progress | Scaffolded |
+| Read the comments without leaving the reader ✅ | In progress | Shipped |
 
 ---
-_Epics: 9 · seeds in funnel: 0 · status drift: 2. Regenerate with `node scripts/build-order.mjs`._
+_Epics: 9 · seeds in funnel: 0 · status drift: 1. Regenerate with `node scripts/build-order.mjs`._

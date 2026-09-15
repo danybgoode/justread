@@ -1,10 +1,10 @@
 ---
-status: in-progress
+status: shipped
 slug: article-autofetch
 build_order: 6
 ---
 
-# Epic: Click an article and the content is already there
+# Epic: Click an article and the content is already there ✅
 
 > **Area:** 01-reading-experience · **Risk:** high · **Class:** Feature · **Archetype:** Grower · **Scope seed:** [`00-ideas/seeds/article-autofetch.md`](../../00-ideas/seeds/article-autofetch.md)
 
@@ -65,7 +65,7 @@ IP). Builders cite these, they don't re-derive them.
 | **D2** | **Scraping comes off the poll path when `PREFETCH_WORKERS` > 0.** The processor stops scraping inline for every caller (poll, subscribe, manual refresh); `handler.RefreshFeed` and both `CreateFeed*` enqueue the new entries' IDs | Unchanged from 2026-09-14. Subscribing to a 25-entry feed with inline scraping and a two-step chain would hold the subscribe request for a minute |
 | **D3** | **One seam: `autofetch.Fetch`.** The processor's crawler block and `ProcessEntryWebPage` (the Download button) both call it; the prefetch worker reaches it through `ProcessEntryWebPage` | S2 build contract. The manual and automatic paths can't drift, because there is one path |
 | **D4** | **Kill switch = env vars read at startup, flipped in `deploy/.env` on the VM, then `docker compose up -d miniflux`** (a restart, not a rebuild). Every option's upstream default is today's behaviour, and compose turns each one on with a `${VAR:-on}` default, so the kill is one line in `.env` | panfleto has no flag provider, and building one was out of appetite. Tested live by turning each switch off and on (DoD) |
-| **D5** | **Backfill = 27 feeds, by SQL on the VM**, with the exact IDs recorded in `sprint-1.md` and a one-line reversal. It covers feeds whose 14-day p90 is under 2,000 chars, **excluding** Reddit (the VM IP is already throttled: 3 of 4 Reddit feeds are failing to poll), xkcd (the content *is* the image), and podcasts (simplecast: the page is show notes). Feeds with no entries in 14 days are left alone | Production has 0 API keys, and the feeds belong to two non-admin users (memory: feed-config rollouts go through SQL). No feed has ever had `crawler` on, so a "deliberately off" feed can't be told apart from a default one. The data-driven feed set is the answer to 1.2's clobbering question |
+| **D5** | **Backfill = 27 feeds, by SQL on the VM** (26 after production: **Techmeme (feed 55) turned back off on 2026-09-15** — its item links are anchors into its whole front page, so the scraper stored the entire river, 100K+ chars and ~1,790 links per entry), with the exact IDs recorded in `sprint-1.md` and a one-line reversal. It covers feeds whose 14-day p90 is under 2,000 chars, **excluding** Reddit (the VM IP is already throttled: 3 of 4 Reddit feeds are failing to poll), xkcd (the content *is* the image), and podcasts (simplecast: the page is show notes). Feeds with no entries in 14 days are left alone | Production has 0 API keys, and the feeds belong to two non-admin users (memory: feed-config rollouts go through SQL). No feed has ever had `crawler` on, so a "deliberately off" feed can't be told apart from a default one. The data-driven feed set is the answer to 1.2's clobbering question |
 | **D6** | **`FORCE_CRAWLER` ORs into feed creation.** A reader turns a feed off in its settings after subscribing, and the subscribe form's checkbox is pre-ticked so it tells the truth | `FeedCreationRequest.Crawler` is a plain `bool`, so the API and onboarding can't tell "absent" from "false" |
 | **D7** | **Automatic fetches only replace content that gets longer.** The Download button keeps today's rule (any non-empty result replaces) | The guard against "some feeds scrape worse than their RSS" that costs no column. The per-feed opt-out is the existing `crawler` checkbox (2.1) |
 | **D8** | **The fetch-state note is hardcoded English**, like the rail beside it. "Fetching…" reuses the translated `entry.state.loading` | Miniflux's printer has no fallback: a missing key renders as the key itself, and `TestMissingTranslations` requires a new key in all 23 locale files. That would be rebase tax on 23 upstream files for one sentence |
@@ -123,12 +123,12 @@ Backend-only; nothing to degrade gracefully. But each sprint changes outbound tr
 container log. S2 is the sprint most likely to surface a rate limit; S3 is the one that fixes it.
 
 ## Definition of Done (epic)
-- [ ] All sprints merged to `main` + deployed via `update.sh` + smoke-tested (gaps stated)
-- [ ] Each `sprint-N.md` has its smoke walkthrough (real URLs)
-- [ ] This README marked ✅; every sprint status ticked with commit refs
-- [ ] `RETROSPECTIVE.md` written
-- [ ] Product poster updated — 01's "Original-content fetching" line goes 🚧 → ✅, and the repo `README.md`'s long-standing "enabled everywhere" claim becomes true rather than aspirational
-- [ ] Durable learnings promoted to `Roadmap/LEARNINGS.md`
-- [ ] **Kill-switch:** the D4 mechanism exists and has been tested by actually turning the feature off and back on
-- [ ] `AGENTS.md` rule 1's delta count updated for any files this epic added to the fork
-- [ ] Feature branch deleted; frontmatter `status: shipped`; `node scripts/build-order.mjs`
+- [x] All sprints merged to `main` (PR #10, `0825cd5`) + deployed via `update.sh` + smoke-tested. The gaps are stated in each sprint: signed-in browser steps are owed to the product owner
+- [x] Each `sprint-N.md` has its smoke walkthrough (real URLs) and the measured numbers
+- [x] This README marked ✅; every sprint status ticked with commit refs
+- [x] `RETROSPECTIVE.md` written
+- [x] Product poster updated — 01's "Original-content fetching" line goes 🚧 → ✅
+- [x] Durable learnings promoted to `Roadmap/LEARNINGS.md`
+- [x] **Kill switch:** D4's env vars turned off and back on in production, 2026-09-15 21:08 UTC. With them off, the container read the empty values, and neither the prefetcher nor unwall.app ran. Back on, the prefetcher restarted and re-queued 213 entries
+- [x] `AGENTS.md` rule 1's delta count updated (27 code files, 8 topic commits)
+- [x] Feature branch deleted; frontmatter `status: shipped`; `node scripts/build-order.mjs`

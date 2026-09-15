@@ -1,6 +1,6 @@
 # Read the comments without leaving the reader — Sprint 1: Hacker News comments in the reader
 
-**Status:** ⬜ not started
+**Status:** ✅ shipped 2026-09-15 · fork `06593003` (`panfleto: inline comments`) · PR #11 merged `f6cd9d7` · `update.sh` 19:52 UTC
 
 > **Build contract (locked by the architect before the builder started)**
 >
@@ -57,17 +57,23 @@ the discussion without leaving the reader.
 ## Sprint 1 — Smoke walkthrough (do these in order)
 Env: production · `https://app.panfleto.win`
 
-1. **(auth path — owed to the product owner by name)** Sign in and open any **Hacker News** article.
-   → Below the article there is a collapsed "Comments" section.
+**Already confirmed by the agent** (2026-09-15, after deploy): `e2e/comments-route.spec.ts` passes against production
+(an anonymous request to `/entry/1/comments` redirects to sign-in). `hn.algolia.com` is reachable from inside the production
+container. The log is clean. 132 HN entries from the last day carry a supported comments URL. Locally, against the same
+binary, headless Chromium rendered an 87-comment thread nested 5 deep, made no request before expanding, and inserted
+no login page after an expired session.
+
+1. **(auth path — owed to the product owner by name)** Sign in and open any **Hacker News** article (Feeds → Hacker News).
+   → Below the article, after the paywall rail, there is a collapsed **Comments** section.
 2. Expand it.
-   → The HN thread renders inside panfleto, with authors and timestamps, nested.
-3. Open an article from a feed with **no** comments (e.g. Daring Fireball).
-   → No comments section at all. The page looks exactly as it did before this sprint.
-4. Open the browser network tab, load an HN article, and do **not** expand the panel.
-   → No request to the comments route was made. It's lazy.
-5. Find a comment containing a link and click it.
-   → It opens normally; the page is not broken by the sanitizer having stripped too much.
-6. Open Settings → check nothing changed there.
-   → This sprint touches the entry view only.
+   → "Loading…" and then the HN thread, with author and "N hours ago" on each comment, and replies indented.
+3. Open an article from a feed with **no** comments (e.g. Daring Fireball), and one from **Ars Technica** (its comments are on its own site).
+   → No Comments section on either. The toolbar's outbound **Comments** link is still there on Ars.
+4. Open the browser network tab, load another HN article, and do **not** expand the panel.
+   → No request to `/entry/…/comments`. Expand it: exactly one request.
+5. In a long thread, find a comment containing a link and click it.
+   → It opens in a new tab. The page isn't broken.
+6. Reload and expand the same thread again within 10 minutes.
+   → It appears at once (served from the in-process cache).
 
 If any step fails, note the step number + what you saw — that's the bug report.

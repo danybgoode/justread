@@ -136,7 +136,26 @@ to any project carrying someone else's codebase.*
   match URL, author and tags as well as title; the old stem `ad` would have silenced two whole feeds
   through their domains (`jornada.com.mx`), which no headline test shows.
 
+- **Probe a third-party dependency from the production IP, and check what its 200 contains.** (2026-09-15,
+  spike-unwall-app + inline-comments) From the VM, `unwall.app/{host}{path}` answered 200 as an app shell (the
+  article came from a JSON API found in its bundle), archive.ph was refused by the VCN resolver and timed out by IP,
+  and Reddit answered 403/429 within three calls. From a laptop all three looked different. Test DNS (`getent`
+  vs `dig @8.8.8.8`) and TCP separately, or you misread which layer said no. It cut two stories before they were built.
+- **Judge a rollout by what it stored, not by a median going up.** (2026-09-15, article-autofetch) The first crawler
+  poll's medians looked like a clean win, but Techmeme's was 105K characters: its item links are anchors into its
+  front page, so every entry stored the whole river. Read the outliers in the first cycle before calling it healthy.
+- **Moving work off a hot path breaks every caller that relied on it running inline.** (2026-09-15, article-autofetch)
+  With scraping deferred to a queue, a forced feed refresh still rewrote stored content from RSS but no longer
+  re-scraped it, so fetched articles silently reverted to teasers. The after-scrape filter pass and integrations also
+  lost the full text. List everything that ran after the inline call and give each one a deferred equivalent, or
+  write down why it doesn't need one.
+
 ## Tooling gotchas
+- **Under a strict Trusted Types CSP a policy name is a singleton, and a bare fragment route has no CSP.**
+  (2026-09-15, inline-comments) `trusted-types html url` forbids a second `createPolicy('html')`, and upstream's
+  Download button created one per press, so the second press threw. Share one policy and route every `innerHTML`
+  through it, the error path included. A route returning a fragment of third-party HTML carries no page CSP, so it
+  needs its own sandbox header. And `fetch` follows a session redirect into your DOM, so use `redirect: "error"`.
 - **Postgres ARE takes a whole regex's greediness from its FIRST quantifier.** (2026-09-15, paywall-rail)
   `'<hr\s*/?>…(.*?)</p>'` is greedy throughout because `\s*` comes first, so `regexp_replace(…, 'g')`
   eats everything between the first and the last match. Use negated classes (`(?:[^<]|<a\s[^>]*>[^<]*</a>)*`)

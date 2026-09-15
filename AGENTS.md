@@ -51,9 +51,13 @@ Before planning or building, read these — they are the source of truth and cha
 
 ### 1. Upstream Miniflux owns the reader. The fork's delta is a budget, not a canvas.
 `panfleto-core` tracks `miniflux/v2` and is rebased onto upstream `main` — weekly, by the
-`panfleto upstream sync` workflow on the fork. Since the 2026-09 resync the delta is **six topic
-commits** touching **12 code and template files**, plus `internal/ui/static/bin/feeds.json` (the one
-list of recommended feeds), that workflow, and 17 branding icons — and that number is the budget.
+`panfleto upstream sync` workflow on the fork. As of 2026-09-15 the delta is **eight topic commits**
+touching **27 code and template files**, plus `internal/ui/static/bin/feeds.json` (the one list of recommended
+feeds), that workflow, and 17 branding icons — and that number is the budget. It was 12 until
+`article-autofetch` and `inline-comments` added two genuinely new capabilities: 9 new panfleto-owned files
+(`internal/reader/{autofetch,prefetch,comments}/`, `internal/ui/entry_comments.go`) and 6 upstream files
+touched for the first time (`cli/daemon.go`, `config/options.go`, `reader/handler/handler.go`,
+`reader/processor/processor.go`, `ui/ui.go`, `ui/static/js/app.js`). The upstream-owned ones are the rebase risk.
 `git -C panfleto-core fetch -q https://github.com/miniflux/v2 main && git -C panfleto-core diff --stat FETCH_HEAD...HEAD`
 shows it (three dots: only panfleto's side, however far upstream has moved). Every file you add to the fork is
 rebase tax paid at every future sync, forever.
@@ -68,8 +72,8 @@ Before changing a file under `panfleto-core/`, exhaust these in order:
 | An **upstream PR** to `miniflux/v2` | Carrying a patch forever |
 
 If you must patch, keep it to a file the fork already owns, and put it in the topic commit it belongs
-to, never a new one on top. Say in the PR body which of the 12 it touches — or that the delta just grew
-to 13 and why that was worth it.
+to, never a new one on top. Say in the PR body which of the 27 it touches — or that the delta just grew
+to 28 and why that was worth it.
 
 ### 2. Never mutate `entries.content` from outside Miniflux.
 The reader owns article content. **Presentation** belongs in a template

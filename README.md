@@ -32,6 +32,9 @@ VM, no monthly bill, no cold starts.
   Science and Reddit rather than landing in one flat list.
 - **Ad filtering** — a per-feed block rule keeps posts labelled as sponsored out of
   Unread, without matching ordinary words like *leader* or *promoted*.
+- **The article is already there** — feeds fetch the full article in the background
+  (directly, or through unwall.app when a site refuses panfleto), so a teaser feed reads like a full-text one.
+- **Hacker News comments inline** — the thread opens under the article, no second tab.
 - **Paywall handling** — every article carries a bypass rail (archive.ph ·
   archive.is · unwall.app), rendered by the entry template.
 - **Starter feeds on signup** — a new account arrives with 16 curated feeds

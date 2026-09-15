@@ -1,6 +1,6 @@
 # Click an article and the content is already there — Sprint 1: Crawler on by default
 
-**Status:** ⬜ not started
+**Status:** ✅ shipped 2026-09-15 · fork `fa8e46a2` (`panfleto: article autofetch`) · PR #10 merged `0825cd5` · `update.sh` 19:43 UTC (all switches off), `FORCE_CRAWLER` on 19:44 UTC
 
 > **Build contract (locked by the architect before the builder started)**
 >
@@ -58,20 +58,38 @@ production VM
   article arrives with full text rather than a teaser.
 - **deterministic gate:** `go build ./... && go vet ./... && go test ./...` + `docker compose build miniflux` + the api spec. Local — CI does not cover `panfleto-core/`.
 
+## Results — recorded in production, 2026-09-15
+
+**1.2's clobber question (answered before running):** no feed had ever had `crawler` on, so a deliberate "off" couldn't be
+distinguished from the default. The backfill therefore chose feeds by data (D5) instead of trying to preserve a choice nobody had made.
+
+**The backfill**, run as recorded SQL on the VM at 19:44 UTC, changed **27 feeds**:
+`1,2,4,6,7,8,10,11,12,14,16,17,18,20,24,25,31,34,37,39,42,46,48,52,53,54,55`. It was reported to the product owner.
+Reversal: `UPDATE feeds SET crawler=false WHERE id IN (…the same list…);`. **Feed 55 (Techmeme) was turned back off
+at 20:57 UTC**, see D5, leaving 26.
+
+**The first poll cycle with the crawler on** (20:49–20:50 UTC, inline scraping, no fallback): **204 new entries, 135 of
+them in crawler feeds, at a median of 2,623 text characters.** Load peaked at **0.18**, Miniflux and Postgres CPU stayed
+under 3%, and the cycle finished between two 50-second samples. 48 warnings: 44 × `403` (NYT and BBC block the VM's IP)
+and 4 × Cloudflare challenge. Those were the misses sprint 2's fallback was built for.
+
+**Spec:** `e2e/autofetch-defaults.spec.ts`, observed red with `FORCE_CRAWLER=0` and green with the default (local stack). It
+skips in CI without API credentials, and production has no API keys.
+
 ## Sprint 1 — Smoke walkthrough (do these in order)
 Env: production · `https://app.panfleto.win`
 
-1. **(auth path — owed to the product owner by name)** Sign in and go to `https://app.panfleto.win/subscribe`. Add `https://www.theverge.com/rss/index.xml`.
-   → The feed is added.
-2. Open the feed's settings page.
-   → "Fetch original content" is already **on**, without you having ticked it.
-3. Wait for one poll cycle (up to 60 min), then open a new article from that feed.
-   → The full article text is there. No Download button press needed.
-4. Open an article from a feed you added **before** this sprint.
-   → Same: full text, already there.
-5. Pick a feed, turn "fetch original content" **off** manually, and confirm it stays off after the next poll.
-   → The per-feed override still wins over the default.
-6. On the VM, run `docker stats` during a poll cycle.
-   → CPU is elevated but the reader stays responsive; no container restart in the log.
+1. **(auth path — owed to the product owner by name)** Sign in and go to `https://app.panfleto.win/subscribe`.
+   → The "Fetch original content" checkbox is ticked and greyed out: `FORCE_CRAWLER` is on.
+2. Add `https://www.theverge.com/rss/index.xml` (or any feed you don't have), then open the feed's settings page.
+   → "Fetch original content" is **on**.
+3. Within a minute or two, open a new article from that feed.
+   → Full article text, no Download press. (The Verge's median after the backfill is 2,623 characters, against 717 before.)
+4. Open a **Guardian** or **Ars Technica** article that arrived after 20:50 UTC on 2026-09-15.
+   → Full text.
+5. Turn "Fetch original content" **off** in one feed's settings, and confirm it stays off after the next poll.
+   → The per-feed setting wins over the default.
+6. Open **Techmeme**.
+   → Its entries show Techmeme's own summaries, not a 100K-character dump of its front page (D5).
 
 If any step fails, note the step number + what you saw — that's the bug report.
