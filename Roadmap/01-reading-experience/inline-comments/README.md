@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: shipped
 slug: inline-comments
 build_order: 7
 ---

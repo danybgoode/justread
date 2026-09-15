@@ -12,7 +12,7 @@
 
 ## 🏗️ Building now (1)
 
-- [Read the comments without leaving the reader ✅](../../01-reading-experience/inline-comments/README.md) — 01 Reading experience · 3/3 stories · risk: High · wave-2026-09-panfleto
+- [Can the newspaper read one reader's feeds?](../../01-reading-experience/spike-personalized-editorial/README.md) — 01 Reading experience · 3/6 stories · risk: Low
 
 ## 📋 Ready to build (scaffolded, not started) (3)
 
@@ -20,10 +20,11 @@
 - [MCP tokens shouldn't travel in query strings](../../03-agent-surface/mcp-token-handling/README.md) — 03 Agent surface · 0/4 stories · risk: High
 - [Stop compiling Go on the production VM](../../09-platform-infra/ci-build-pipeline/README.md) — 09 Platform & Infra · 0/4 stories · risk: High
 
-## ✅ Shipped (5)
+## ✅ Shipped (6)
 
 - [Click an article and the content is already there ✅](../../01-reading-experience/article-autofetch/README.md) — 01 Reading experience · 7/7 stories · risk: High · wave-2026-09-panfleto
 - [How should unwall.app reach the reader? ✅](../../01-reading-experience/spike-unwall-app/README.md) — 01 Reading experience · 2/2 stories · risk: Low · wave-2026-09-panfleto
+- [Read the comments without leaving the reader ✅](../../01-reading-experience/inline-comments/README.md) — 01 Reading experience · 3/3 stories · risk: High · wave-2026-09-panfleto
 - [Tell the paywall rail once, in the template, correctly ✅](../../01-reading-experience/paywall-rail-single-source/README.md) — 01 Reading experience · 5/5 stories · risk: High · wave-2026-09-panfleto
 - [The ad-block rule is silently dropping real articles ✅](../../01-reading-experience/adblock-rule-false-positives/README.md) — 01 Reading experience · 2/2 stories · risk: Low · wave-2026-09-panfleto
 - [Put panfleto-core back on upstream's timeline ✅](../../09-platform-infra/miniflux-upstream-resync/README.md) — 09 Platform & Infra · 9/9 stories · risk: High · wave-2026-09-panfleto
@@ -32,15 +33,5 @@
 
 _None._
 
-## ⚠️ Status drift — README frontmatter vs sprint/retro-derived (1)
-
-These epics’ authoritative README-frontmatter `status:` disagrees with what the sprint/retro
-derivation infers. The board trusts the **frontmatter**; a mismatch usually means a close-out
-forgot to set `status:` (or the README is stale). Reconcile the README, then this advisory clears.
-
-| Epic | frontmatter (used) | sprint/retro-derived |
-|---|---|---|
-| Read the comments without leaving the reader ✅ | In progress | Shipped |
-
 ---
-_Epics: 9 · seeds in funnel: 0 · status drift: 1. Regenerate with `node scripts/build-order.mjs`._
+_Epics: 10 · seeds in funnel: 0 · status drift: 0. Regenerate with `node scripts/build-order.mjs`._

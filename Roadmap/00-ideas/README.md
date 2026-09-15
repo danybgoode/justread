@@ -114,8 +114,9 @@ plugin-shipped script in one consuming project is exactly the fork drift the plu
 | 8 | `ci-build-pipeline` | **shaped bet** | M | **high** |
 | 9 | `onboarding-provisioning-reliability` | fixed scope | S | low |
 | 10 | `mcp-token-handling` | fixed scope | S | **high** |
+| 11 | `spike-personalized-editorial` | spike | S | low |
 
 Dependencies that constrain the order: **4 blocks 6 and 7** (both patch the fork; doing either first
-means replaying a moving delta). **5 blocks step 2 of 6's fallback chain**, and can run in parallel
+means replaying a moving delta). **10 blocks 11's follow-on build epic** (the personalized edition would otherwise ship a second consumer of the query-string MCP credential — see that epic's D2). **5 blocks step 2 of 6's fallback chain**, and can run in parallel
 with 4. **3 does not block on 5** — it only adds a link. **8 de-risks 4** and every rebase after it,
 so there is a real argument for pulling it earlier than 8.
