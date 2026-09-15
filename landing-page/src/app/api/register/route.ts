@@ -4,24 +4,24 @@ const MINIFLUX_API_URL = process.env.MINIFLUX_API_URL || "http://localhost:8080/
 const ADMIN_USERNAME = process.env.MINIFLUX_ADMIN_USERNAME || "admin";
 const ADMIN_PASSWORD = process.env.MINIFLUX_ADMIN_PASSWORD || "admin_password";
 
-const STARTER_FEEDS = [
-  { url: "https://news.ycombinator.com/rss", category: "Tech" },
-  { url: "https://www.theverge.com/rss/index.xml", category: "Tech" },
-  { url: "https://wwwhatsnew.com/feed/", category: "Tech" },
-  { url: "https://feeds.arstechnica.com/arstechnica/index", category: "Tech" },
-  { url: "https://daringfireball.net/feeds/main", category: "Tech" },
-  { url: "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml", category: "News" },
-  { url: "https://www.jornada.com.mx/rss/edicion.xml", category: "News" },
-  { url: "https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/section/mexico/portada", category: "News" },
-  { url: "https://feeds.bbci.co.uk/news/rss.xml", category: "News" },
-  { url: "https://www.ft.com/rss/home", category: "Business" },
-  { url: "https://feeds.content.dowjones.io/public/rss/mw_topstories", category: "Business" },
-  { url: "https://xkcd.com/rss.xml", category: "Comics" },
-  { url: "https://www.newyorker.com/feed/everything", category: "Culture" },
-  { url: "https://feeds.simplecast.com/dCXMIpJz", category: "Podcasts" },
-  { url: "https://feeds.simplecast.com/Y8lFbOT4", category: "Podcasts" },
-  { url: "https://podcast.darknetdiaries.com/", category: "Podcasts" },
-];
+// The one list of starter feeds is panfleto-core's feeds.json (internal/ui/static/bin/feeds.json).
+// The reader embeds it and serves it with its other static assets, so signup reads it from there
+// rather than keeping a copy that drifts. The checksum path segment only drives caching.
+const FEEDS_JSON_URL = `${MINIFLUX_API_URL.replace(/\/v1\/?$/, "")}/icon/feeds/feeds.json`;
+
+type SuggestedFeed = { url: string; title: string; category: string; starter: boolean };
+
+async function loadStarterFeeds(): Promise<SuggestedFeed[]> {
+  try {
+    const res = await fetch(FEEDS_JSON_URL, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const feeds = (await res.json()) as SuggestedFeed[];
+    return feeds.filter((feed) => feed.starter);
+  } catch (e) {
+    console.error(`Failed to load starter feeds from ${FEEDS_JSON_URL}:`, e);
+    return [];
+  }
+}
 
 export async function POST(req: Request) {
   try {
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
     // 2. Setup Categories & Feeds
     const categoryMap: Record<string, number> = {};
 
-    for (const feed of STARTER_FEEDS) {
+    for (const feed of await loadStarterFeeds()) {
       // Create category if not exists
       if (!categoryMap[feed.category]) {
         const catRes = await fetch(`${MINIFLUX_API_URL}/categories`, {

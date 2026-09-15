@@ -50,9 +50,12 @@ Before planning or building, read these — they are the source of truth and cha
 ## ⚠️ The rules that cannot be violated
 
 ### 1. Upstream Miniflux owns the reader. The fork's delta is a budget, not a canvas.
-`panfleto-core` tracks `miniflux/v2` and is rebased onto upstream `main` on a recurring schedule. As
-of the 2026-09 audit the entire delta is **12 files plus branding icons** — and that number is the
-budget. Every file you add to the fork is rebase tax paid at every future sync, forever.
+`panfleto-core` tracks `miniflux/v2` and is rebased onto upstream `main` — weekly, by the
+`panfleto upstream sync` workflow on the fork. Since the 2026-09 resync the delta is **six topic
+commits** touching **12 code and template files**, plus `internal/ui/static/bin/feeds.json` (the one
+list of recommended feeds), that workflow, and 17 branding icons — and that number is the budget.
+`git -C panfleto-core diff --stat upstream/main..panfleto` shows it. Every file you add to the fork is
+rebase tax paid at every future sync, forever.
 
 Before changing a file under `panfleto-core/`, exhaust these in order:
 
@@ -63,8 +66,9 @@ Before changing a file under `panfleto-core/`, exhaust these in order:
 | A repo-local script under `scripts/` against the Miniflux API | Patching anything |
 | An **upstream PR** to `miniflux/v2` | Carrying a patch forever |
 
-If you must patch, keep it to a file the fork already owns, and say in the PR body which of the 12
-it touches — or that the delta just grew to 13 and why that was worth it.
+If you must patch, keep it to a file the fork already owns, and put it in the topic commit it belongs
+to, never a new one on top. Say in the PR body which of the 12 it touches — or that the delta just grew
+to 13 and why that was worth it.
 
 ### 2. Never mutate `entries.content` from outside Miniflux.
 The reader owns article content. **Presentation** belongs in a template

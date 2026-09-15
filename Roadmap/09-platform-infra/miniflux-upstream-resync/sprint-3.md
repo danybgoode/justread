@@ -1,6 +1,10 @@
 # Put panfleto-core back on upstream's timeline — Sprint 3: Shrink the delta and automate the sync
 
-**Status:** ⬜ not started
+**Status:** 🚧 built + gate green locally — deploys after S2 hop 2 (stacked)
+
+> **Architect's correction (2026-09-15):** this sprint's scaffold was written from the tree before the S2
+> rebases, and four of its claims don't hold. The corrected shape is **README D13**, and the stories below
+> are measured against D13 rather than the struck-through lines.
 
 > **Build contract (locked by the architect before the builder started)**
 >
@@ -10,8 +14,7 @@
 >   `add_subscription.html:351`; only *then* does 3.2 become a no-op deletion rather than a
 >   behaviour change. Doing 3.2 first breaks the subscribe page's CSP.
 > - **Verify D5 before starting:** confirm `add_subscription.html:351` is still the only consumer of
->   `.cspNonce` outside `layout.html`. If the rebase in S2 introduced another, 3.2 is off the table
->   and the delta stays at 10, not 9.
+>   `.cspNonce` outside `layout.html`. *(Verified at `upstream/main` (2ee92c9b): still the only one.)*
 > - **This sprint removes code.** If it is adding net lines, something has gone wrong.
 > - **Low risk, and it is the only low-risk sprint in this epic** — no migrations, no auth, no
 >   production data. A non-builder agent may merge on green.
@@ -31,12 +34,31 @@ work"* — which is what maintaining three copies feels like.
 
 **Acceptance:**
 - One `feeds.json` holds every feed's URL, title and category
-- `user_onboarding.go` reads it via `go:embed` — no hardcoded list remains
+- `user_onboarding.go` reads it ~~via `go:embed`~~ (via upstream's existing `bin/*` embed and `view.SuggestedFeeds`) — no hardcoded list remains
+- *(added by D13)* the landing page's `/api/register` reads it too — its own 16-feed copy is gone
 - The subscribe page renders its suggestions in a **template loop** over the same data
 - A new account still arrives with the same feeds, categorised the same way
 - The subscribe page still offers Quick Add and Review for each suggestion
-- `scripts/enhance_miniflux.js` reads the same file rather than its own map
+- ~~`scripts/enhance_miniflux.js` reads the same file rather than its own map~~ → it has no feed list, only a keyword → category map for any feed. It now categorises feeds that are on `feeds.json` by URL first, and keeps the keyword map for everything else (D13)
 - Adding a feed to `feeds.json` and nothing else makes it appear in **both** places
+
+**Result (2026-09-15):** ✅ locally. Fork commits `a76c83c9` (onboarding + `feeds.json` + loader) and
+`28bc8650` (subscribe page), in a history rebuilt as six topic commits on `upstream/main`, each building
+on its own.
+- `feeds.json`: 23 feeds, 16 `starter`. It is the union of the old lists, and the titles for feeds that
+  were only in Go were fetched from the feeds themselves.
+- **Subscribe page:** a loop of POST forms + Review links, no `<script>`, no `style=`. Logged-in browser
+  smoke: 23 rows; **Review** → `/bookmarklet?uri=…` with the URL pre-filled; **Quick Add** on xkcd →
+  `/feed/1/entries` "xkcd.com".
+- **New accounts, both paths, same 16 feeds** `{Tech 5, News 4, Business 2, Comics 1, Culture 1, Podcasts 3}`:
+  the landing signup run locally against the stack (`POST /api/register` → 16), and `provisionUserOnboarding`
+  exercised directly by a throwaway, uncommitted Go test against the local Postgres (16, and `entry_direction`
+  `desc` / `default_home_page` `feeds` intact).
+- **Specs:** `scripts/feeds-json.test.mjs` (3 tests — schema; no file hardcodes a listed URL; no inline
+  script/nonce) is **red at hop 2** (3 failures) and green at S3. `e2e/subscribe-suggestions.spec.ts` (served
+  `feeds.json`; the signed-in half with a password account) passes 8/8 locally with `reader-health`. **Observed red:**
+  one suggestion dropped from the loop → the signed-in test fails; production before this deploy → the
+  anonymous test fails (no `feeds.json` served yet).
 
 **Risk:** low
 
@@ -50,12 +72,16 @@ upstream's `nonce` function again would produce a different one. Story 3.1 delet
 script. So this story is a deletion, not a rewrite — and it takes the delta from 12 files to **9**.
 
 **Acceptance:**
-- `internal/ui/view/view.go` is byte-identical to upstream's
+- ~~`internal/ui/view/view.go` is byte-identical to upstream's~~ → the nonce is gone from it, but it stays in the delta as the `feeds.json` loader (D13)
 - `layout.html` differs from upstream **only** in branding (title, apple-mobile-web-app-title, the
   `pan<span>fleto</span>` logo) — the `{{ $cspNonce := nonce }}` line is upstream's again
-- `git diff upstream/main..panfleto --stat` shows **9 files** plus icons
+- ~~`git diff upstream/main..panfleto --stat` shows **9 files** plus icons~~ → 12 code/template files + `feeds.json` + the workflow + 17 icons (D13)
 - The subscribe page loads with no CSP violation in the browser console
-- `AGENTS.md` rule 1's stated delta count is updated from 12 to 9
+- `AGENTS.md` rule 1's stated delta count is updated ~~from 12 to 9~~ to what S3 actually left (D13)
+
+**Result (2026-09-15):** ✅ locally. `layout.html`'s nonce line is upstream's again, and `view.go` no
+longer mentions `cspNonce`. Chromium console, logged in, against D10's baseline: `/unread` 0 · `/feeds` 0 ·
+**`/subscribe` 20 → 0** · `/integrations` 4 (unchanged — the MCP panel, a logged follow-up) · `/about` 0.
 
 **Risk:** low
 
@@ -71,6 +97,15 @@ result, **so that** panfleto is never four months behind again without anyone no
 - Nothing to do → it exits quietly without opening anything
 - The first run has been observed doing one of the three
 - The workflow lives on `panfleto-core`, not here — this repo only moves the pin
+- *(added by the S2 fresh review)* accepting a sync tags the replaced tip first, so an old superproject pin stays fetchable
+
+**Built (2026-09-15):** `.github/workflows/panfleto-upstream-sync.yml`, fork commit `962dcf5d`, the sixth
+topic commit. Weekly (Mon 06:17 UTC) plus `workflow_dispatch`. Nothing to do → a step summary only. Clean
+and green → force-pushes `sync/upstream-main-<branch>` and opens or refreshes a PR whose body says **not** to
+merge through GitHub (a rebase rewrites history). Conflict → an `upstream-sync` issue naming the files and the
+stopping commit. Red build → an issue naming the failed step. Accepting = dispatch with `accept: true`, which
+tags the current tip `pre-sync-<stamp>` and force-pushes the sync branch with lease. Actions are pinned to the
+SHAs upstream uses, and `actionlint` is clean. The first observed run is recorded below after deploy.
 
 **Risk:** low
 

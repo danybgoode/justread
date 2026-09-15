@@ -29,6 +29,12 @@ const BLOCK_RULE = "(?i)(sponsor|sponsored|ad|promotion|deal|sale|discount|ofert
 
 async function run() {
   try {
+    // Feeds panfleto recommends are categorised by feeds.json, the one list the reader serves with its
+    // static assets (panfleto-core internal/ui/static/bin/feeds.json). The keyword map below only
+    // covers feeds that are not on that list.
+    const { data: suggested } = await axios.get(`${MINIFLUX_URL}/icon/feeds/feeds.json`);
+    const suggestedCategory = new Map(suggested.map((f) => [f.url, f.category]));
+
     console.log("Fetching existing categories...");
     const { data: existingCategories } = await api.get('/categories');
     const categoryMap = {};
@@ -37,7 +43,7 @@ async function run() {
     }
 
     console.log("Creating missing categories...");
-    for (const catName of Object.keys(CATEGORIES)) {
+    for (const catName of new Set([...Object.keys(CATEGORIES), ...suggestedCategory.values()])) {
       if (!categoryMap[catName.toLowerCase()]) {
         console.log(`Creating category: ${catName}`);
         const { data: newCat } = await api.post('/categories', { title: catName });
@@ -55,7 +61,9 @@ async function run() {
       const titleLower = feed.title.toLowerCase();
       
       // Determine category
-      for (const [catName, keywords] of Object.entries(CATEGORIES)) {
+      if (suggestedCategory.has(feed.feed_url)) {
+        targetCategoryId = categoryMap[suggestedCategory.get(feed.feed_url).toLowerCase()];
+      } else for (const [catName, keywords] of Object.entries(CATEGORIES)) {
         if (keywords.some(kw => titleLower.includes(kw))) {
           targetCategoryId = categoryMap[catName.toLowerCase()];
           break;

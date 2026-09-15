@@ -6,3 +6,7 @@ deploy_output.json
 # Filled-in deployment secrets (only the .example files are tracked)
 deploy/.env
 deploy/oauth.env
+
+# Playwright run artefacts
+test-results/
+playwright-report/
