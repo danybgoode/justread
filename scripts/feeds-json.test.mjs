@@ -15,6 +15,7 @@ const core = join(root, 'panfleto-core')
 const FEEDS_JSON = join(core, 'internal/ui/static/bin/feeds.json')
 const coreCheckedOut = existsSync(join(core, 'go.mod'))
 const read = (p) => readFileSync(p, 'utf8')
+if (!coreCheckedOut && process.env.CI) throw new Error('panfleto-core submodule not checked out in CI — a skip here would read as a pass')
 const skip = coreCheckedOut ? false : 'panfleto-core submodule not checked out'
 
 test('feeds.json is a list of well-formed, unique https feeds', { skip }, () => {

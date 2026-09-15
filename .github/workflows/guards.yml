@@ -23,6 +23,8 @@ on:
       - 'Roadmap/**'
       - 'scripts/**'
       - 'e2e/**'
+      - 'panfleto-core'           # the submodule pin: feeds-json.test.mjs guards what it points at
+      - 'landing-page/src/app/api/register/**'
       - 'playwright.config.ts'
       # Deliberately NOT here: panfleto-core/** and deploy/**. The reader is built and tested
       # locally (there is no per-branch preview to build against — WAYS-OF-WORKING § Deploy rail),
@@ -41,6 +43,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # build-order's extractor derives dates from git history
+          submodules: true # public fork; scripts/feeds-json.test.mjs reads it (no Go build here)
       - uses: actions/setup-node@v4
         with:
           node-version: '22'

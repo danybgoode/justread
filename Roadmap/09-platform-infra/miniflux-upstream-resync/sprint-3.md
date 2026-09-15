@@ -106,6 +106,12 @@ merge through GitHub (a rebase rewrites history). Conflict → an `upstream-sync
 stopping commit. Red build → an issue naming the failed step. Accepting = dispatch with `accept: true`, which
 tags the current tip `pre-sync-<stamp>` and force-pushes the sync branch with lease. Actions are pinned to the
 SHAs upstream uses, and `actionlint` is clean. The first observed run is recorded below after deploy.
+**Fresh review on #4 → fixed** (fork tip `0f4bbb68`): pushes and PRs use the `SYNC_TOKEN` secret (D14), because
+`GITHUB_TOKEN` can't push workflow-file changes or open PRs on this repo; `accept` refuses unless `panfleto` is still
+the SHA the sync PR recorded (`<!-- sync-base: … -->`), so a later push to `panfleto` can't be silently dropped; the
+conflict issue tells people to push the sync branch and `accept`, never `panfleto` directly. In the superproject,
+`guards.yml` checks out the submodule and triggers on the pin, and `feeds-json.test.mjs` throws in CI rather than
+skipping.
 
 **Risk:** low
 

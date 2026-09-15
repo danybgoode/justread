@@ -54,7 +54,8 @@ Before planning or building, read these — they are the source of truth and cha
 `panfleto upstream sync` workflow on the fork. Since the 2026-09 resync the delta is **six topic
 commits** touching **12 code and template files**, plus `internal/ui/static/bin/feeds.json` (the one
 list of recommended feeds), that workflow, and 17 branding icons — and that number is the budget.
-`git -C panfleto-core diff --stat upstream/main..panfleto` shows it. Every file you add to the fork is
+`git -C panfleto-core fetch -q https://github.com/miniflux/v2 main && git -C panfleto-core diff --stat FETCH_HEAD...HEAD`
+shows it (three dots: only panfleto's side, however far upstream has moved). Every file you add to the fork is
 rebase tax paid at every future sync, forever.
 
 Before changing a file under `panfleto-core/`, exhaust these in order:
