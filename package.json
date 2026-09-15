@@ -26,5 +26,8 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/danybgoode/justread"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.58"
   }
 }

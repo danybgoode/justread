@@ -13,7 +13,9 @@ behind Caddy on one Oracle ARM VM, orchestrated with Docker Compose against Post
 **Repo layout** (monorepo):
 ```
 fluxonline/                  ← git remote is danybgoode/justread; the product is "panfleto"
-├── panfleto-core/           ← the Miniflux fork — the reader itself (Go)
+├── panfleto-core/           ← the Miniflux fork — the reader itself (Go). A git SUBMODULE
+│                               (danybgoode/panfleto-core, branch `panfleto`); clone with
+│                               --recurse-submodules or the directory is empty
 ├── landing-page/            ← Next.js 16: panfleto.win, /api/register, /api/mcp
 ├── deploy/                  ← Oracle Cloud provisioning + the running compose stack
 ├── scripts/                 ← ways-of-work tooling (*.mjs) + feed-enhancement utilities (*.js)
@@ -111,7 +113,7 @@ that says "ready to deploy" is an unfinished PR — say who runs `update.sh` and
 ## Quick-reference
 
 ```bash
-# Reader (Go) — from panfleto-core/
+# Reader (Go) — from panfleto-core/ (a submodule: git submodule update --init --recursive)
 go build ./...                       # compile
 go vet ./...                         # vet
 go test ./...                        # unit tests

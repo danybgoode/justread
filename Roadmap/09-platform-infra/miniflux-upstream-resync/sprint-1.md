@@ -1,6 +1,10 @@
 # Put panfleto-core back on upstream's timeline — Sprint 1: Re-root panfleto-core on upstream
 
-**Status:** ⬜ not started
+**Status:** 🚧 built + gate green locally — PR open, deploy pending (the story is done when production runs from the submodule)
+
+**Commits:** `danybgoode/panfleto-core@panfleto` — `b6328685` branding · `79a64310` onboarding ·
+`b3a715da` MCP panel · `3771bd33` link rail · `bdf23f75` CSP nonce (tag `pre-resync`).
+Superproject: `9bda168` (submodule wiring + `update.sh`).
 
 > **Build contract (locked by the architect before the builder started)**
 >
@@ -37,6 +41,11 @@ git checkout -b panfleto 06e36c3e
 - `git -C panfleto-core merge-base panfleto upstream/main` returns a real commit (today there is none)
 - The `panfleto` branch's tip is `06e36c3e` with no commits on top yet
 
+**Result (2026-09-14):** ✅ `upstream` → `https://github.com/miniflux/v2`, `origin` →
+`https://github.com/danybgoode/panfleto-core` (HTTPS, public — README D8). `merge-base panfleto
+upstream/main` = `06e36c3e54f6`. The "tip is `06e36c3e` with no commits" state was observed before 1.2
+replayed on top of it.
+
 **Risk:** high
 
 ### Story 1.2 — The delta replayed as five topic commits
@@ -62,6 +71,14 @@ The last one is deliberately last and deliberately separate: S3 deletes it entir
 - `internal/ui/ui.go` and `internal/database/migrations.go` appear in **none** of the five commits
 - A diff of the working tree against today's vendored `panfleto-core/` is empty
 
+**Result (2026-09-14):** ✅ five commits with exactly those subjects; `diff 06e36c3e..panfleto --stat`
+= **33 paths: the 12 files + 21 PNGs/ICO**; `ui.go` / `migrations.go` in none of them; after the
+replay `git status` against an rsync of the vendored tree is clean (only git-ignored release binaries
+differed). One detail the table didn't say: `layout.html` is split across two commits — branding
+(title, app title, logo, and three blank lines after `</main>` that the vendored copy carried) in
+commit 1, the single `$cspNonce := .cspNonce` line in commit 5. The fifth commit also carries the
+whole `add_subscription.html` table, since its inline script is the nonce's only consumer.
+
 **Risk:** high
 
 ### Story 1.3 — Wired back in as a submodule
@@ -76,7 +93,26 @@ The last one is deliberately last and deliberately separate: S3 deletes it entir
 - `docker compose up` brings the reader up and it is **visually identical** to production today
 - `.gitmodules` is committed and points at `origin`, not a local path
 
+**Result (2026-09-14):** ✅ locally — `git submodule status` → `bdf23f75 panfleto-core (heads/panfleto)`;
+`.gitmodules` → the HTTPS origin, branch `panfleto`; a fresh clone of the pushed branch has an
+**empty** `panfleto-core/` until `git submodule update --init --recursive`, after which
+`docker compose build miniflux` succeeds; the stack comes up, 130 migrations on an empty DB, branded
+"Sign In - panfleto". `update.sh` also moves a pre-submodule vendored directory aside if one survives the reset
+(`submodule update` refuses to clone into a non-empty directory). The VM's checkout was read first:
+no ignored or untracked files under `panfleto-core/`, so the guard is belt-and-braces there, but a
+local checkout with release binaries in it does need it. Production confirmation is below.
+
 **Risk:** high
+
+### Deploy note — the first `update.sh` run after this merge (fresh-review finding)
+
+`git reset --hard` replaces `deploy/update.sh` with a new inode while bash is still reading the **old**
+one, so the first run executes the pre-submodule script: it empties `panfleto-core/`, skips the
+submodule init, and fails at `docker compose build`. That failure is safe — `up -d` is never reached,
+so the running containers keep serving — but it is a failure. **For this one deploy, reset first and
+then run the new script:**
+`cd /opt/panfleto && git fetch origin && git reset --hard origin/main && deploy/update.sh`.
+Every later run is normal.
 
 ## Sprint QA
 - **api spec(s):** none new — this sprint changes no behaviour, so a spec asserting behaviour would

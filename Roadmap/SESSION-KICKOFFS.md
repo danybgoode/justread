@@ -244,8 +244,8 @@ uncommitted files are finished.
 > `git status`, `git log --oneline main..HEAD`, and the sprint doc, then re-derive state from the
 > repo rather than from the last session's summary. That re-derivation is the actual point of this
 > section; the script would only make it cheaper. Two panfleto specifics when resuming: check
-> whether `panfleto-core` (a submodule once the resync lands) is on the commit the superproject
-> expects, and check whether the VM has actually been deployed since the last merge — neither is
+> whether `panfleto-core` (a submodule) is on the commit the superproject expects
+> (`git submodule status` — a leading `+` means it isn't), and check whether the VM has actually been deployed since the last merge — neither is
 > visible from `git status` in the superproject alone.
 
 **Leaving the trail** — cheap, and worth doing at every natural boundary (a story lands, a gate goes

@@ -7,6 +7,15 @@ cd /opt/panfleto
 git fetch origin
 git reset --hard origin/main
 
+# panfleto-core is a submodule pinned at a SHA (Roadmap/09-platform-infra/miniflux-upstream-resync).
+# A checkout that predates the submodule can keep a plain directory there if it held untracked or
+# ignored files, and `submodule update` refuses to clone into it - move it aside once.
+if [ -d panfleto-core ] && [ ! -e panfleto-core/.git ]; then
+  mv panfleto-core "panfleto-core.vendored-$(date +%Y%m%d%H%M%S)"
+fi
+git submodule sync --recursive
+git submodule update --init --recursive --force
+
 cd deploy
 docker compose build
 docker compose up -d

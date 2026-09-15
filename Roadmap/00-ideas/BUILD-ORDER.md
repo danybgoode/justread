@@ -10,13 +10,13 @@
 > funnel), then run `node scripts/build-order.mjs`. This board and the Notion "Marketplace Roadmap"
 > DB are both *derived views* — never hand-edit the board.
 
-## 🏗️ Building now (0)
-
-_None._
-
-## 📋 Ready to build (scaffolded, not started) (1)
+## 🏗️ Building now (1)
 
 - [Put panfleto-core back on upstream's timeline](../../09-platform-infra/miniflux-upstream-resync/README.md) — 09 Platform-infra · 0/9 stories · risk: High · wave-2026-09-panfleto
+
+## 📋 Ready to build (scaffolded, not started) (0)
+
+_None._
 
 ## ✅ Shipped (0)
 
@@ -34,5 +34,15 @@ _None._
 - [MCP tokens shouldn't travel in query strings](seeds/mcp-token-handling.md) — Raw · Chore · appetite S
 - [Stop compiling Go on the production VM](seeds/ci-build-pipeline.md) — Raw · Chore · appetite M
 
+## ⚠️ Status drift — README frontmatter vs sprint/retro-derived (1)
+
+These epics’ authoritative README-frontmatter `status:` disagrees with what the sprint/retro
+derivation infers. The board trusts the **frontmatter**; a mismatch usually means a close-out
+forgot to set `status:` (or the README is stale). Reconcile the README, then this advisory clears.
+
+| Epic | frontmatter (used) | sprint/retro-derived |
+|---|---|---|
+| Put panfleto-core back on upstream's timeline | In progress | Scaffolded |
+
 ---
-_Epics: 1 · seeds in funnel: 9 · status drift: 0. Regenerate with `node scripts/build-order.mjs`._
+_Epics: 1 · seeds in funnel: 9 · status drift: 1. Regenerate with `node scripts/build-order.mjs`._

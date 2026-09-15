@@ -1,0 +1,4 @@
+[submodule "panfleto-core"]
+	path = panfleto-core
+	url = https://github.com/danybgoode/panfleto-core.git
+	branch = panfleto
