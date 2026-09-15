@@ -112,9 +112,35 @@ to any project carrying someone else's codebase.*
 - **Every file you add to a fork is rebase tax paid forever.** (2026-09-14) Exhaust config options,
   per-entity settings, a repo-local script against the upstream API, and an upstream PR *before*
   patching. The delta count belongs in the project's rules as a number, so growing it is a visible
-  decision rather than a drift.
+  decision rather than a drift. **A scope doc's "put the helper beside the others" is exactly how the
+  count grows unnoticed** (2026-09-15, paywall-rail): check the target file against
+  `git diff --stat upstream...HEAD` before accepting it — the unwall link needed no Go at all.
+- **Amending a fork topic commit: move the fork branch before merging the pin, and tag both tips.**
+  (2026-09-15, paywall-rail) Rewritten history means the new pin is reachable only through a branch until
+  the fork's main branch is force-pushed, and the old pin — every earlier superproject commit's rollback
+  target — only through a tag. Merge the pin second, or the weekly sync rebuilds from a tip that lacks
+  the change.
+
+## Scoping against production
+- **Query the live database before believing a scope doc about production data.** (2026-09-15, both
+  `adblock-rule-false-positives` and `paywall-rail-single-source`) Two epics scoped from the scripts'
+  history were both wrong about production: the "cleanup" had 0 rows because the database postdated
+  the script's last run, and the "rule dropping articles" had never reached a feed. Seconds of `psql`
+  removed a HIGH-tier write and turned a bug fix into a first-time rollout. Ask *which install did this
+  ever run against*, not just *what does the code do*.
+- **An API that ignores unknown JSON fields turns a wrong field name into a silent success.** (2026-09-15,
+  adblock) `PUT /v1/feeds/{id}` with `block_rules` returned 200 for months and changed nothing — Go's
+  `encoding/json` drops unknown keys. Read back what a script wrote, or test its payload's field names
+  against the model.
+- **A filter that matches URLs needs URL cases in its tests.** (2026-09-15, adblock) Miniflux block rules
+  match URL, author and tags as well as title; the old stem `ad` would have silenced two whole feeds
+  through their domains (`jornada.com.mx`), which no headline test shows.
 
 ## Tooling gotchas
+- **Postgres ARE takes a whole regex's greediness from its FIRST quantifier.** (2026-09-15, paywall-rail)
+  `'<hr\s*/?>…(.*?)</p>'` is greedy throughout because `\s*` comes first, so `regexp_replace(…, 'g')`
+  eats everything between the first and the last match. Use negated classes (`(?:[^<]|<a\s[^>]*>[^<]*</a>)*`)
+  instead of `.*?`, and prove it on a row with two occurrences and text between them.
 - **A script with a co-located pure-logic test file MUST guard its `main()` call with an `isMain`
   check.** Importing a script that calls `main()` unconditionally at module scope re-executes the
   whole script for real (shell-outs, notifications, git pushes, all of it) the moment a test file

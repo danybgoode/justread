@@ -256,6 +256,11 @@ author's context-bias hides. Two layers do this, and they're complementary:
     on a `panfleto-core/` diff, say in the review prompt that the target is Go inside a Miniflux
     fork and that the standing constraint is `AGENTS.md` rule 1 (keep the delta small), or you get
     idiomatic-refactor findings that would grow the fork.
+  - **A submodule pin is invisible to `cross-review.mjs`.** `gh pr diff` shows one `Subproject commit` line,
+    so a PR whose real change lives in `panfleto-core` gets a review of nothing. Feed the reviewer the PR
+    diff **plus** `git -C panfleto-core diff <old-pin> <new-pin>` (paywall-rail-single-source, 2026-09-15).
+  - **Codex capped again (2026-09-15, until 2026-10-09)**; agy's Gemini tier returned empty and it fell
+    back to GPT-OSS 120B, which then 503'd once under load. Retry agy once before calling the layer dark.
   - _(pin versions here as they bite — a young CLI's print contract breaks on minor bumps.)_
 
 - **Fresh reviewer subagent (context independence) — HIGH tier only:** an agent that did **not** hold the

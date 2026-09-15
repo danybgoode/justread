@@ -20,12 +20,12 @@ status source of truth, not this page.
 
 ## Epics
 
-All five are scaffolded and ready to build. Build order runs top to bottom.
+Build order runs top to bottom.
 
 | # | Epic | Status | Risk | Appetite |
 |---|---|---|---|---|
-| 2 | [`adblock-rule-false-positives`](adblock-rule-false-positives/README.md) — the ad filter is eating real articles | 📋 scaffolded | low | S |
-| 3 | [`paywall-rail-single-source`](paywall-rail-single-source/README.md) — tell the rail once, in the template | 📋 scaffolded | high | S |
+| 2 | [`adblock-rule-false-positives`](adblock-rule-false-positives/README.md) — the ad filter is eating real articles | ✅ shipped 2026-09-15 | low | S |
+| 3 | [`paywall-rail-single-source`](paywall-rail-single-source/README.md) — tell the rail once, in the template | ✅ shipped 2026-09-15 | high | S |
 | 5 | [`spike-unwall-app`](spike-unwall-app/README.md) — how should unwall.app reach the reader? | 📋 scaffolded | low | S |
 | 6 | [`article-autofetch`](article-autofetch/README.md) — click an article and it's already there | 📋 scaffolded | high | M |
 | 7 | [`inline-comments`](inline-comments/README.md) — read the comments without leaving | 📋 scaffolded | high | M |
