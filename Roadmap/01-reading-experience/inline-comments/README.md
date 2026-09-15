@@ -1,5 +1,5 @@
 ---
-status: scaffolded
+status: in-progress
 slug: inline-comments
 build_order: 7
 ---
@@ -60,22 +60,29 @@ Three options, and the architect picks one and writes it into D1 **before S2 sta
 This is **escalate-don't-guess** (`AGENTS.md` rule 3). S1 is deliberately sliced so it does **not**
 need the answer — HN's API is generous enough to survive without a durable cache.
 
-## Architecture decisions — to be LOCKED before S2
+## Architecture decisions — LOCKED 2026-09-15 against production
 
-| # | Decision | State |
+| # | Decision | Evidence |
 |---|---|---|
-| **D1** | Cache: migration, in-process, or side schema | **To lock** — the table above |
-| **D2** | Thread depth: top-level only, or nested with a cap | **To lock** — a 400-comment HN thread rendered in full is its own problem |
-| **D3** | Unreachable comments API: show an error, or fall back to today's link | **To lock** |
-| **D4** | Two adapters, then stop | **Decided** — HN + Reddit covers nearly all of the starter feeds |
+| **D1** | **In-process TTL cache**: 10 minutes, 128 threads, keyed by thread. **No migration and no side schema.** A restart is a cache miss, by design | HN's Algolia API is unauthenticated and generous. With Reddit cut (D4), nothing left needs protection that survives a restart. Rule 3 stays at zero custom migrations |
+| **D2** | **Nested, capped:** 5 levels deep and 300 comments. A truncated thread ends with the existing translated "View Comments" link to the full thread on HN | HN's front page regularly carries threads with several hundred comments. Rendering all of them inline is its own performance problem |
+| **D3** | **An unreachable API shows a short fragment with the same outbound link**, and the route answers 502. The outbound comments link in the toolbar stays on every entry | The reader never sees a broken page, and today's escape hatch is untouched |
+| **D4** | **One adapter, then stop: Hacker News. Reddit (story 2.2) is cut by the product owner, 2026-09-15** | From the VM: Reddit `.json` returns **403**, RSS returned **429 after 3 calls**, and 3 of the 4 production Reddit feeds are already failing to poll. Reddit entries carry **no** comments URL (0 of ~640 in 14 days), and Reddit isn't in the starter feeds. The only working path was a registered OAuth app, a new external dependency and production secret, which the product owner declined |
+| **D5** | **The panel renders only for URLs an adapter supports** (`news.ycombinator.com/item?id=N`), only for a signed-in reader, and never on `/share/` | Ars Technica and 9to5Mac entries also carry comments URLs (539 in 14 days) to their own sites, and a panel that can't load would be worse than today's link |
+| **D6** | **Rendered by the comments package's own `html/template`, styled only by existing classes** (replies nest as `blockquote` inside `.entry-content`). Every comment body goes through `sanitizer.SanitizeHTML` | The reader's CSP is `style-src 'nonce-…'`, so inline `style` attributes are blocked. A view registered in `engine.go` would add an upstream file to the delta. The fragment is inserted through the one `html` Trusted Types policy `app.js` already declares, created once and shared, because CSP `trusted-types html url` forbids creating a duplicate |
+
+**Fork delta (rule 1).** New files: `internal/reader/comments/` (adapter, cache, render and tests) and
+`internal/ui/entry_comments.go` (the route). Upstream files touched: `internal/ui/ui.go` (one route line)
+and `internal/ui/static/js/app.js` (the lazy loader and the shared policy). Already panfleto's:
+`entry.html` and `view/view.go`. It lands as one new topic commit, `panfleto: inline comments`.
 
 ## Non-negotiables for whoever builds this
 
 1. **Every comment body goes through `internal/reader/sanitizer`.** This is untrusted HTML written by
    strangers, rendered inside an authenticated session. There is no version of this epic where that
    is skipped.
-2. **Reddit will throttle a single VM IP.** The cache is not an optimisation, it is the feature
-   working at all.
+2. **~~Reddit will throttle a single VM IP.~~** Confirmed on 2026-09-15 (403 on JSON, 429 on RSS), and Reddit is cut. The cache
+   still exists, so reopening an HN thread doesn't refetch it.
 3. **The panel is lazy.** An entry with no comments URL costs nothing — same pattern as enclosures.
 
 ## Scope — stories
@@ -85,7 +92,7 @@ need the answer — HN's API is generous enough to survive without a durable cac
 | 1 | 1.1 — A comments route and a lazy panel | low |
 | 1 | 1.2 — Hacker News threads, sanitized | high |
 | 2 | 2.1 — A cache that survives the decision | high |
-| 2 | 2.2 — Reddit threads, rate-limit aware | high |
+| 2 | ~~2.2 — Reddit threads, rate-limit aware~~ **cut by the product owner 2026-09-15 (D4)** | — |
 
 ## Deploy order
 
