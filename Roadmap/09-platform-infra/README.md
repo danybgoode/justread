@@ -20,4 +20,10 @@ See the poster's [09 · Platform & Infra](../README.md#09--platform--infra) sect
 `deploy/` · `panfleto-core/` (the fork itself) · `scripts/` · `.github/workflows/` · `.githooks/`
 
 ## Epics
-_(none scaffolded yet — see `../00-ideas/BUILD-ORDER.md`)_
+
+| Epic | Status | Risk |
+|---|---|---|
+| [`miniflux-upstream-resync`](miniflux-upstream-resync/README.md) — put panfleto-core back on upstream's timeline | 📋 scaffolded, not started | high |
+
+See `../00-ideas/BUILD-ORDER.md` for the generated board, and `../00-ideas/README.md` for the rest of
+the funnel and its agreed sequence.

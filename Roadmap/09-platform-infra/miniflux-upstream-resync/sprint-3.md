@@ -1,0 +1,103 @@
+# Put panfleto-core back on upstream's timeline — Sprint 3: Shrink the delta and automate the sync
+
+**Status:** ⬜ not started
+
+> **Build contract (locked by the architect before the builder started)**
+>
+> - **D4 · the suggested-feeds table is rebuilt from `feeds.json`**, not preserved as markup. It is
+>   ~240 lines of hand-written table in a file upstream also edits, for a feature that is a loop.
+> - **Order matters, and it is the point of this sprint.** Story 3.1 removes the inline `<script>` at
+>   `add_subscription.html:351`; only *then* does 3.2 become a no-op deletion rather than a
+>   behaviour change. Doing 3.2 first breaks the subscribe page's CSP.
+> - **Verify D5 before starting:** confirm `add_subscription.html:351` is still the only consumer of
+>   `.cspNonce` outside `layout.html`. If the rebase in S2 introduced another, 3.2 is off the table
+>   and the delta stays at 10, not 9.
+> - **This sprint removes code.** If it is adding net lines, something has gone wrong.
+> - **Low risk, and it is the only low-risk sprint in this epic** — no migrations, no auth, no
+>   production data. A non-builder agent may merge on green.
+
+## Stories
+
+### Story 3.1 — One feeds.json, three lists gone
+**As a** maintainer, **I want** every recommended feed listed in exactly one file, **so that** a dead
+feed is fixed once instead of three times and the fork stops carrying 240 lines of table markup that
+upstream also edits.
+
+Today the same knowledge lives in three places: 13 feeds hardcoded in Go
+(`internal/ui/user_onboarding.go`), roughly the same list as hand-written table rows
+(`views/add_subscription.html`), and a keyword→category map in `scripts/enhance_miniflux.js`. The
+most recent commit on this repo before the bootstrap was *"Replace three starter feeds that no longer
+work"* — which is what maintaining three copies feels like.
+
+**Acceptance:**
+- One `feeds.json` holds every feed's URL, title and category
+- `user_onboarding.go` reads it via `go:embed` — no hardcoded list remains
+- The subscribe page renders its suggestions in a **template loop** over the same data
+- A new account still arrives with the same feeds, categorised the same way
+- The subscribe page still offers Quick Add and Review for each suggestion
+- `scripts/enhance_miniflux.js` reads the same file rather than its own map
+- Adding a feed to `feeds.json` and nothing else makes it appear in **both** places
+
+**Risk:** low
+
+### Story 3.2 — The nonce patch returned to upstream
+**As a** maintainer, **I want** `view.go` and `layout.html`'s nonce line back to upstream's version,
+**so that** the fork stops carrying a CSP patch it no longer needs.
+
+The `cspNonce` in `internal/ui/view/view.go` exists for exactly one reason: the inline `<script>` at
+`add_subscription.html:351` needs the same nonce `layout.html` put in the CSP header, and calling
+upstream's `nonce` function again would produce a different one. Story 3.1 deletes that inline
+script. So this story is a deletion, not a rewrite — and it takes the delta from 12 files to **9**.
+
+**Acceptance:**
+- `internal/ui/view/view.go` is byte-identical to upstream's
+- `layout.html` differs from upstream **only** in branding (title, apple-mobile-web-app-title, the
+  `pan<span>fleto</span>` logo) — the `{{ $cspNonce := nonce }}` line is upstream's again
+- `git diff upstream/main..panfleto --stat` shows **9 files** plus icons
+- The subscribe page loads with no CSP violation in the browser console
+- `AGENTS.md` rule 1's stated delta count is updated from 12 to 9
+
+**Risk:** low
+
+### Story 3.3 — The weekly sync that makes this stick
+**As the** product owner, **I want** a weekly attempt to rebase onto upstream that tells me the
+result, **so that** panfleto is never four months behind again without anyone noticing.
+
+**Acceptance:**
+- A scheduled GitHub Action on `panfleto-core` fetches `upstream`, rebases `panfleto` onto
+  `upstream/main` on a throwaway branch, and builds it
+- Clean + building → it opens a PR
+- Conflict or build failure → it opens an issue **naming the conflicting file**
+- Nothing to do → it exits quietly without opening anything
+- The first run has been observed doing one of the three
+- The workflow lives on `panfleto-core`, not here — this repo only moves the pin
+
+**Risk:** low
+
+## Sprint QA
+- **api spec(s):** `e2e/subscribe-suggestions.spec.ts` — anonymous where possible: assert the
+  subscribe page's suggestion count matches `feeds.json`'s length, so 3.1 can't silently drop a feed.
+  If the page requires auth, assert against `feeds.json` parsing + the embed instead (a pure-logic
+  spec on an extracted seam, which is free coverage).
+- **browser smoke owed:** yes, to the product owner — the subscribe page's **Quick Add** and
+  **Review** actions, and the **browser console being free of CSP violations** after 3.2. A console
+  check is precisely what an API-level spec cannot see.
+- **deterministic gate:** `go build` + `go vet` + `go test` + `docker compose build` + both api specs.
+
+## Sprint 3 — Smoke walkthrough (do these in order)
+Env: production · `https://app.panfleto.win`
+
+1. **(auth path — owed to the product owner by name)** Sign in and go to `https://app.panfleto.win/subscribe`.
+   → The "Suggested Feeds" section renders with the same feeds as before, in the same categories.
+2. Open the browser console (⌥⌘J) and reload the page.
+   → **No Content-Security-Policy violation errors.** This is the check that proves 3.2 was safe.
+3. Click "Quick Add" on any suggestion.
+   → The feed is subscribed and you land on its entries.
+4. Click "Review" on another suggestion.
+   → Its URL is loaded into the add-feed form above, not subscribed yet.
+5. Register a brand-new test account (or ask for one to be provisioned).
+   → It arrives with the same starter feeds, in the same categories, as before this sprint.
+6. On `panfleto-core`, go to the Actions tab and run the sync workflow manually.
+   → It either opens a PR, opens an issue naming a conflicting file, or exits reporting nothing to do.
+
+If any step fails, note the step number + what you saw — that's the bug report.

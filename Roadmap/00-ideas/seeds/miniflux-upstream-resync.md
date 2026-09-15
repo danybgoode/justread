@@ -1,16 +1,16 @@
 ---
 title: "Put panfleto-core back on upstream's timeline"
 slug: miniflux-upstream-resync
-status: ready
+status: scaffolded
 area: "09"
 type: chore
 priority: wave-2026-09-panfleto
 appetite: L
 underwritten_by: null
 risk: high
-epic: null
+epic: "09-platform-infra/miniflux-upstream-resync"
 build_order: 4
-updated: 2026-09-14
+updated: 2026-09-15
 ---
 
 # Pitch — Put panfleto-core back on upstream's timeline

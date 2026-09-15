@@ -5,7 +5,7 @@
 
 # Build order — generated status board
 
-> **Generated 2026-09-14 — do not hand-edit.** Epic status SSOT = the epic `README.md` frontmatter
+> **Generated 2026-09-15 — do not hand-edit.** Epic status SSOT = the epic `README.md` frontmatter
 > `status:` field (set at epic close). To change what this shows, edit that field (or a seed for the
 > funnel), then run `node scripts/build-order.mjs`. This board and the Notion "Marketplace Roadmap"
 > DB are both *derived views* — never hand-edit the board.
@@ -14,19 +14,18 @@
 
 _None._
 
-## 📋 Ready to build (scaffolded, not started) (0)
+## 📋 Ready to build (scaffolded, not started) (1)
 
-_None._
+- [Put panfleto-core back on upstream's timeline](../../09-platform-infra/miniflux-upstream-resync/README.md) — 09 Platform-infra · 0/9 stories · risk: High · wave-2026-09-panfleto
 
 ## ✅ Shipped (0)
 
 _None._
 
-## ⬜ Funnel — seeds not yet scaffolded (10)
+## ⬜ Funnel — seeds not yet scaffolded (9)
 
 - [Adopt the dobby-foundation operating system](seeds/ways-of-work-bootstrap.md) — Ready · Chore · appetite S · wave-2026-09-panfleto
 - [Click an article and the content is already there](seeds/article-autofetch.md) — Raw · Feature · appetite M · wave-2026-09-panfleto
-- [Put panfleto-core back on upstream's timeline](seeds/miniflux-upstream-resync.md) — Ready · Chore · appetite L · wave-2026-09-panfleto
 - [Read the comments without leaving the reader](seeds/inline-comments.md) — Raw · Feature · appetite M · wave-2026-09-panfleto
 - [Spike — how should unwall.app reach the reader?](seeds/spike-unwall-app.md) — Ready · Spike · appetite S · wave-2026-09-panfleto
 - [Tell the paywall rail once, in the template, correctly](seeds/paywall-rail-single-source.md) — Ready · Chore · appetite S · wave-2026-09-panfleto
@@ -36,4 +35,4 @@ _None._
 - [Stop compiling Go on the production VM](seeds/ci-build-pipeline.md) — Raw · Chore · appetite M
 
 ---
-_Epics: 0 · seeds in funnel: 10 · status drift: 0. Regenerate with `node scripts/build-order.mjs`._
+_Epics: 1 · seeds in funnel: 9 · status drift: 0. Regenerate with `node scripts/build-order.mjs`._
