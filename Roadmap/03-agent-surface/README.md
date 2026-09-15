@@ -18,4 +18,11 @@ See the poster's [03 · Agent surface](../README.md#03--agent-surface) section.
 `internal/template/templates/views/integrations.html`
 
 ## Epics
-_(none scaffolded yet — see `../00-ideas/BUILD-ORDER.md`)_
+
+| # | Epic | Status | Risk | Appetite |
+|---|---|---|---|---|
+| 10 | [`mcp-token-handling`](mcp-token-handling/README.md) — MCP tokens shouldn't travel in query strings | 📋 scaffolded | high | S |
+
+**Open question that may halve it:** sprint 2 depends on whether Claude, Cursor and Continue support
+custom headers on a remote MCP URL. Research that at the architecture lock — if they mostly don't,
+sprint 1 is the whole bet.

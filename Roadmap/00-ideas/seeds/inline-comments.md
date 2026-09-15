@@ -1,16 +1,16 @@
 ---
 title: "Read the comments without leaving the reader"
 slug: inline-comments
-status: raw
+status: scaffolded
 area: "01"
 type: feature
 priority: wave-2026-09-panfleto
 appetite: M
 underwritten_by: null
 risk: high
-epic: null
+epic: "01-reading-experience/inline-comments"
 build_order: 7
-updated: 2026-09-14
+updated: 2026-09-15
 ---
 
 # Seed — Read the comments without leaving the reader

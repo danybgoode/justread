@@ -19,4 +19,17 @@ status source of truth, not this page.
 `internal/reader/processor/` · `internal/reader/scraper/` · `internal/reader/sanitizer/`
 
 ## Epics
-_(none scaffolded yet — see `../00-ideas/BUILD-ORDER.md`)_
+
+All five are scaffolded and ready to build. Build order runs top to bottom.
+
+| # | Epic | Status | Risk | Appetite |
+|---|---|---|---|---|
+| 2 | [`adblock-rule-false-positives`](adblock-rule-false-positives/README.md) — the ad filter is eating real articles | 📋 scaffolded | low | S |
+| 3 | [`paywall-rail-single-source`](paywall-rail-single-source/README.md) — tell the rail once, in the template | 📋 scaffolded | high | S |
+| 5 | [`spike-unwall-app`](spike-unwall-app/README.md) — how should unwall.app reach the reader? | 📋 scaffolded | low | S |
+| 6 | [`article-autofetch`](article-autofetch/README.md) — click an article and it's already there | 📋 scaffolded | high | M |
+| 7 | [`inline-comments`](inline-comments/README.md) — read the comments without leaving | 📋 scaffolded | high | M |
+
+**Dependencies:** the spike (5) blocks story 2.2 of autofetch (6). Both 6 and 7 patch the fork, so
+both wait for `09-platform-infra/miniflux-upstream-resync` — building either first means replaying a
+moving delta. 2 and 3 depend on nothing and can start today.

@@ -1,16 +1,16 @@
 ---
 title: "Spike — how should unwall.app reach the reader?"
 slug: spike-unwall-app
-status: ready
+status: scaffolded
 area: "01"
 type: spike
 priority: wave-2026-09-panfleto
 appetite: S
 underwritten_by: null
 risk: low
-epic: null
+epic: "01-reading-experience/spike-unwall-app"
 build_order: 5
-updated: 2026-09-14
+updated: 2026-09-15
 ---
 
 # Spike — how should unwall.app reach the reader?

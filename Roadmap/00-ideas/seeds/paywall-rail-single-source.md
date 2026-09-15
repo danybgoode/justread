@@ -1,16 +1,16 @@
 ---
 title: "Tell the paywall rail once, in the template, correctly"
 slug: paywall-rail-single-source
-status: ready
+status: scaffolded
 area: "01"
 type: chore
 priority: wave-2026-09-panfleto
 appetite: S
 underwritten_by: null
 risk: high
-epic: null
+epic: "01-reading-experience/paywall-rail-single-source"
 build_order: 3
-updated: 2026-09-14
+updated: 2026-09-15
 ---
 
 # Pitch — Tell the paywall rail once, in the template, correctly

@@ -1,16 +1,16 @@
 ---
 title: "Click an article and the content is already there"
 slug: article-autofetch
-status: raw
+status: scaffolded
 area: "01"
 type: feature
 priority: wave-2026-09-panfleto
 appetite: M
 underwritten_by: null
 risk: high
-epic: null
+epic: "01-reading-experience/article-autofetch"
 build_order: 6
-updated: 2026-09-14
+updated: 2026-09-15
 ---
 
 # Seed — Click an article and the content is already there

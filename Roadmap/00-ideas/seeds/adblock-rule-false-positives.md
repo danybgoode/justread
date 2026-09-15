@@ -1,16 +1,16 @@
 ---
 title: "The ad-block rule is silently dropping real articles"
 slug: adblock-rule-false-positives
-status: ready
+status: scaffolded
 area: "01"
 type: bug
 priority: wave-2026-09-panfleto
 appetite: S
 underwritten_by: null
 risk: low
-epic: null
+epic: "01-reading-experience/adblock-rule-false-positives"
 build_order: 2
-updated: 2026-09-14
+updated: 2026-09-15
 ---
 
 # Bug — The ad-block rule is silently dropping real articles

@@ -41,11 +41,15 @@ const REPO = resolve(__dirname, '..');
 const ROADMAP = join(REPO, 'Roadmap');
 const SEEDS = join(ROADMAP, '00-ideas', 'seeds');
 
+// PROJECT CONFIG. The template shipped this hardcoded to the origin project's product domains
+// ('01 Discovery', '02 Checkout & Payments', ...), which silently mislabelled every panfleto epic on
+// the board — onboarding rendered as "Checkout & Payments". It should be a TEMPLATE FILL-IN upstream;
+// reported to dobby-foundation 2026-09-15. Keep in sync with Roadmap/README.md's macro-section table.
 const AREA_NAMES = {
-  '01': '01 Discovery', '02': '02 Checkout & Payments', '03': '03 Selling & Shops',
-  '04': '04 Shipping', '05': '05 Trust/Offers/Messaging', '06': '06 Print',
-  '07': '07 Agentic/Federated', '08': '08 Growth', '09': '09 Platform-infra',
-  '10': '10 Events & Ticketing',
+  '01': '01 Reading experience',
+  '02': '02 Onboarding & signup',
+  '03': '03 Agent surface',
+  '09': '09 Platform & Infra',
 };
 const SEED_STATUS_LABEL = {
   raw: 'Raw', ready: 'Ready', queued: 'Queued', scaffolded: 'Scaffolded',

@@ -14,25 +14,24 @@
 
 _None._
 
-## 📋 Ready to build (scaffolded, not started) (0)
+## 📋 Ready to build (scaffolded, not started) (8)
 
-_None._
+- [Click an article and the content is already there](../../01-reading-experience/article-autofetch/README.md) — 01 Reading experience · 0/8 stories · risk: High · wave-2026-09-panfleto
+- [How should unwall.app reach the reader?](../../01-reading-experience/spike-unwall-app/README.md) — 01 Reading experience · 0/2 stories · risk: Low · wave-2026-09-panfleto
+- [Read the comments without leaving the reader](../../01-reading-experience/inline-comments/README.md) — 01 Reading experience · 0/4 stories · risk: High · wave-2026-09-panfleto
+- [Tell the paywall rail once, in the template, correctly](../../01-reading-experience/paywall-rail-single-source/README.md) — 01 Reading experience · 0/5 stories · risk: High · wave-2026-09-panfleto
+- [The ad-block rule is silently dropping real articles](../../01-reading-experience/adblock-rule-false-positives/README.md) — 01 Reading experience · 0/2 stories · risk: Low · wave-2026-09-panfleto
+- [A new signup should not be a coin flip](../../02-onboarding-and-signup/onboarding-provisioning-reliability/README.md) — 02 Onboarding & signup · 0/2 stories · risk: Low
+- [MCP tokens shouldn't travel in query strings](../../03-agent-surface/mcp-token-handling/README.md) — 03 Agent surface · 0/4 stories · risk: High
+- [Stop compiling Go on the production VM](../../09-platform-infra/ci-build-pipeline/README.md) — 09 Platform & Infra · 0/4 stories · risk: High
 
 ## ✅ Shipped (1)
 
-- [Put panfleto-core back on upstream's timeline ✅](../../09-platform-infra/miniflux-upstream-resync/README.md) — 09 Platform-infra · 9/9 stories · risk: High · wave-2026-09-panfleto
+- [Put panfleto-core back on upstream's timeline ✅](../../09-platform-infra/miniflux-upstream-resync/README.md) — 09 Platform & Infra · 9/9 stories · risk: High · wave-2026-09-panfleto
 
-## ⬜ Funnel — seeds not yet scaffolded (9)
+## ⬜ Funnel — seeds not yet scaffolded (0)
 
-- [Adopt the dobby-foundation operating system](seeds/ways-of-work-bootstrap.md) — Ready · Chore · appetite S · wave-2026-09-panfleto
-- [Click an article and the content is already there](seeds/article-autofetch.md) — Raw · Feature · appetite M · wave-2026-09-panfleto
-- [Read the comments without leaving the reader](seeds/inline-comments.md) — Raw · Feature · appetite M · wave-2026-09-panfleto
-- [Spike — how should unwall.app reach the reader?](seeds/spike-unwall-app.md) — Ready · Spike · appetite S · wave-2026-09-panfleto
-- [Tell the paywall rail once, in the template, correctly](seeds/paywall-rail-single-source.md) — Ready · Chore · appetite S · wave-2026-09-panfleto
-- [The ad-block rule is silently dropping real articles](seeds/adblock-rule-false-positives.md) — Ready · Feature · appetite S · wave-2026-09-panfleto
-- [A new signup should not be a coin flip](seeds/onboarding-provisioning-reliability.md) — Raw · Chore · appetite S
-- [MCP tokens shouldn't travel in query strings](seeds/mcp-token-handling.md) — Raw · Chore · appetite S
-- [Stop compiling Go on the production VM](seeds/ci-build-pipeline.md) — Raw · Chore · appetite M
+_None._
 
 ---
-_Epics: 1 · seeds in funnel: 9 · status drift: 0. Regenerate with `node scripts/build-order.mjs`._
+_Epics: 9 · seeds in funnel: 0 · status drift: 0. Regenerate with `node scripts/build-order.mjs`._

@@ -1,16 +1,16 @@
 ---
 title: "MCP tokens shouldn't travel in query strings"
 slug: mcp-token-handling
-status: raw
+status: scaffolded
 area: "03"
 type: chore
 priority: null
 appetite: S
 underwritten_by: null
 risk: high
-epic: null
+epic: "03-agent-surface/mcp-token-handling"
 build_order: 10
-updated: 2026-09-14
+updated: 2026-09-15
 ---
 
 # Seed — MCP tokens shouldn't travel in query strings

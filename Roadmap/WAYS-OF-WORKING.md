@@ -242,6 +242,12 @@ author's context-bias hides. Two layers do this, and they're complementary:
   every PR gets two genuinely external passes. Claude stays last in the preference order because
   Claude capacity is usually the thing building.
 
+  **Update 2026-09-15, after the first real epic:** installed is not the same as available. The resync
+  retro records that **Codex was capped for the entire epic**, and that **agy auto-updated twice
+  (1.2.1 → 1.2.3) mid-session**, breaking its version pin each time and stalling when run in parallel.
+  Plan for the roster being short rather than assuming four families. A capped family is a refund ask,
+  and the downgrade goes in the PR body.
+
   Gotchas as we hit them — **add to this list, don't rediscover it**:
   - **The failure shape to watch for is exit 0 with empty output.** That reads as a clean review and
     is the single most dangerous outcome on this layer. If a pass returns nothing, treat it as DARK

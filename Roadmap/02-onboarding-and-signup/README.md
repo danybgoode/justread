@@ -17,4 +17,10 @@ See the poster's [02 · Onboarding & signup](../README.md#02--onboarding--signup
 `internal/ui/oauth2_callback.go` · `internal/template/templates/views/add_subscription.html`
 
 ## Epics
-_(none scaffolded yet — see `../00-ideas/BUILD-ORDER.md`)_
+
+| # | Epic | Status | Risk | Appetite |
+|---|---|---|---|---|
+| 9 | [`onboarding-provisioning-reliability`](onboarding-provisioning-reliability/README.md) — a new signup should not be a coin flip | 📋 scaffolded | low | S |
+
+**Sequencing note:** best built *after* `miniflux-upstream-resync` sprint 3, which consolidates the
+starter-feed list into one `feeds.json`. Building it first means writing the feed health check twice.

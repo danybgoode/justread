@@ -1,7 +1,7 @@
 ---
 title: "Adopt the dobby-foundation operating system"
 slug: ways-of-work-bootstrap
-status: ready
+status: shipped
 area: "09"
 type: chore
 priority: wave-2026-09-panfleto
@@ -10,7 +10,7 @@ underwritten_by: null
 risk: low
 epic: null
 build_order: 1
-updated: 2026-09-14
+updated: 2026-09-15
 ---
 
 # Pitch — Adopt the dobby-foundation operating system

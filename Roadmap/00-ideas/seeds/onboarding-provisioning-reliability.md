@@ -1,16 +1,16 @@
 ---
 title: "A new signup should not be a coin flip"
 slug: onboarding-provisioning-reliability
-status: raw
+status: scaffolded
 area: "02"
 type: chore
 priority: null
 appetite: S
 underwritten_by: null
 risk: low
-epic: null
+epic: "02-onboarding-and-signup/onboarding-provisioning-reliability"
 build_order: 9
-updated: 2026-09-14
+updated: 2026-09-15
 ---
 
 # Seed — A new signup should not be a coin flip

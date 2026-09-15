@@ -21,9 +21,16 @@ See the poster's [09 · Platform & Infra](../README.md#09--platform--infra) sect
 
 ## Epics
 
-| Epic | Status | Risk |
-|---|---|---|
-| [`miniflux-upstream-resync`](miniflux-upstream-resync/README.md) — put panfleto-core back on upstream's timeline | 📋 scaffolded, not started | high |
+| # | Epic | Status | Risk | Appetite |
+|---|---|---|---|---|
+| 4 | [`miniflux-upstream-resync`](miniflux-upstream-resync/README.md) — put panfleto-core back on upstream's timeline | 📋 scaffolded | high | L |
+| 8 | [`ci-build-pipeline`](ci-build-pipeline/README.md) — stop compiling Go on the production VM | 📋 scaffolded | high | M |
+
+**The resync (4) is the keystone** — `article-autofetch`, `inline-comments` and the CI pipeline all
+sit behind it, because each would otherwise be built against a fork that is about to move under them.
+**8 de-risks 4** and every rebase after it, so there is a real argument for pulling it earlier than
+its number suggests — check `gh repo view --json isPrivate` first, since that decides whether it is
+nearly free or genuinely expensive.
 
 See `../00-ideas/BUILD-ORDER.md` for the generated board, and `../00-ideas/README.md` for the rest of
 the funnel and its agreed sequence.

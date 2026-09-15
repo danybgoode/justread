@@ -1,16 +1,16 @@
 ---
 title: "Stop compiling Go on the production VM"
 slug: ci-build-pipeline
-status: raw
+status: scaffolded
 area: "09"
 type: chore
 priority: null
 appetite: M
 underwritten_by: null
 risk: high
-epic: null
+epic: "09-platform-infra/ci-build-pipeline"
 build_order: 8
-updated: 2026-09-14
+updated: 2026-09-15
 ---
 
 # Seed — Stop compiling Go on the production VM
