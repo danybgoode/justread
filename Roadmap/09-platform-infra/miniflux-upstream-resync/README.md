@@ -108,8 +108,48 @@ rebuilt VM at that `main` commit fails with `not our ref`. Tags: `pre-resync` (S
 `resync-hop1-v2.3.3` (S2.2), `resync-hop2-main` (S2.3). S3.3's weekly sync inherits the rule — see
 sprint-3.
 
-That mechanism only holds if the database can come back too, which is why S2.1 exists and blocks
-everything after it.
+**Moving the pin back is NOT enough once a hop's migrations have run** (fresh-review finding on PR #2,
+rehearsed 2026-09-15). The old binary still boots, because it only refuses a schema *older* than its own.
+But migration 131 (and later 134) rebuilds `enclosures_user_entry_url_unique_idx` on an expression the
+old `createEnclosure` `ON CONFLICT (user_id, entry_id, md5(url))` no longer matches. So every feed
+refresh that touches an enclosure fails with `42P10`, while `/healthcheck` and `reader-health.spec.ts`
+stay green. **Rollback therefore runs down-SQL before the old image starts:**
+
+```bash
+# on the VM — stop the reader, un-apply the hop's migrations, then deploy the old pin
+docker compose -f /opt/panfleto/deploy/docker-compose.yml stop miniflux
+docker compose -f /opt/panfleto/deploy/docker-compose.yml exec -T postgres \
+  psql -v ON_ERROR_STOP=1 -U miniflux miniflux < down-hopN.sql
+# then: move the pin back in a commit on main, merge, update.sh
+```
+
+*Hop 1 (132 → 130, back to `pre-resync`):*
+```sql
+BEGIN;
+DROP INDEX IF EXISTS enclosures_user_entry_url_unique_idx;
+CREATE UNIQUE INDEX enclosures_user_entry_url_unique_idx ON enclosures (user_id, entry_id, md5(url));
+ALTER TABLE entries DROP COLUMN language;
+ALTER TABLE feeds DROP COLUMN language;
+UPDATE schema_version SET version = 130;
+COMMIT;
+```
+*Hop 2 (134 → 132, back to `resync-hop1-v2.3.3`):*
+```sql
+BEGIN;
+DROP INDEX IF EXISTS enclosures_user_entry_url_unique_idx;
+CREATE UNIQUE INDEX enclosures_user_entry_url_unique_idx ON enclosures (user_id, entry_id, encode(sha256(url::bytea), 'hex'));
+CREATE INDEX IF NOT EXISTS entries_user_status_changed_idx ON entries (user_id, status, changed_at);
+UPDATE schema_version SET version = 132;
+COMMIT;
+```
+**Rehearsed for hop 1 on a restored copy of production, on the VM.** The image migrates 130→132. The old
+`ON CONFLICT md5(url)` upsert then fails with 42P10 (the trap is real). The down-SQL runs in 0.12 s, after
+which the same upsert returns `INSERT 0 0`, the pre-resync image boots cleanly, and rolling forward
+replays 131–132. **A rollback is only verified when** the log shows no `unable to create enclosure`
+after the next hourly refresh; a green healthcheck proves nothing here.
+
+The dump restore (S2.1) stays the last resort. It is lossy: up to 24 h of read/star state, new signups,
+and any "Panfleto MCP" API keys minted in that window, which silently breaks MCP URLs already handed out.
 
 ## Model routing (state it so the choice is auditable)
 
