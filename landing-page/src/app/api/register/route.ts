@@ -7,7 +7,7 @@ const ADMIN_PASSWORD = process.env.MINIFLUX_ADMIN_PASSWORD || "admin_password";
 // The one list of starter feeds is panfleto-core's feeds.json (internal/ui/static/bin/feeds.json).
 // The reader embeds it and serves it with its other static assets, so signup reads it from there
 // rather than keeping a copy that drifts. The checksum path segment only drives caching.
-const FEEDS_JSON_URL = `${MINIFLUX_API_URL.replace(/\/v1\/?$/, "")}/icon/feeds/feeds.json`;
+const FEEDS_JSON_URL = new URL("/icon/feeds/feeds.json", MINIFLUX_API_URL).toString();
 
 type SuggestedFeed = { url: string; title: string; category: string; starter: boolean };
 
@@ -16,7 +16,9 @@ async function loadStarterFeeds(): Promise<SuggestedFeed[]> {
     const res = await fetch(FEEDS_JSON_URL, { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const feeds = (await res.json()) as SuggestedFeed[];
-    return feeds.filter((feed) => feed.starter);
+    const starters = feeds.filter((feed) => feed.starter);
+    if (starters.length === 0) console.error(`No starter feeds in ${FEEDS_JSON_URL}`);
+    return starters;
   } catch (e) {
     console.error(`Failed to load starter feeds from ${FEEDS_JSON_URL}:`, e);
     return [];
