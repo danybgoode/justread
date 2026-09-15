@@ -49,6 +49,10 @@ if echo "$changed" | grep -qE '^scripts/' && [ "$has_script_tests" = true ]; the
     echo "pre-push: scripts/ node:test failed — see output above." >&2
     fail=1
   fi
+  # AGENTS.md rule 2 — the same check guards.yml runs; here too, because main has no branch protection.
+  if ! node scripts/content-write-guard.mjs >&2; then
+    fail=1
+  fi
 fi
 
 # TEMPLATE FILL-IN — the derived-artifact freshness check, if your project has one. This is the

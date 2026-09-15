@@ -23,14 +23,20 @@ test.describe('paywall rail on a shared entry', () => {
 
     // Exactly one rail — an entry the old archive appender touched would show a second one in its content.
     expect(html.match(/Paywall Bypass/g) ?? []).toHaveLength(1)
-    expect(html).not.toContain('txtify.it')
-    expect(html).not.toContain('web.archive.org')
 
-    const rail = html.slice(html.indexOf('class="entry-archive-link"'))
-    const hrefs = [...rail.matchAll(/<a href="([^"]+)"/g)].map((m) => m[1].replaceAll('&amp;', '&'))
-    const articleURL = hrefs[0].replace('https://archive.ph/newest/', '')
+    // The entry's real URL, from the title link — not from the rail being tested.
+    const title = html.match(/<h1[^>]*>\s*<a href="([^"]+)"/)
+    expect(title, 'entry title link').not.toBeNull()
+    const articleURL = title![1].replaceAll('&amp;', '&')
     expect(articleURL).toMatch(/^https?:\/\//)
-    expect(hrefs.slice(0, 3)).toEqual([
+
+    const start = html.indexOf('class="entry-archive-link"')
+    expect(start, 'rail container').toBeGreaterThan(-1)
+    const rail = html.slice(start, html.indexOf('</div>', start)) // the link group, before Save Panflo
+    expect(rail).not.toContain('txtify.it')
+    expect(rail).not.toContain('web.archive.org')
+    const hrefs = [...rail.matchAll(/<a href="([^"]+)"/g)].map((m) => m[1].replaceAll('&amp;', '&'))
+    expect(hrefs).toEqual([
       `https://archive.ph/newest/${articleURL}`,
       `https://archive.is/newest/${articleURL}`,
       `https://unwall.app/${articleURL.replace(/^https?:\/\//, '')}`,

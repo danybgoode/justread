@@ -1,6 +1,6 @@
 // FIXTURE — never run. The deleted scripts/archive_appender.js, verbatim below this header, kept so
 // content-write-guard.test.mjs proves the guard catches the exact write that rule 2 exists to stop.
-// scripts/fixtures/ is skipped by the guard's own scan.
+// Stored as .txt so nothing can execute it and the guard's own scan does not flag it.
 
 const axios = require('axios');
 
