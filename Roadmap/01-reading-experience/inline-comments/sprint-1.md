@@ -6,6 +6,9 @@
 >
 > - **S1 deliberately needs no cache decision.** HN's Algolia API is generous and unauthenticated, so
 >   this sprint ships without touching D1. Do **not** add a table here.
+> - **Locked 2026-09-15:** D2 nests to 5 levels and 300 comments. D3 answers 502 with a fragment holding the
+>   outbound link. D5 shows the panel only for HN item URLs, to signed-in readers. D6 renders with the package's
+>   own template, uses existing classes, and inserts through one shared Trusted Types policy.
 > - **`internal/reader/sanitizer` is not optional.** Every comment body, every time.
 > - **Copy the enclosures pattern** in `entry.html` for the lazy `<details>` panel rather than
 >   inventing a new one — it already handles the "entry doesn't have this" case for free.

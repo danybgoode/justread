@@ -4,6 +4,9 @@
 
 > **Build contract (locked by the architect before the builder started)**
 >
+> - **Locked 2026-09-15:** D1 is an in-process TTL cache (10 min, 128 threads), with no migration, so this sprint
+>   needed no escalation. **Story 2.2 (Reddit) is cut by the product owner**; see the epic README's D4 for
+>   the evidence. The sprint ships 2.1 alone.
 > - **D1 must be decided before this sprint starts.** Migration, in-process cache, or side schema.
 >   If the answer is "a migration", this sprint is **escalated to the product owner and does not
 >   start** until they have approved it — `AGENTS.md` rule 3.
@@ -29,7 +32,11 @@ re-hit a rate-limited API and the feature doesn't take itself down.
 
 **Risk:** high
 
-### Story 2.2 — Reddit threads, rate-limit aware
+### ~~Story 2.2 — Reddit threads, rate-limit aware~~ — CUT 2026-09-15 (product owner)
+
+> From the VM: `.json` returned 403, RSS returned 429 after three calls, and 3 of 4 production Reddit feeds already
+> fail to poll. Reddit entries carry no comments URL. The only path left was a Reddit OAuth app, a new
+> production secret, and the product owner chose to cut the story instead.
 **As a** reader of the Reddit feeds, **I want** those threads inline too, **so that** the four
 Reddit-adjacent categories in the starter set stop sending me out to a browser tab.
 
