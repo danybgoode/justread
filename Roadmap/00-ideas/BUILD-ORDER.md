@@ -12,7 +12,7 @@
 
 ## 🏗️ Building now (1)
 
-- [Put panfleto-core back on upstream's timeline](../../09-platform-infra/miniflux-upstream-resync/README.md) — 09 Platform-infra · 0/9 stories · risk: High · wave-2026-09-panfleto
+- [Put panfleto-core back on upstream's timeline](../../09-platform-infra/miniflux-upstream-resync/README.md) — 09 Platform-infra · 3/9 stories · risk: High · wave-2026-09-panfleto
 
 ## 📋 Ready to build (scaffolded, not started) (0)
 
