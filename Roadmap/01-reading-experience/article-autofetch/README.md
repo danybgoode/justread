@@ -70,6 +70,22 @@ IP). Builders cite these, they don't re-derive them.
 | **D7** | **Automatic fetches only replace content that gets longer.** The Download button keeps today's rule (any non-empty result replaces) | The guard against "some feeds scrape worse than their RSS" that costs no column. The per-feed opt-out is the existing `crawler` checkbox (2.1) |
 | **D8** | **The fetch-state note is hardcoded English**, like the rail beside it. "Fetching…" reuses the translated `entry.state.loading` | Miniflux's printer has no fallback: a missing key renders as the key itself, and `TestMissingTranslations` requires a new key in all 23 locale files. That would be rebase tax on 23 upstream files for one sentence |
 
+**Review-driven deviations, decided 2026-09-15.** The fresh reviewer's findings on PR #10:
+- **Fixed.** A forced refresh re-queues every rewritten entry, not only new ones. Block and keep rules re-run on
+  prefetched content, and a match is marked read (upstream drops the entry, but this one is already stored).
+  The unwall step paces calls 500 ms apart instead of holding a lock across the request, so the Download
+  button never waits behind a worker. A feed with credentials or a cookie never reaches the fallback, so
+  article-link tokens stay private. Recovery is capped at the queue size and logs one line. The chain logs
+  at Debug when no fallback is configured.
+- **Accepted, with the reason.** (a) **Integrations get the feed's content.** Webhooks, Wallabag and the rest
+  fire when an entry is stored, before the worker fetches it. panfleto has 0 integrations configured in
+  production, and moving the push would mean patching `integration/`. (b) **`FORCE_CRAWLER` applies to
+  full-content feeds too**, so a short post on a full-text feed costs one direct scrape and, if still thin, one
+  unwall call. D7 means the content never gets worse. The volume is inside A4's measured 47.6/h, because the
+  backfill (D5) left full-content feeds off, and only feeds added after deploy take the default. (c) **A burst
+  from one host can occupy both workers**, because they wait in the host gate. The delay is 2 s, and the next
+  sprint's measurements decide whether it needs a per-host queue.
+
 **Fork delta (rule 1).** New files: `internal/reader/autofetch/` and `internal/reader/prefetch/` (code +
 tests). Upstream files touched for the first time: `config/options.go`, `reader/handler/handler.go`,
 `reader/processor/processor.go` and `cli/daemon.go`. `entry.html`, `add_subscription.html` and `view/view.go`
