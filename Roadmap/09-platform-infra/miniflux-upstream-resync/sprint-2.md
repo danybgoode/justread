@@ -117,9 +117,30 @@ sync in S3 has zero backlog to work through on its first run.
 **Acceptance:**
 - `git rebase upstream/main` completes; `git log --oneline upstream/main..panfleto` lists **only**
   the five panfleto topic commits — that single command is the whole proof of this epic
+  *(fresh review on #3: that command also passes at hop 1, since v2.3.3 is an ancestor of main. The
+  proof is the pair: `git rev-list --count panfleto..upstream/main` = **0** at the time of the rebase,
+  **and** the five-commit log — plus `panfleto` actually moved to the hop-2 tip)*
 - Gate clean again; deployed; migrations applied; the smoke walkthrough passes again
 - The submodule pin in this repo is updated and committed
 - If anything here fights back, **stop and re-shape** rather than extending the appetite in flight
+
+**Result so far (2026-09-15):**
+- **Rebase.** `resync-hop1-v2.3.3` (`e219eb3d`) onto `upstream/main` `76889f08`: **no conflicts**. `range-diff`:
+  all five commits `=`. Tip `2ee92c9b`, tag `resync-hop2-main`. `rev-list --count 2ee92c9b..upstream/main` = 0.
+  The fresh reviewer's predicted `b3039d6c` conflict didn't happen: the panfleto table is a pure addition, and
+  upstream's seven new `aria-label`s are present.
+- **Gate.** `go build` / `vet` / `test ./...` exit 0.
+- **Auth.** `76889f08` rejects Basic auth when `DISABLE_LOCAL_AUTH` is set. The landing page signup uses Basic
+  auth (as admin, then as the new user). Production doesn't set it (variable *names* read from the VM), so
+  nothing breaks. **Latent trap recorded:** `deploy/oauth.env.example` now warns against setting it until
+  `/api/register` uses an API key. The MCP route uses `X-Auth-Token`, and onboarding is in-process, so both
+  are unaffected.
+- **Rehearsal on a restored production copy** (VM, throwaway containers): 130→134 boot, 133–134 in 0.45 s;
+  the hop-1 upsert 42P10 at 134, hop-2 upsert `INSERT 0 0`; the README's hop-2 down-SQL as a file 134→132 in
+  0.25 s → the hop-1 upsert works, the hop-1 image boots, and the hop-2 image rolls forward again; hop-2
+  `/healthcheck` 200.
+- **Deploy step not to forget:** move `panfleto` on the fork to `2ee92c9b` (force-with-lease from `e219eb3d`),
+  so `.gitmodules`' `branch = panfleto` and S3's sync start from hop 2.
 
 **Risk:** high
 
