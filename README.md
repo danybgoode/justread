@@ -63,9 +63,13 @@ keeps running unchanged once the introductory trial expires. **Total cost: $0.**
 
 ## Repository layout
 
+`panfleto-core` is a **git submodule**. Clone with `git clone --recurse-submodules`, or run
+`git submodule update --init --recursive` after a plain clone — otherwise `panfleto-core/` is empty
+and the reader image fails to build.
+
 ```
 deploy/           Oracle Cloud provisioning + the running stack (see deploy/README.md)
-panfleto-core/    Miniflux fork — the reader itself
+panfleto-core/    Miniflux fork — the reader itself (git submodule → danybgoode/panfleto-core)
 landing-page/     Next.js landing page, signup API, and MCP server
 scripts/          Feed enhancement utilities
 ```
