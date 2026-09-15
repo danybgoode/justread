@@ -1,6 +1,6 @@
 # Put panfleto-core back on upstream's timeline — Sprint 3: Shrink the delta and automate the sync
 
-**Status:** ✅ merged + deployed — #4 (`26400f3`), final pin `804e6dfc` (tag `resync-done`) via #5 (`777c3c0`), deployed 03:01 UTC
+**Status:** ✅ merged + deployed — #4 (merged `26400f3` 02:42 UTC, `update.sh` done 02:44), final pin `804e6dfc` (tag `resync-done`) via #5 (merged `777c3c0` 03:01, `update.sh` done 03:02)
 
 > **Architect's correction (2026-09-15):** this sprint's scaffold was written from the tree before the S2
 > rebases, and four of its claims don't hold. The corrected shape is **README D13**, and the stories below
@@ -69,7 +69,7 @@ on its own.
 The `cspNonce` in `internal/ui/view/view.go` exists for exactly one reason: the inline `<script>` at
 `add_subscription.html:351` needs the same nonce `layout.html` put in the CSP header, and calling
 upstream's `nonce` function again would produce a different one. Story 3.1 deletes that inline
-script. So this story is a deletion, not a rewrite — and it takes the delta from 12 files to **9**.
+script. So this story is a deletion, not a rewrite — ~~and it takes the delta from 12 files to **9**~~ *(D13: the files stay, smaller — `view.go` becomes the `feeds.json` loader)*.
 
 **Acceptance:**
 - ~~`internal/ui/view/view.go` is byte-identical to upstream's~~ → the nonce is gone from it, but it stays in the delta as the `feeds.json` loader (D13)

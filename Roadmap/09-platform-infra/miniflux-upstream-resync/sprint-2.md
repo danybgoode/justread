@@ -76,7 +76,7 @@ git rebase v2.3.3
 - The product-owner smoke walkthrough below passes end to end
 - **Then stop.** Live on 2.3.3 for a few days before 2.3. *(Re-shaped by README D11: bounded by evidence, not by the calendar.)*
 
-**Result so far (2026-09-15):**
+**Result (2026-09-15):**
 - **Rebase.** `panfleto` → `c1b100fe` (tag `resync-hop1-v2.3.3`). **Scope correction:** the build contract's
   "conflicts only in the three named files" was incomplete. `aa509b88` is the named `layout.html` commit, but it also
   **deleted five favicon PNGs** that the branding commit modifies (modify/delete conflicts) and switched the browser
@@ -129,7 +129,7 @@ sync in S3 has zero backlog to work through on its first run.
 - The submodule pin in this repo is updated and committed
 - If anything here fights back, **stop and re-shape** rather than extending the appetite in flight
 
-**Result so far (2026-09-15):**
+**Result (2026-09-15):**
 - **Rebase.** `resync-hop1-v2.3.3` (`e219eb3d`) onto `upstream/main` `76889f08`: **no conflicts**. `range-diff`:
   all five commits `=`. Tip `2ee92c9b`, tag `resync-hop2-main`. `rev-list --count 2ee92c9b..upstream/main` = 0.
   The fresh reviewer's predicted `b3039d6c` conflict didn't happen: the panfleto table is a pure addition, and

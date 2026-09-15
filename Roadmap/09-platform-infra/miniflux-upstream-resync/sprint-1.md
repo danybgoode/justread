@@ -1,6 +1,6 @@
 # Put panfleto-core back on upstream's timeline — Sprint 1: Re-root panfleto-core on upstream
 
-**Status:** ✅ merged (#1, `27fe3b6`) + deployed — production built from the submodule 2026-09-15 01:00 UTC
+**Status:** ✅ merged (#1, `27fe3b6`, 01:00 UTC) + deployed — production built from the submodule, `update.sh` done 01:03 UTC 2026-09-15
 
 **Commits:** `danybgoode/panfleto-core@panfleto` — `b6328685` branding · `79a64310` onboarding ·
 `b3a715da` MCP panel · `3771bd33` link rail · `bdf23f75` CSP nonce (tag `pre-resync`).
@@ -114,7 +114,7 @@ then run the new script:**
 `cd /opt/panfleto && git fetch origin && git reset --hard origin/main && deploy/update.sh`.
 Every later run is normal.
 
-### Deployed (2026-09-15 01:00 UTC, merge `27fe3b6`)
+### Deployed (2026-09-15, merge `27fe3b6` at 01:00 UTC, `update.sh` finished ~01:03)
 Reset-first runbook as above, then `update.sh` (2 m 15 s). `git -C /opt/panfleto submodule status` → `bdf23f75
 (pre-resync)`; `schema_version` 130 → 130 (no migrations); `/healthcheck` 200, sign-in page "Sign In - panfleto",
 `miniflux -version` `2.2.x-dev` — unchanged, as S1 promised. The empty `panfleto-core.vendored-*` directory the guard

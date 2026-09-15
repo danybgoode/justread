@@ -6,7 +6,7 @@ read.
 The landing page and its copy, registration and Auth0 SSO, the starter feeds a new account arrives
 with, the welcome email and signup notification, and feed discovery on the subscribe page.
 
-The promise this domain keeps is **no empty screen**: a brand-new account opens onto 13 categorised
+The promise this domain keeps is **no empty screen**: a brand-new account opens onto 16 categorised
 feeds with articles in them, not an onboarding wizard.
 
 ## Current features

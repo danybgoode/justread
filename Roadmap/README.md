@@ -60,7 +60,7 @@ independently shippable slice of value.
 - ✅ Landing page and one-click signup at `panfleto.win`
 - ✅ Auth0 SSO (opt-in via `deploy/oauth.env`) with password login as the fallback
 - ✅ 16 starter feeds across Tech · News · Business · Comics · Culture · Podcasts, categorised on arrival — the same set for password and Auth0 signups, from one `feeds.json`
-- ✅ Welcome email (Resend) and a Telegram ping on every signup
+- 🚧 **Welcome email (Resend) and a Telegram ping** — sent for password signups (the landing page); **not for Auth0 signups**, because the reader's onboarding code never receives `RESEND_API_KEY`/`TELEGRAM_BOT_TOKEN` (compose passes them only to `landing`)
 - ✅ Suggested-feeds gallery on the subscribe page — 23 feeds from the same `feeds.json`, Quick Add and Review with no inline script (no CSP violations)
 - 🚧 **Onboarding is fire-and-forget** — provisioning runs in an unsupervised goroutine with no timeout, retry or error surfacing; a partial feed list is invisible
 
@@ -75,7 +75,8 @@ independently shippable slice of value.
 - ✅ Nightly `pg_dump` to OCI Object Storage via instance principal (no API keys on the host), 30-day expiry
 - ✅ Ways-of-working scaffolding: `Roadmap/`, `AGENTS.md`, local-first git hooks, the guards workflow
 - ✅ **Miniflux fork sync** — `panfleto-core` is a real fork (`danybgoode/panfleto-core`, a submodule here) sitting on upstream `main` plus six panfleto topic commits; every migration and its rollback rehearsed on a restored copy of production
-- ✅ **Weekly upstream sync** — a scheduled workflow on the fork rebases onto `miniflux/v2` `main` and builds: quiet when there's nothing to do, a PR when clean, an issue naming the file when it conflicts; `accept` tags the old tip first
+- ✅ **Upstream sync workflow** — on the fork: rebases onto `miniflux/v2` `main` and runs `go build`/`vet`/`test`; quiet when there's nothing to do, a PR when clean and green, an issue naming the conflicting file or failed step otherwise; `accept` refuses a moved base and tags the old tip first. Every path observed on real runs
+- 🚧 **…on a weekly schedule** — cron Mon 06:17 UTC is configured; the first scheduled run has not been observed yet
 - 🚧 **Feed categorisation and ad filtering** — runs, but the block rule's unanchored `ad`/`deal`/`sale` stems silently drop legitimate articles
 - ❌ **No CI build** — `update.sh` compiles Go on the production VM; a compile error takes the reader down and there is no artifact to roll back to
 - ❌ **Content mutation in production** — a GitHub Action rewrites `entries.content` every 3 hours
@@ -84,7 +85,7 @@ independently shippable slice of value.
 
 ## Recent highlights
 
-- **2026-09-15** — `miniflux-upstream-resync`: the reader moved from a pasted-in Miniflux 131 commits behind to upstream `main`, in two rehearsed hops, with no user-visible change beyond a cleaner subscribe page. `panfleto-core` is now a real fork with a weekly rebase-and-PR workflow, four copies of the starter-feed list became one `feeds.json`, and the CSP nonce patch is gone.
+- **2026-09-15** — `miniflux-upstream-resync`: the reader moved from a pasted-in Miniflux 131 commits behind to upstream `main`, in two rehearsed hops, with no user-visible change beyond a cleaner subscribe page. `panfleto-core` is now a real fork with a weekly rebase-and-PR workflow, three copies of the starter-feed list became one `feeds.json`, and the CSP nonce patch is gone.
 - **2026-09-14** — `ways-of-work-bootstrap`: panfleto adopted the dobby-foundation operating system — `Roadmap/`, `AGENTS.md` with five cannot-be-violated rules, the guards workflow and local-first hooks. First full audit of the Miniflux fork landed with it: the delta is 12 files, the fork point is `06e36c3e`, and there are zero custom migrations.
 
 ## License

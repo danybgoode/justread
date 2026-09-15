@@ -8,14 +8,14 @@ _Closed: 2026-09-15_
 archaeology project.** Production went from a pasted-in copy 131 commits and three releases behind, with no
 merge base, to `miniflux/v2` `main` (`76889f08`) plus six named panfleto commits. The four months of upstream
 fixes it had missed are live, including the username-timing fix, the OAuth identity-field fix and
-`DISABLE_LOCAL_AUTH` enforcement on the API. Nothing a reader sees changed except the subscribe page, which
-lost 20 CSP violations and gained six suggestions.
+`DISABLE_LOCAL_AUTH` enforcement on the API. What a reader sees barely changed: the subscribe page lost 20 CSP violations
+and gained six suggestions, and new Auth0 accounts now start with the same 16 feeds as password signups (13 before).
 
-| Sprint | What's now true | PR · merge · deployed |
+| Sprint | What's now true | PR · merge (UTC merge time; `update.sh` followed within ~3 min) |
 |---|---|---|
 | S1 · Re-root | `danybgoode/panfleto-core` is a real fork: `upstream` remote, `panfleto` rooted at `06e36c3e`, the delta replayed as five topic commits, byte-identical to the vendored tree. Wired in as a submodule; `update.sh` initialises it | #1 · `27fe3b6` · 2026-09-15 01:00 UTC |
 | S2 · Rebase forward | S2.1: a bucket dump restored and verified *before* any deploy. Hop 1 → v2.3.3 (migrations 131–132), soaked through a full refresh cycle. Hop 2 → `upstream/main` (133–134). Both hops' migrations **and their rollbacks** rehearsed on a restored production copy on the VM | #2 · `6c53c96` · 01:36 · #3 · `02e065c` · 02:39 |
-| S3 · Shrink + automate | One `feeds.json` replaces four lists (Go onboarding, the subscribe-page table, the landing signup, the categoriser). The subscribe page is a no-JS loop, so the CSP nonce patch is gone. The weekly `panfleto upstream sync` workflow is observed on every path | #4 · `26400f3` · 02:42 · #5 · `777c3c0` · 03:01 |
+| S3 · Shrink + automate | One `feeds.json` replaces three lists (Go onboarding, the subscribe-page table, the landing signup), and the categoriser reads it too. The subscribe page is a no-JS loop, so the CSP nonce patch is gone. The weekly `panfleto upstream sync` workflow is observed on every path | #4 · `26400f3` · 02:42 · #5 · `777c3c0` · 03:01 |
 
 The proof, as the pitch promised: `git rev-list --count panfleto..upstream/main` = 0, and
 `git log --oneline upstream/main..panfleto` lists exactly the six topic commits. Deployed pins are all tagged:
@@ -28,7 +28,8 @@ The proof, as the pitch promised: `git rev-list --count panfleto..upstream/main`
   `/about` can't report 2.3.3 from a git-less Docker build (D9); `/about` isn't anonymous; "delta 12 → 9" was
   unreachable while keeping D4 (D13). Each correction is written into the README, not rediscovered mid-build.
 - **Rehearsing on a restored copy of production, on the production host,** made the one irreversible part of the
-  epic boring: every migration ran first on real data (0.12–0.45 s), and no production data left the VM.
+  epic boring: every migration ran first on real data (hop 1's 131–132 cleanly; hop 2's 133–134 in 0.45 s) and every rollback
+  down-SQL too (0.12 s and 0.25 s), and no production data left the VM.
 - **The fresh reviewer subagent was the review layer that found real bugs, four times over:** the first `update.sh`
   run executing the *old* script, the rollback that looks green but breaks every enclosure write, `GITHUB_TOKEN`
   being unable to push workflow-file changes, and an `accept` race. The external passes mostly re-reviewed the
@@ -75,6 +76,10 @@ The proof, as the pitch promised: `git rev-list --count panfleto..upstream/main`
 - **Upstream's dependabot still runs on the fork** and will open bump PRs weekly/monthly; they should be closed
   (bumps arrive through the rebase). Disabling it needs a repo setting or a delta file — not done.
 - **The first *scheduled* sync run** (Monday 06:17 UTC) is still to be observed; every path was observed on dispatch.
+  No scheduled workflow has fired on the fork yet at all (upstream's `stale.yml` didn't run at 02:00 either), so watch
+  for GitHub's delay in activating schedules on a new repository.
+- **Upstream's `stale.yml` also runs on the fork** (no owner guard): an open PR goes stale after 60 days and closes 14 days
+  later. A weekly-refreshed sync PR should stay fresh; noted, not changed (it would be delta).
 
 **Pre-existing, surfaced by reviews, deliberately not changed here (rule 1 / out of scope):**
 - `/integrations` still carries 4 CSP violations (the MCP panel's inline styles and `onclick`).
