@@ -73,6 +73,35 @@ one-liner + why + date shape.
   re-derive actual file state directly (grep the real repo) and run the language's type-checker/build
   before treating the batch as complete.
 
+## Working with a vendored fork
+*panfleto's reader is a Miniflux fork. These are the rules that fall out of that, and they generalise
+to any project carrying someone else's codebase.*
+
+- **Reconstruct a vendored fork's base by blob-matching, never by dates.** (2026-09-14, the fork
+  audit) A pasted-in copy has no merge base, so "when was this forked" has no git answer. What works:
+  hash a file upstream changes often (`go.mod`), search upstream history for that blob to get a
+  rough window, then minimise whole-tree diff across candidate commits in that window. It found
+  `06e36c3e` exactly — and the naive date-based guess was off by three commits and 9 files, which
+  would have meant replaying upstream's own code as "our patches".
+- **Before replaying a patch, check whether upstream already has it.** (2026-09-14) Two of panfleto's
+  apparent customisations were upstream's: a disabled cross-origin middleware (upstream's own revert,
+  at the fork point itself) and an index-dropping migration (upstream's `bdd7f4f3`). Replaying either
+  creates a conflict against identical code. *Why it matters:* the delta you think you have is always
+  bigger than the delta you actually have, and the difference is pure wasted rebase pain.
+- **Find out what a local patch is a workaround FOR before carrying it forward.** (2026-09-14) The
+  `cspNonce` patch looked like a security change. It exists solely so one inline `<script>` can share
+  the nonce the CSP header used — delete the feature that needs that script and the patch deletes
+  itself, taking three of twelve delta files with it. *Why it matters:* patches carried without
+  understanding compound; one understood patch removed a quarter of the fork.
+- **`schemaVersion = len(migrations)` means a custom migration is a permanent conflict.** (2026-09-14)
+  When upstream appends to the same slice, a migration you own at index N collides at every rebase,
+  and wrong ordering on a deployed DB is unrecoverable without a restore. Zero custom migrations is
+  a property worth protecting, not an accident. See `AGENTS.md` rule 3.
+- **Every file you add to a fork is rebase tax paid forever.** (2026-09-14) Exhaust config options,
+  per-entity settings, a repo-local script against the upstream API, and an upstream PR *before*
+  patching. The delta count belongs in the project's rules as a number, so growing it is a visible
+  decision rather than a drift.
+
 ## Tooling gotchas
 - **A script with a co-located pure-logic test file MUST guard its `main()` call with an `isMain`
   check.** Importing a script that calls `main()` unconditionally at module scope re-executes the
@@ -157,6 +186,19 @@ one-liner + why + date shape.
   the artifact mode stateless.** Reusing a stateful window/log rail for an on-demand report mode risks
   silently advancing state a scheduled run depends on — keep on-demand modes explicitly
   non-state-mutating and lock that with a test.
+
+- **A copy-once template clobbers same-named files — diff before you trust the copy.** (2026-09-15,
+  the ways-of-work bootstrap) `cp -R template/. .` silently replaced the project's `README.md` with
+  the template's. `git diff --stat` caught it; nothing else would have. Check `.gitignore` too — if
+  the template ships one, the project's is the one carrying the secret exclusions.
+- **A silent enum fallback makes drift undetectable exactly where it matters.** (2026-09-15) Two live
+  examples in the shared tooling, both found by reading rather than by a failure:
+  `roadmap-to-notion.mjs`'s `TYPE_LABEL` has no `bug`, so every bug renders as a Feature, while
+  `scaffold-epic.mjs` validates against a list that includes it; and `BUILD-ORDER.md`'s funnel sorts
+  by `priority`, never by `build_order`, so the board's order is not the agreed order. *The rule:*
+  when two scripts share an enum, one validating and one labelling, they drift — and the labelling
+  one fails silently. Report upstream to `dobby-foundation` rather than patching in one consuming
+  project; a fork of a shared script is the drift the plugin exists to prevent.
 
 ## Working efficiently
 - **Running a whole multi-sprint epic in one session is the main context-cost driver.** The durable
