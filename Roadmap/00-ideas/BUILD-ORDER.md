@@ -10,17 +10,17 @@
 > funnel), then run `node scripts/build-order.mjs`. This board and the Notion "Marketplace Roadmap"
 > DB are both *derived views* — never hand-edit the board.
 
-## 🏗️ Building now (1)
+## 🏗️ Building now (0)
 
-- [Put panfleto-core back on upstream's timeline](../../09-platform-infra/miniflux-upstream-resync/README.md) — 09 Platform-infra · 3/9 stories · risk: High · wave-2026-09-panfleto
+_None._
 
 ## 📋 Ready to build (scaffolded, not started) (0)
 
 _None._
 
-## ✅ Shipped (0)
+## ✅ Shipped (1)
 
-_None._
+- [Put panfleto-core back on upstream's timeline ✅](../../09-platform-infra/miniflux-upstream-resync/README.md) — 09 Platform-infra · 9/9 stories · risk: High · wave-2026-09-panfleto
 
 ## ⬜ Funnel — seeds not yet scaffolded (9)
 

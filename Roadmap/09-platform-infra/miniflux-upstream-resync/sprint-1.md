@@ -1,6 +1,6 @@
 # Put panfleto-core back on upstream's timeline — Sprint 1: Re-root panfleto-core on upstream
 
-**Status:** 🚧 built + gate green locally — PR open, deploy pending (the story is done when production runs from the submodule)
+**Status:** ✅ merged (#1, `27fe3b6`, 01:00 UTC) + deployed — production built from the submodule, `update.sh` done 01:03 UTC 2026-09-15
 
 **Commits:** `danybgoode/panfleto-core@panfleto` — `b6328685` branding · `79a64310` onboarding ·
 `b3a715da` MCP panel · `3771bd33` link rail · `bdf23f75` CSP nonce (tag `pre-resync`).
@@ -23,7 +23,7 @@ Superproject: `9bda168` (submodule wiring + `update.sh`).
 
 ## Stories
 
-### Story 1.1 — A real fork with real history
+### Story 1.1 — A real fork with real history ✅
 **As a** maintainer, **I want** `panfleto-core` to be a git fork of `miniflux/v2` with an `upstream`
 remote, **so that** syncing becomes a rebase instead of an archaeology project.
 
@@ -48,7 +48,7 @@ replayed on top of it.
 
 **Risk:** high
 
-### Story 1.2 — The delta replayed as five topic commits
+### Story 1.2 — The delta replayed as five topic commits ✅
 **As a** maintainer, **I want** panfleto's 12 changed files committed one concern at a time on top of
 the real fork point, **so that** a conflict six months from now names the feature it belongs to
 instead of landing in an unreadable blob.
@@ -81,7 +81,7 @@ whole `add_subscription.html` table, since its inline script is the nonce's only
 
 **Risk:** high
 
-### Story 1.3 — Wired back in as a submodule
+### Story 1.3 — Wired back in as a submodule ✅
 **As a** maintainer, **I want** this repo to reference `panfleto-core` as a submodule pinned at a SHA,
 **so that** rolling the reader back is moving one pointer rather than reverting a merge.
 
@@ -114,6 +114,12 @@ then run the new script:**
 `cd /opt/panfleto && git fetch origin && git reset --hard origin/main && deploy/update.sh`.
 Every later run is normal.
 
+### Deployed (2026-09-15, merge `27fe3b6` at 01:00 UTC, `update.sh` finished ~01:03)
+Reset-first runbook as above, then `update.sh` (2 m 15 s). `git -C /opt/panfleto submodule status` → `bdf23f75
+(pre-resync)`; `schema_version` 130 → 130 (no migrations); `/healthcheck` 200, sign-in page "Sign In - panfleto",
+`miniflux -version` `2.2.x-dev` — unchanged, as S1 promised. The empty `panfleto-core.vendored-*` directory the guard
+created was removed by hand. **Owed to the product owner:** walkthrough steps 3–5 signed in (look and feel unchanged).
+
 ## Sprint QA
 - **api spec(s):** none new — this sprint changes no behaviour, so a spec asserting behaviour would
   assert nothing. The gate here is the **build from a fresh submodule clone**, which is the thing
@@ -125,7 +131,7 @@ Every later run is normal.
   is local, and the PR body says so.
 
 ## Sprint 1 — Smoke walkthrough (do these in order)
-Env: local · `http://localhost:8080` (S1 does not deploy to production)
+Env: local · `http://localhost:8080` for steps 1–6 as written; in production the same checks are steps 3–6 at `https://app.panfleto.win` (S1 did deploy — identical code, new source of truth)
 
 1. In a **fresh empty directory**, run `git clone <this repo> && cd <repo> && git submodule update --init --recursive`.
    → `panfleto-core/` is populated, not empty.

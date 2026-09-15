@@ -1,6 +1,6 @@
 # Put panfleto-core back on upstream's timeline — Sprint 2: Rebase forward to main
 
-**Status:** 🚧 in progress — 2.1 ✅ · ✅ complete — 2.1 ✅ · 2.2 ✅ (#2, `6c53c96`, soaked) · 2.3 ✅ (#3, `02e065c`)
+**Status:** ✅ merged + deployed — 2.1 ✅ · 2.2 ✅ (#2, `6c53c96`, soaked per D11) · 2.3 ✅ (#3, `02e065c`)
 
 > **Build contract (locked by the architect before the builder started)**
 >
@@ -27,7 +27,7 @@
 
 ## Stories
 
-### Story 2.1 — A restore that has actually been restored
+### Story 2.1 — A restore that has actually been restored ✅
 **As the** product owner, **I want** proof that last night's backup restores before anything is
 deployed, **so that** the one irreversible part of this epic has a way back.
 
@@ -58,7 +58,7 @@ D7: the pre-rebase SHA `bdf23f75` is recorded in the README's *Rollback* section
 
 **Risk:** high
 
-### Story 2.2 — Rebase to v2.3.3, deploy, verify
+### Story 2.2 — Rebase to v2.3.3, deploy, verify ✅
 **As a** reader, **I want** panfleto running a current released Miniflux, **so that** I get four
 months of upstream fixes — including the ones to the authentication paths panfleto uses.
 
@@ -76,7 +76,7 @@ git rebase v2.3.3
 - The product-owner smoke walkthrough below passes end to end
 - **Then stop.** Live on 2.3.3 for a few days before 2.3. *(Re-shaped by README D11: bounded by evidence, not by the calendar.)*
 
-**Result so far (2026-09-15):**
+**Result (2026-09-15):**
 - **Rebase.** `panfleto` → `c1b100fe` (tag `resync-hop1-v2.3.3`). **Scope correction:** the build contract's
   "conflicts only in the three named files" was incomplete. `aa509b88` is the named `layout.html` commit, but it also
   **deleted five favicon PNGs** that the branding commit modifies (modify/delete conflicts) and switched the browser
@@ -115,7 +115,7 @@ git rebase v2.3.3
 
 **Risk:** high
 
-### Story 2.3 — Rebase to upstream/main, deploy, verify
+### Story 2.3 — Rebase to upstream/main, deploy, verify ✅
 **As a** maintainer, **I want** the fork sitting directly on `upstream/main`, **so that** the weekly
 sync in S3 has zero backlog to work through on its first run.
 
@@ -129,7 +129,7 @@ sync in S3 has zero backlog to work through on its first run.
 - The submodule pin in this repo is updated and committed
 - If anything here fights back, **stop and re-shape** rather than extending the appetite in flight
 
-**Result so far (2026-09-15):**
+**Result (2026-09-15):**
 - **Rebase.** `resync-hop1-v2.3.3` (`e219eb3d`) onto `upstream/main` `76889f08`: **no conflicts**. `range-diff`:
   all five commits `=`. Tip `2ee92c9b`, tag `resync-hop2-main`. `rev-list --count 2ee92c9b..upstream/main` = 0.
   The fresh reviewer's predicted `b3039d6c` conflict didn't happen: the panfleto table is a pure addition, and
