@@ -8,8 +8,8 @@ git fetch origin
 git reset --hard origin/main
 
 # panfleto-core is a submodule pinned at a SHA (Roadmap/09-platform-infra/miniflux-upstream-resync).
-# A checkout that predates the submodule still has a plain directory there holding untracked build
-# leftovers, which `submodule update` refuses to clone over - move it aside once.
+# A checkout that predates the submodule can keep a plain directory there if it held untracked or
+# ignored files, and `submodule update` refuses to clone into it - move it aside once.
 if [ -d panfleto-core ] && [ ! -e panfleto-core/.git ]; then
   mv panfleto-core "panfleto-core.vendored-$(date +%Y%m%d%H%M%S)"
 fi
