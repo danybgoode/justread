@@ -1,6 +1,6 @@
 # Put panfleto-core back on upstream's timeline — Sprint 3: Shrink the delta and automate the sync
 
-**Status:** 🚧 built + gate green locally — deploys after S2 hop 2 (stacked)
+**Status:** ✅ deployed — #4 (`26400f3`), final pin `804e6dfc` (tag `resync-done`) in the close-out PR
 
 > **Architect's correction (2026-09-15):** this sprint's scaffold was written from the tree before the S2
 > rebases, and four of its claims don't hold. The corrected shape is **README D13**, and the stories below
@@ -114,6 +114,39 @@ conflict issue tells people to push the sync branch and `accept`, never `panflet
 skipping.
 
 **Risk:** low
+
+## Deployed + observed (2026-09-15)
+
+**S3 live (02:42 UTC, merge `26400f3`, `update.sh` 79 s, reader and landing both rebuilt):**
+- The fork's `panfleto` moved `2ee92c9b` → `0f4bbb68` (force-with-lease; tag `resync-s3`). Boot: `current_version=134
+  latest_version=134`, no error.
+- `npx playwright test --project=api` against production: **7 passed, 1 skipped**. `reader-health` 6/6, the anonymous
+  `feeds.json` test passes, and the signed-in half skips (production signs in through Auth0 — owed below).
+- `https://app.panfleto.win/icon/x/feeds.json` → 200. **Inside the running landing container**, the S3 code path
+  (`new URL("/icon/feeds/feeds.json", MINIFLUX_API_URL)`) reads **23 feeds, 16 starters `{Tech 5, News 4, Business 2,
+  Comics 1, Culture 1, Podcasts 3}`**. A real production signup was deliberately *not* made (it would send a real
+  welcome email and a Telegram ping); it is owed below.
+
+**3.3 — first runs observed on the fork (all dispatched by hand):**
+| Run | Branch | Outcome |
+|---|---|---|
+| `34922335174` | `panfleto` | ✅ **nothing to do**: step summary only, no PR or issue |
+| `34922354625`, `34922506020` | `sync-test` (at hop 1) | ❌ `gh pr create` failed. The first theory (a race with the just-pushed branch) was wrong. **Root cause: `gh` treats a git remote named `upstream` as the base repository, so the PR was being attempted on miniflux/v2.** Fixed by pinning `GH_REPO` to the fork. Nothing reached miniflux/v2 (verified: no issues or PRs by this account) |
+| `34922687492` | `sync-test` | ✅ **clean → PR #9**: pushed with `SYNC_TOKEN` a history whose upstream commits touch `.github/workflows` (so the D14 token is load-bearing, as reviewed), with the five topic commits, the 20 upstream commits and the `sync-base` marker |
+| `34922780206` | `sync-test`, `accept`, base moved on purpose | ✅ **refused**: `sync-test is 73353fb8… but the sync PR was built from e219eb3d…` |
+| `34922801410` | `sync-test`, `accept` | ✅ tagged `pre-sync-202609150252`, moved the branch to the sync branch, PR #9 closed as merged |
+| `34922841200` | `sync-conflict-test` (at `pre-resync`) | ✅ **conflict → issue #10** naming the five favicon PNGs and the stopping commit `b6328685` — the same real conflict hop 1 hit |
+
+The exercise surfaced one more gap, now fixed: after a *manual* conflict resolution there is no sync PR carrying a
+`sync-base`, so the conflict issue now spells out the PR-with-marker step before `accept`. The test branches,
+tag, PR and issue are deleted or closed. The close-out's fresh review then found two more small workflow issues,
+both fixed and re-exercised (runs `34923238409` sync → PR #11, `34923274846` accept → success): `accept` now comments
+before a tolerant close, because GitHub auto-marks the PR merged within a second of the force-push and a strict
+close raced it; and the conflict issue says to use the marker for the *current* base tip, editing an existing PR
+if there is one. **While doing this, the fork's `panfleto` was force-pushed four times** (`0f4bbb68` → `5cca1a72` →
+`ff677ff4` → `fa1046df` → `804e6dfc`), each an amend of the sixth commit. Only `0f4bbb68` was ever pinned or
+deployed, and it stays reachable as tag `resync-s3`. Final fork tip **`804e6dfc`** (tag `resync-done`) differs from
+the deployed `0f4bbb68` only in the workflow file; the close-out PR pins it and deploys.
 
 ## Sprint QA
 - **api spec(s):** `e2e/subscribe-suggestions.spec.ts` — anonymous where possible: assert the
