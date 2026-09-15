@@ -1,6 +1,6 @@
 # Put panfleto-core back on upstream's timeline — Sprint 2: Rebase forward to main
 
-**Status:** 🚧 in progress — 2.1 ✅ · 2.2 built, gate green, rehearsed against restored production data; deploy pending · 2.3 not started
+**Status:** 🚧 in progress — 2.1 ✅ · 2.2 deployed (#2, `6c53c96`), soaking per D11 · 2.3 built + rehearsed, PR pending the soak
 
 > **Build contract (locked by the architect before the builder started)**
 >
@@ -98,6 +98,15 @@ git rebase v2.3.3
   doesn't: `/about` 302s to sign-in. The spec asserts that redirect, plus `/v1/version` → 401 JSON.
 - **Local logged-in smoke at v2.3.3.** `/about` 2.3.x-dev, logo `panfleto`, MCP panel with a token URL, 17
   suggestions, the favicon renders the panfleto albatross, CSP counts identical to the D10 baseline (0/0/20/4/0).
+
+**Deployed to production (2026-09-15 01:36 UTC, `update.sh`, merge `6c53c96`):**
+- Build + restart **61 s**; the old container served throughout the build.
+- Boot log: `Running database migrations current_version=130 latest_version=132` → `Starting HTTP server`, no error.
+- `schema_version` **132**; `enclosures_user_entry_url_unique_idx` = `encode(sha256(url::bytea),'hex')`.
+- `git -C /opt/panfleto submodule status` → `e219eb3d (resync-hop1-v2.3.3)`; `miniflux -version` → `2.3.x-dev`.
+- `npx playwright test --project=api` against `https://app.panfleto.win` → **6/6**. `https://panfleto.win` → 200.
+- Log in the first 10 minutes: only the spec's own deliberate anonymous `/v1/version` 401. Nothing else above INFO.
+- **Soak (D11):** SOAK_RESULT_PENDING
 
 **Risk:** high
 
