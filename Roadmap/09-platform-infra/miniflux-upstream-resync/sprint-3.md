@@ -1,6 +1,6 @@
 # Put panfleto-core back on upstream's timeline — Sprint 3: Shrink the delta and automate the sync
 
-**Status:** ✅ deployed — #4 (`26400f3`), final pin `804e6dfc` (tag `resync-done`) in the close-out PR
+**Status:** ✅ merged + deployed — #4 (`26400f3`), final pin `804e6dfc` (tag `resync-done`) via #5 (`777c3c0`), deployed 03:01 UTC
 
 > **Architect's correction (2026-09-15):** this sprint's scaffold was written from the tree before the S2
 > rebases, and four of its claims don't hold. The corrected shape is **README D13**, and the stories below
@@ -21,7 +21,7 @@
 
 ## Stories
 
-### Story 3.1 — One feeds.json, three lists gone
+### Story 3.1 — One feeds.json, three lists gone ✅
 **As a** maintainer, **I want** every recommended feed listed in exactly one file, **so that** a dead
 feed is fixed once instead of three times and the fork stops carrying 240 lines of table markup that
 upstream also edits.
@@ -62,7 +62,7 @@ on its own.
 
 **Risk:** low
 
-### Story 3.2 — The nonce patch returned to upstream
+### Story 3.2 — The nonce patch returned to upstream ✅
 **As a** maintainer, **I want** `view.go` and `layout.html`'s nonce line back to upstream's version,
 **so that** the fork stops carrying a CSP patch it no longer needs.
 
@@ -85,7 +85,7 @@ longer mentions `cspNonce`. Chromium console, logged in, against D10's baseline:
 
 **Risk:** low
 
-### Story 3.3 — The weekly sync that makes this stick
+### Story 3.3 — The weekly sync that makes this stick ✅
 **As the** product owner, **I want** a weekly attempt to rebase onto upstream that tells me the
 result, **so that** panfleto is never four months behind again without anyone noticing.
 
@@ -147,6 +147,11 @@ if there is one. **While doing this, the fork's `panfleto` was force-pushed four
 `ff677ff4` → `fa1046df` → `804e6dfc`), each an amend of the sixth commit. Only `0f4bbb68` was ever pinned or
 deployed, and it stays reachable as tag `resync-s3`. Final fork tip **`804e6dfc`** (tag `resync-done`) differs from
 the deployed `0f4bbb68` only in the workflow file; the close-out PR pins it and deploys.
+
+**Hop-2 schema confirmed under real writes (2026-09-15 03:43 UTC, final pin `804e6dfc` live):** the hourly batch
+`Created a batch of feeds rows_count=46` ran on `schema_version` 134; since the hop-2 deploy **48 new entries and 43 new
+enclosures were written through the raw `sha256(url::bytea)` unique index**, with 0 ERROR and 0 `enclosure` log lines and
+feeds with parsing errors unchanged at 4. This closes the evidence sprint-2 2.3 deferred here.
 
 ## Sprint QA
 - **api spec(s):** `e2e/subscribe-suggestions.spec.ts` — anonymous where possible: assert the

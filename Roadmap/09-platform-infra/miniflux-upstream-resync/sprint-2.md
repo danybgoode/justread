@@ -1,6 +1,6 @@
 # Put panfleto-core back on upstream's timeline — Sprint 2: Rebase forward to main
 
-**Status:** 🚧 in progress — 2.1 ✅ · ✅ complete — 2.1 ✅ · 2.2 ✅ (#2, `6c53c96`, soaked) · 2.3 ✅ (#3, `02e065c`)
+**Status:** ✅ merged + deployed — 2.1 ✅ · 2.2 ✅ (#2, `6c53c96`, soaked per D11) · 2.3 ✅ (#3, `02e065c`)
 
 > **Build contract (locked by the architect before the builder started)**
 >
@@ -27,7 +27,7 @@
 
 ## Stories
 
-### Story 2.1 — A restore that has actually been restored
+### Story 2.1 — A restore that has actually been restored ✅
 **As the** product owner, **I want** proof that last night's backup restores before anything is
 deployed, **so that** the one irreversible part of this epic has a way back.
 
@@ -58,7 +58,7 @@ D7: the pre-rebase SHA `bdf23f75` is recorded in the README's *Rollback* section
 
 **Risk:** high
 
-### Story 2.2 — Rebase to v2.3.3, deploy, verify
+### Story 2.2 — Rebase to v2.3.3, deploy, verify ✅
 **As a** reader, **I want** panfleto running a current released Miniflux, **so that** I get four
 months of upstream fixes — including the ones to the authentication paths panfleto uses.
 
@@ -115,7 +115,7 @@ git rebase v2.3.3
 
 **Risk:** high
 
-### Story 2.3 — Rebase to upstream/main, deploy, verify
+### Story 2.3 — Rebase to upstream/main, deploy, verify ✅
 **As a** maintainer, **I want** the fork sitting directly on `upstream/main`, **so that** the weekly
 sync in S3 has zero backlog to work through on its first run.
 

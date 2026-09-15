@@ -1,10 +1,10 @@
 ---
-status: in-progress   # AUTHORITATIVE epic status (SSOT) — scaffolded | in-progress | shipped | archived. Set shipped at epic close.
+status: shipped   # AUTHORITATIVE epic status (SSOT) — scaffolded | in-progress | shipped | archived. Set shipped at epic close.
 slug: miniflux-upstream-resync
 build_order: 4
 ---
 
-# Epic: Put panfleto-core back on upstream's timeline
+# Epic: Put panfleto-core back on upstream's timeline ✅
 
 > **Area:** 09-platform-infra · **Risk:** high · **Class:** Chore · **Archetype:** Maintainer · **Scope seed:** [`00-ideas/seeds/miniflux-upstream-resync.md`](../../00-ideas/seeds/miniflux-upstream-resync.md)
 
@@ -176,6 +176,9 @@ and any "Panfleto MCP" API keys minted in that window, which silently breaks MCP
   file, delete a template block, add a workflow.
 - **Review is inverted** — the fresh reviewer subagent on the highest-risk PR (S2) runs on the
   strongest model.
+- **As run:** one orchestrating session on the strongest model built all three sprints (S3 was not handed to a
+  faster builder — its scaffold needed correcting first, D13), and **every** PR got a fresh reviewer subagent on the
+  strongest model, since the orchestrator was also the builder.
 
 ## Review & merge
 
@@ -194,12 +197,12 @@ Per `Roadmap/WAYS-OF-WORKING.md`. Specific to this epic:
   that in every PR body rather than letting a green badge imply more than it checked.
 
 ## Definition of Done (epic)
-- [ ] All sprints merged to `main` + smoke-tested (gaps stated)
-- [ ] Each `sprint-N.md` has its smoke walkthrough (real URLs)
-- [ ] This README marked ✅; every sprint status ticked with commit refs
-- [ ] `RETROSPECTIVE.md` written
-- [ ] Product poster (`Roadmap/README.md`) updated — the 09 section's "Miniflux fork sync" line goes 🚧 → ✅, and the 131-commits-behind claim is removed
-- [ ] Durable learnings promoted to `Roadmap/LEARNINGS.md` (dedupe — sharpen, don't append)
-- [ ] **Kill-switch:** carve-out, not a flag. Verify instead that the pre-rebase SHA is recorded above and that the S2.1 restore was actually performed
-- [ ] `AGENTS.md` rule 1's delta count updated from 12 to whatever S3 actually left
-- [ ] Feature branch deleted; **this README's frontmatter `status: shipped`** (run `node scripts/build-order.mjs`)
+- [x] All sprints merged to `main` + smoke-tested (gaps stated) — #1–#5; production smoke per sprint doc; credential-gated steps owed by name (RETROSPECTIVE *Gaps*)
+- [x] Each `sprint-N.md` has its smoke walkthrough (real URLs)
+- [x] This README marked ✅; every sprint status ticked with commit refs
+- [x] `RETROSPECTIVE.md` written
+- [x] Product poster (`Roadmap/README.md`) updated — the 09 section's "Miniflux fork sync" line goes 🚧 → ✅, and the 131-commits-behind claim is removed
+- [x] Durable learnings promoted to `Roadmap/LEARNINGS.md` (dedupe — sharpen, don't append)
+- [x] **Kill-switch:** carve-out, not a flag. The pre-rebase SHA is recorded above (`bdf23f75`, tag `pre-resync`), the S2.1 restore was actually performed (sprint-2), and each hop's rollback down-SQL was rehearsed on restored production data
+- [x] `AGENTS.md` rule 1's delta count updated from 12 to whatever S3 actually left — six topic commits, 12 code/template files + `feeds.json` + the sync workflow + 17 icons (D13)
+- [x] Feature branch deleted; **this README's frontmatter `status: shipped`** (run `node scripts/build-order.mjs`)

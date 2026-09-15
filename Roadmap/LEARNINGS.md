@@ -88,15 +88,27 @@ to any project carrying someone else's codebase.*
   at the fork point itself) and an index-dropping migration (upstream's `bdd7f4f3`). Replaying either
   creates a conflict against identical code. *Why it matters:* the delta you think you have is always
   bigger than the delta you actually have, and the difference is pure wasted rebase pain.
-- **Find out what a local patch is a workaround FOR before carrying it forward.** (2026-09-14) The
-  `cspNonce` patch looked like a security change. It exists solely so one inline `<script>` can share
-  the nonce the CSP header used — delete the feature that needs that script and the patch deletes
-  itself, taking three of twelve delta files with it. *Why it matters:* patches carried without
-  understanding compound; one understood patch removed a quarter of the fork.
+- **Find out what a local patch is a workaround FOR before carrying it forward — then count what its
+  replacement needs.** (2026-09-14, sharpened 2026-09-15 by the resync) The `cspNonce` patch existed
+  solely so one inline `<script>` could share the CSP header's nonce; replacing that script with a no-JS
+  template loop did retire the patch. But the promised "three of twelve delta files gone" was wrong: a
+  template loop still needs Go to hand it data, so the files stayed (smaller). *Why it matters:* an
+  understood patch is removable, but a delta *count* promised before the replacement's plumbing is
+  sketched is a guess.
 - **`schemaVersion = len(migrations)` means a custom migration is a permanent conflict.** (2026-09-14)
   When upstream appends to the same slice, a migration you own at index N collides at every rebase,
   and wrong ordering on a deployed DB is unrecoverable without a restore. Zero custom migrations is
   a property worth protecting, not an accident. See `AGENTS.md` rule 3.
+- **Rolling back an upstream sync is not moving the pin back — rehearse the down-SQL on a restored copy.**
+  (2026-09-15, the resync) Miniflux's binary refuses only an *older* schema, so a rolled-back image boots on
+  the newer one; but a migration that rebuilt a unique index on a new expression makes the old code's
+  `ON CONFLICT` fail (42P10) on every write while the healthcheck stays green. Write per-hop down-SQL,
+  run it against a restored dump **on the production host** (data never leaves it), and judge a rollback by the
+  log after the next real write cycle, not by a 200.
+- **Audit a rebase's conflict surface for binary files and deletions, not just text.** (2026-09-15) The
+  audited `layout.html` commit also deleted five favicon PNGs the fork had rebranded — a modify/delete
+  conflict no text-diff count showed — and taking upstream's replacement would have silently swapped the
+  product's favicon for upstream's logo. Assert branding in a spec so a future sync can't do it quietly.
 - **Every file you add to a fork is rebase tax paid forever.** (2026-09-14) Exhaust config options,
   per-entity settings, a repo-local script against the upstream API, and an upstream PR *before*
   patching. The delta count belongs in the project's rules as a number, so growing it is a visible
@@ -164,7 +176,9 @@ to any project carrying someone else's codebase.*
   **A young foreign CLI can silently break its own contract on a MINOR version bump** — a print mode
   that used to always emit something can start exiting 0 with empty output on a real failure. Treat
   **empty output as failure** (not success), and make any version-pin check **fail loud** so a
-  contract break gets caught, not silently absorbed.
+  contract break gets caught, not silently absorbed. **It can also auto-update itself mid-session**
+  (agy went 1.2.1 → 1.2.3 inside one epic, tripping the pin twice) and stall when several runs share it —
+  re-probe on a pin mismatch and run one pass at a time.
   **A CLI authed by an interactive/OAuth login is NOT free to run in CI** — confirm a portable
   non-interactive credential path AND its cost before automating it in a runner; some CLIs have no
   headless auth at all, which may mean an advisory/local-only tool stays local-only rather than
@@ -187,6 +201,18 @@ to any project carrying someone else's codebase.*
   silently advancing state a scheduled run depends on — keep on-demand modes explicitly
   non-state-mutating and lock that with a test.
 
+- **`gh` resolves a git remote named `upstream` as the base repository.** (2026-09-15, the resync's sync
+  workflow) A job that adds `upstream` for a fork and then runs `gh pr create` / `gh issue create` aims them at
+  the upstream project; it failed only because the branches didn't exist there. Set `GH_REPO` for every job
+  that has such a remote. *Found by exercising the PR path on a throwaway branch* — the first real run said
+  "nothing to do" and would have hidden it for weeks.
+- **`GITHUB_TOKEN` can never push commits that touch `.github/workflows/*`.** (2026-09-15) A bot that rebases a
+  fork onto upstream pushes upstream's history, which includes dependabot action bumps, so it needs a token with
+  workflow scope (and a repo can separately forbid Actions from opening PRs). Decide the credential at design
+  time, not after the first failed push.
+- **A deploy script that `git reset --hard`s its own checkout runs the OLD script on that run.** (2026-09-15)
+  bash keeps reading the replaced inode. When a change edits the deploy script itself, deploy by resetting
+  first and then invoking the new script.
 - **A copy-once template clobbers same-named files — diff before you trust the copy.** (2026-09-15,
   the ways-of-work bootstrap) `cp -R template/. .` silently replaced the project's `README.md` with
   the template's. `git diff --stat` caught it; nothing else would have. Check `.gitignore` too — if
