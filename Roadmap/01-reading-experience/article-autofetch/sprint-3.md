@@ -12,6 +12,12 @@
 >   Do not write a migration to make a UI state nicer.
 > - **Retune `POLLING_FREQUENCY` and `BATCH_SIZE` with this sprint, not after.** The prefetcher and
 >   the poller compete for the same two cores; tuning one without the other just moves the contention.
+> - **Locked 2026-09-15, A3: derived, no column.** "Fetching" is membership in the in-memory
+>   queue, and "found nothing" is a bounded in-memory set. Recent thin entries in crawler feeds are
+>   re-queued on boot (`PREFETCH_RECOVERY_WINDOW`), so a restart re-derives the queue instead of losing it.
+> - **Polling retune, measured rather than assumed:** `POLLING_FREQUENCY: 60` × `BATCH_SIZE: 100`
+>   stays, unless the S3 drain shows contention. The queue decouples the two, and 47.6 fetches/hour is
+>   small next to the 1,679 entries/day the poller already ingests.
 > - **Per-host concurrency is 1.** Not a performance choice — it is what keeps panfleto from looking
 >   like a scraper to the sites it depends on.
 

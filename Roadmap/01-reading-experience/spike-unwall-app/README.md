@@ -1,16 +1,22 @@
 ---
-status: scaffolded
+status: shipped
 slug: spike-unwall-app
 build_order: 5
 ---
 
-# Epic: How should unwall.app reach the reader?
+# Epic: How should unwall.app reach the reader? ✅
 
 > **Area:** 01-reading-experience · **Risk:** low · **Class:** Spike · **Scope seed:** [`00-ideas/seeds/spike-unwall-app.md`](../../00-ideas/seeds/spike-unwall-app.md)
 
 ## Why
 
 **This is an investigation that ends in a written decision. No branch, no build, no PR beyond the doc.**
+
+> **✅ Answered 2026-09-15: (A) server-side fetch through `api.unwall.app/fetch?url=…`**, a miss on any
+> failure, a 1-hour in-process cache. Full findings and the five-point decision are in
+> [`sprint-1.md`](sprint-1.md). The same session found archive.ph unreachable from the VM, which cut
+> `article-autofetch` story 2.3. The decision doc landed on `feat/article-autofetch`, the first branch
+> that builds on it.
 
 `article-autofetch` S2 wants unwall.app as step two of its fallback chain, and
 `paywall-rail-single-source` S2 adds it as a link. The link is safe either way. The *fetch* is not,
@@ -64,10 +70,10 @@ node scripts/cross-panel.mjs Roadmap/01-reading-experience/spike-unwall-app/spri
 Advisory, single-pass, print-only. Never a gate.
 
 ## Definition of Done (epic)
-- [ ] The decision section in `sprint-1.md` is filled in and answers all five required points
-- [ ] This README marked ✅; frontmatter `status: shipped`
-- [ ] `article-autofetch`'s README assumption **A1** is updated from "to lock" to the answer
-- [ ] If the answer is "unwall.app isn't usable", `article-autofetch` story 2.2 is **cut** from that
-      epic and its chain becomes two steps — say so out loud rather than leaving a dead story
-- [ ] `RETROSPECTIVE.md` written (short — a spike's retro is two paragraphs)
-- [ ] `node scripts/build-order.mjs`
+- [x] The decision section in `sprint-1.md` is filled in and answers all five required points
+- [x] This README marked ✅; frontmatter `status: shipped`
+- [x] `article-autofetch`'s README assumption **A1** is updated from "to lock" to the answer
+- [x] unwall.app **is** usable, so story 2.2 stays. **Story 2.3 (archive.ph) is cut** instead, because the
+      service can't be reached from the VM, and the chain is two steps
+- [x] `RETROSPECTIVE.md` written
+- [x] `node scripts/build-order.mjs`

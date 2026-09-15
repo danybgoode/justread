@@ -15,6 +15,11 @@
 >   its original feed content. A chain that hard-errors is worse than no chain.
 > - **Never write the fallback's output anywhere but the entry's content, through Miniflux.**
 >   `AGENTS.md` rule 2 — this is the same rule the archive appender broke.
+> - **Locked 2026-09-15:** A1 is answered by `spike-unwall-app` (usable, server-side, a miss on
+>   every failure). A2 is 2,000 text chars (`FETCH_THIN_CONTENT_THRESHOLD`). **Story 2.3 is cut:**
+>   archive.ph can't be reached from the VM (DNS refused, TCP timeout on every A record), so the chain is
+>   two steps. The per-feed opt-out is the existing `crawler` checkbox, and D7 means an automatic fetch
+>   never replaces content with something shorter.
 > - **Measure before you widen.** A4 is resolved here, with real numbers, not at the end.
 
 ## Stories
@@ -51,7 +56,13 @@ the link rail becomes a fallback I rarely have to click rather than the main way
 
 **Risk:** high
 
-### Story 2.3 — archive.ph as step three, rate-limit aware
+### ~~Story 2.3 — archive.ph as step three, rate-limit aware~~ — CUT 2026-09-15
+
+> **Cut, with evidence rather than appetite.** From `panfleto-prod`, the VCN resolver refuses
+> `archive.ph/.is/.today/.md`, and TCP to all three public A records times out
+> (`spike-unwall-app/sprint-1.md` finding 7). A step that can't connect would only add a timeout
+> to every thin entry. The rate-limit-aware back-off it asked for lives on the unwall.app step
+> instead, and **A4 is answered in the epic README: 47.6 eligible entries/hour against unwall's 7,200/hour.**
 **As the** product owner, **I want** the last resort to back off politely, **so that** panfleto's
 single VM IP doesn't get blocked and take the fallback down for everyone.
 

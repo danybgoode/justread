@@ -76,6 +76,16 @@ rate-limited, wait it out rather than restarting Caddy in a loop.
 docker compose logs -f miniflux
 ```
 
+**Article autofetch kill switches** (`Roadmap/01-reading-experience/article-autofetch`, D4). Add the line to
+`deploy/.env`, then run `docker compose up -d miniflux`. That's a restart, not a rebuild:
+
+```bash
+FORCE_CRAWLER=0          # new feeds stop defaulting to "Fetch original content"
+FETCH_FALLBACK_CHAIN=    # never call unwall.app; scrape directly only
+PREFETCH_WORKERS=0       # scrape inline during the poll again (upstream behaviour)
+docker compose logs miniflux | grep -E "Prefetch|Fetch fallback" | tail   # what it is doing
+```
+
 Backups go to the `panfleto-backups` bucket under `db/`, authenticated by the
 instance principal — there are no API keys on the host. Objects expire after 30
 days via a bucket lifecycle policy.
