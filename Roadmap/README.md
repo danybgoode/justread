@@ -51,7 +51,8 @@ independently shippable slice of value.
 ### 01 · Reading experience
 - ✅ Miniflux reader at `app.panfleto.win` — entry list, entry view, star, share, keyboard shortcuts, PWA install
 - ✅ New accounts read newest-first and land on Feeds, not Unread
-- ✅ Paywall-bypass link rail on every article (archive.ph · archive.is · Txtify.it · Wayback)
+- ✅ Paywall-bypass link rail on every article (archive.ph · archive.is · unwall.app), told once, by the template
+- ✅ **Ad filtering** — every feed that existed on 2026-09-15 carries a block rule that matches ad *labels* ("Sponsored:", "Contenido patrocinado", `/sponsored/`), not ad words; on stored entries it blocks 4 of 32,499, all genuine deal posts
 - 🚧 **Original-content fetching** — works per-feed when "fetch original content" is enabled; most feeds still need the reader to press Download. *(The repo README has claimed this was "enabled everywhere" since 2026-05; it is not. Tracked in `00-ideas/seeds/article-autofetch.md`.)*
 - 🚧 **Comments** — an article's comments URL is parsed and stored, but only rendered as an outbound link
 - ❌ No reader-facing way to tell that content failed to fetch
@@ -77,14 +78,16 @@ independently shippable slice of value.
 - ✅ **Miniflux fork sync** — `panfleto-core` is a real fork (`danybgoode/panfleto-core`, a submodule here) sitting on upstream `main` plus six panfleto topic commits; every migration and its rollback rehearsed on a restored copy of production
 - ✅ **Upstream sync workflow** — on the fork: rebases onto `miniflux/v2` `main` and runs `go build`/`vet`/`test`; quiet when there's nothing to do, a PR when clean and green, an issue naming the conflicting file or failed step otherwise; `accept` refuses a moved base and tags the old tip first. Every path observed on real runs
 - 🚧 **…on a weekly schedule** — cron Mon 06:17 UTC is configured; the first scheduled run has not been observed yet
-- 🚧 **Feed categorisation and ad filtering** — runs, but the block rule's unanchored `ad`/`deal`/`sale` stems silently drop legitimate articles
+- 🚧 **Feed categorisation and ad filtering** — `enhance_miniflux.js` writes a tested, label-shaped block rule to the field Miniflux actually reads; feeds added after 2026-09-15 (including new signups' starter feeds) don't get it until the rule is re-applied
 - ❌ **No CI build** — `update.sh` compiles Go on the production VM; a compile error takes the reader down and there is no artifact to roll back to
-- ❌ **Content mutation in production** — a GitHub Action rewrites `entries.content` every 3 hours
+- ✅ **Nothing outside Miniflux writes article content** — `scripts/content-write-guard.mjs` fails `guards` and pre-push on a script that would
 
 ---
 
 ## Recent highlights
 
+- **2026-09-15** — `paywall-rail-single-source`: the paywall rail is told once, by the template, and now links archive.ph, archive.is and unwall.app. The cron job that appended link blocks into stored articles is deleted, and a guard stops any script doing it again. The feared production cleanup had nothing to clean: 0 affected rows, because the job had stopped before the current database existed.
+- **2026-09-15** — `adblock-rule-false-positives`: panfleto filters ads for the first time. The old rule had never reached a feed (the script wrote a field the API ignores), and it would have hidden 43% of stored articles, every La Jornada story among them. The new rule matches ad labels, not words, and is live on all 52 feeds; on the same data it blocks 4 deal posts.
 - **2026-09-15** — `miniflux-upstream-resync`: the reader moved from a pasted-in Miniflux 131 commits behind to upstream `main`, in two rehearsed hops, with no user-visible change beyond a cleaner subscribe page. `panfleto-core` is now a real fork with a weekly rebase-and-PR workflow, three copies of the starter-feed list became one `feeds.json`, and the CSP nonce patch is gone.
 - **2026-09-14** — `ways-of-work-bootstrap`: panfleto adopted the dobby-foundation operating system — `Roadmap/`, `AGENTS.md` with five cannot-be-violated rules, the guards workflow and local-first hooks. First full audit of the Miniflux fork landed with it: the delta is 12 files, the fork point is `06e36c3e`, and there are zero custom migrations.
 

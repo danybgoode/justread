@@ -1,6 +1,6 @@
 # Tell the paywall rail once, in the template, correctly — Sprint 2: One rail, told in the template
 
-**Status:** ⬜ not started
+**Status:** ✅ shipped 2026-09-15 — PR #8 (`a20c21d`; merge `23813b5`), fork `37d7a7e9`, deployed 16:43 UTC
 
 > **Build contract (locked by the architect before the builder started)**
 >
@@ -14,34 +14,41 @@
 > - **Leave the "Save Panflo" link alone.** It shares the rail's container and is not in scope.
 > - **Do not restyle the rail.** Its inline `style=` attributes and the raw hex `#BD5FFF` are real
 >   design-language debt, noted in the seed, and deliberately not this sprint's job.
+>
+> **Corrected during the build (README D5):** there is no `stripScheme` helper. `functions.go` is not a
+> fork-delta file, and html/template's contextual escaping — not `untrustedURL` — is what makes the link
+> safe, so the scheme is cut in `entry.html` with no Go at all.
 
 ## Stories
 
-### Story 2.1 — A stripScheme template helper
+### Story 2.1 — A stripScheme template helper ✅ (replaced by D5)
 **As a** template, **I want** a safe way to render a URL without its scheme, **so that** unwall.app's
 `host/path` format can be built without string-munging in markup.
 
 **Acceptance:**
-- `stripScheme` lives in `internal/template/functions.go` beside the other helpers
-- It parses the URL and returns host + path + query, never a substring of the raw input
-- Unit tests cover: `http://`, `https://`, a URL with a query string, a URL with a port, a non-`www`
-  host, and a malformed URL (which must return something safe, not panic)
-- Its output is still escaped by the template's existing mechanism
+- ➖ No helper in `functions.go` — it would have added a file to the fork's delta (D5)
+- ✅ The template keeps everything after `https://`/`http://`; any other scheme gets no unwall link
+- ✅ Covered through html/template, not a unit test: `http://`, `https://`, query string, port, non-`www` host,
+  malformed input, `javascript:`, `https://javascript:…`, `"><script>`, spaces and non-ASCII — the origin
+  stays `https://unwall.app/`, and hostile characters are percent-encoded. Nothing panics; `startsWith` guards `slice`
+- ✅ Output escaped by html/template at render
 
 **Risk:** low
 
-### Story 2.2 — One rail, correct links
+### Story 2.2 — One rail, correct links ✅
 **As a** reader hitting a paywall, **I want** the bypass options that actually work, **so that** I stop
 clicking two links that rarely do.
 
 **Acceptance:**
-- The rail renders **archive.ph · archive.is · unwall.app**
-- Txtify.it and Wayback are gone from the template
-- For `https://www.nytimes.com/2026/09/14/us/politics/x.html` the unwall link is exactly
-  `https://unwall.app/www.nytimes.com/2026/09/14/us/politics/x.html`
-- All three links open in a new tab, respecting the user's "open external links in new tab" setting
-  the same way the current rail does
-- The rail renders identically on mobile width — it is a flex row today and must not overflow
+- ✅ The rail renders **archive.ph · archive.is · unwall.app** (live: a BBC article, query string intact)
+- ✅ Txtify.it and Wayback are gone from the template (and from the deployed binary)
+- ✅ For `https://www.nytimes.com/2026/09/14/us/politics/x.html` the unwall link is exactly
+  `https://unwall.app/www.nytimes.com/2026/09/14/us/politics/x.html` (rendered by the real binary locally)
+- ✅ All three links open in a new tab the same way the current rail does — hardcoded `target="_blank"`, which is
+  what the rail did; it never read the setting
+- ✅ At a 400px viewport the rail wraps; page `scrollWidth` stays 400 (no overflow)
+- ✅ `e2e/paywall-rail.spec.ts` asserts one rail and the three hrefs against the entry's title link, on any
+  shared entry (`PANFLETO_SHARED_ENTRY`); observed red on an entry carrying the appender's block
 
 **Risk:** low
 

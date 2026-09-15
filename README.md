@@ -30,7 +30,8 @@ VM, no monthly bill, no cold starts.
 
 - **Auto-categorisation** — new feeds are sorted into News, Tech, Business,
   Science and Reddit rather than landing in one flat list.
-- **Ad filtering** — a global block rule keeps sponsored posts out of Unread.
+- **Ad filtering** — a per-feed block rule keeps posts labelled as sponsored out of
+  Unread, without matching ordinary words like *leader* or *promoted*.
 - **Paywall handling** — every article carries a bypass rail (archive.ph ·
   archive.is · unwall.app), rendered by the entry template.
 - **Starter feeds on signup** — a new account arrives with 16 curated feeds

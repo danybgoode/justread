@@ -78,7 +78,8 @@ The reader owns article content. **Presentation** belongs in a template
 an irreversible, unattributable edit to the reader's own data, and it silently fights anything that
 later replaces that content. This rule exists because `scripts/archive_appender.js` did exactly that
 every three hours for months — see `Roadmap/01-reading-experience/paywall-rail-single-source/`, the
-worked example. It is enforced: `scripts/content-write-guard.mjs` fails `guards.yml` when anything
+worked example (its writes landed on the pre-Oracle install; the current database held 0 affected
+entries when the epic closed on 2026-09-15). It is enforced: `scripts/content-write-guard.mjs` fails `guards.yml` when anything
 under `scripts/` issues a `PUT`/`PATCH` to `/entries` with a `content` field.
 
 ### 3. A panfleto-owned migration is a permanent rebase conflict. Treat one as HIGH and escalate.
