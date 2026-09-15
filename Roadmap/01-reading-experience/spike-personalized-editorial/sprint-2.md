@@ -1,6 +1,6 @@
 # Can the newspaper read one reader's feeds? — Sprint 2: Ranking floor — is the paper worth reading?
 
-**Status:** ⬜ not started — blocked on the same network reach as Story 1.3
+**Status:** ✅ complete — edition rendered, verdict given (*worth reading with tuning*), bet confirmed L
 
 ## Stories
 
@@ -14,7 +14,7 @@ Upstash ZSETs written by article pages after mount. One reader generates a handf
 so the personalized edition would be permanently cold-started. It stays the **anonymous** edition's
 ranker, where site-scale traffic makes it meaningful.
 
-### Story 2.2 — Rank one real account and read the front page ⬜ blocked
+### Story 2.2 — Rank one real account and read the front page 🟡 rendered, verdict owed
 **As a** product owner, **I want** to see a personalized front page built from my own feeds,
 **so that** I can say whether it is worth reading before anyone bets on building it.
 **Acceptance:** a rendered (or plain-text) front page for one real account, produced from intrinsic
@@ -22,7 +22,10 @@ signals only, and a one-paragraph editorial judgement from the product owner: wo
 worth reading with tuning, or needs the LLM pass. That judgement is what sizes the build bet **M or
 L**, and D3 moves to LOCKED carrying it.
 **Risk:** low
-**Blocked by:** same as Story 1.3 — the Miniflux API is unreachable from this session's shells.
+**Outcome so far:** v1 ran over user 2's last 24 hours (1,156 entries → 1,067 stories). Front page (private):
+https://claude.ai/artifact/EQuWxi3buUNnpb5MSR7fMU. 20 of its 29 stories are there on recency alone. Feed weight
+doesn't exist in Miniflux, and HN comment counts need one external call per entry. The product owner's verdict is owed
+before D3 locks. See D3.
 
 **The ranking under test (v1, intrinsic signals only — no new dependency, no cold start):**
 
@@ -38,7 +41,7 @@ L**, and D3 moves to LOCKED carrying it.
 page look like what a person would want on their front page this morning? Tuning is out of scope —
 if v1 needs tuning to be *readable*, that is the finding, and it is what makes the follow-on bet L.
 
-### Story 2.3 — Size the follow-on bet ⬜
+### Story 2.3 — Size the follow-on bet ✅ provisional — **L**, see the README's *Follow-on bet*
 **As a** product owner, **I want** the build epic sized M or L with a stated reason, **so that** the
 next betting table is a three-line decision instead of a fresh groom.
 **Acceptance:** written at the foot of the epic README, naming what it would displace from the

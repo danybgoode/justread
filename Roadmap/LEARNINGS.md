@@ -136,6 +136,19 @@ to any project carrying someone else's codebase.*
   match URL, author and tags as well as title; the old stem `ad` would have silenced two whole feeds
   through their domains (`jornada.com.mx`), which no headline test shows.
 
+- **A preview deployment is not free when Preview shares production's `DATABASE_URL`.** (2026-09-15,
+  spike-personalized-editorial) `editorial-panfleto`'s build command is `pnpm payload migrate && pnpm build`
+  and its Preview env inherits the production database URL — so an ordinary preview deploy would have run
+  CMS migrations against the live newsroom DB. Check a project's build command AND its per-environment
+  variables before deploying a throwaway branch; a one-function, no-build deployment with a
+  deployment-scoped secret is the safe shape, and delete it the same day.
+- **`limit=N` on a feed API is a TIME WINDOW, not a page size.** (2026-09-15) `limit=100` covered 2 h 7 min
+  of one real reader's day; the day held 1,156 entries across 26 feeds. Any "daily" page designed against a
+  round limit is silently a "last two hours" page. Measure the span N covers for a real account first — and
+  check the API's ceiling (Miniflux refuses `limit > 1000`) before assuming a day fits in one request.
+- **Corroboration must count publishers, not feeds.** (2026-09-15) Two BBC feeds and two NYT feeds in one
+  account made BBC stories look corroborated by BBC. Any cross-source signal needs a publisher identity
+  above the feed row, or duplicate subscriptions manufacture agreement.
 - **Probe a third-party dependency from the production IP, and check what its 200 contains.** (2026-09-15,
   spike-unwall-app + inline-comments) From the VM, `unwall.app/{host}{path}` answered 200 as an app shell (the
   article came from a JSON API found in its bundle), archive.ph was refused by the VCN resolver and timed out by IP,
@@ -272,6 +285,11 @@ to any project carrying someone else's codebase.*
   project; a fork of a shared script is the drift the plugin exists to prevent.
 
 ## Working efficiently
+- **A spike's builder must not supply the verdict on the taste question the spike exists to inform.**
+  (2026-09-15, spike-personalized-editorial) The run rendered a real edition and its own read pointed at
+  an LLM ranking pass — the product owner read the same page and said *tuning*, which is a materially
+  cheaper wave. Write the decision doc so the builder's read is labelled as such and the decision stays
+  `PENDING` until the owner answers in their own words; a self-approved taste call buys scope nobody asked for.
 - **Running a whole multi-sprint epic in one session is the main context-cost driver.** The durable
   state (the plan file, sprint docs, team memory) makes re-entry cheap by design — compact at each
   sprint/PR boundary, and for big epics consider a fresh session per sprint.

@@ -57,6 +57,10 @@ independently shippable slice of value.
 - ✅ **Comments** — a Hacker News article opens its thread inside the reader: lazy, nested 5 deep, sanitized, cached 10 minutes. Other sites keep the outbound link, and Reddit was cut (it blocks panfleto's IP)
 - ✅ The entry page says when an article is still being fetched ("Loading…"), or when automatic fetching found nothing and the paywall rail is the way in
 
+- 🚧 **A personalized newspaper edition** — decided, not built. A reader's own feeds rendered in the
+  editorial layout at `editorial.panfleto.win`, live from Miniflux with nothing durable stored. Shaped by
+  `spike-personalized-editorial`; bet as three waves behind `mcp-token-handling`
+
 ### 02 · Onboarding & signup
 - ✅ Landing page and one-click signup at `panfleto.win`
 - ✅ Auth0 SSO (opt-in via `deploy/oauth.env`) with password login as the fallback
@@ -86,6 +90,14 @@ independently shippable slice of value.
 
 ## Recent highlights
 
+- **2026-09-15** — `spike-personalized-editorial`: decided how a reader's own feeds could become a
+  newspaper. The editorial site already had a full Miniflux→Payload ingestion pipeline nobody had
+  counted; it stays the *anonymous* edition's, and the personalized one renders live instead, writing
+  nothing durable. Measured from Vercel: `limit=100` covers 2 h 7 min of a real reader's day, and 73% of
+  every fetch is article text the ranker never reads — so the edition needs a per-user derived cache, not
+  a live call. A real edition was ranked and read: the top five hold up, 20 of 29 slots were recency
+  alone. Verdict *worth reading with tuning*, so the follow-on is bet L in three waves, and the LLM
+  ranking idea goes back to the funnel unbet.
 - **2026-09-15** — `article-autofetch` + `spike-unwall-app`: click an article and the text is already there. The spike ran from the production VM. It showed unwall.app works as a server-side API and archive.ph is unreachable, so the chain became direct → unwall.app. After a staged rollout by env var, the first poll brought in 135 full articles at load 0.18, and a 327-entry backlog drained through unwall.app with no rate limit. The kill switch was tested live, off and on.
 - **2026-09-15** — `inline-comments`: Hacker News threads open inside the reader, sanitized and cached, with no migration. Reddit was cut because it blocks panfleto's IP and its entries carry no comments URL.
 

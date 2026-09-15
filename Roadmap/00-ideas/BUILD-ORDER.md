@@ -10,9 +10,9 @@
 > funnel), then run `node scripts/build-order.mjs`. This board and the Notion "Marketplace Roadmap"
 > DB are both *derived views* — never hand-edit the board.
 
-## 🏗️ Building now (1)
+## 🏗️ Building now (0)
 
-- [Can the newspaper read one reader's feeds?](../../01-reading-experience/spike-personalized-editorial/README.md) — 01 Reading experience · 3/6 stories · risk: Low
+_None._
 
 ## 📋 Ready to build (scaffolded, not started) (3)
 
@@ -20,8 +20,9 @@
 - [MCP tokens shouldn't travel in query strings](../../03-agent-surface/mcp-token-handling/README.md) — 03 Agent surface · 0/4 stories · risk: High
 - [Stop compiling Go on the production VM](../../09-platform-infra/ci-build-pipeline/README.md) — 09 Platform & Infra · 0/4 stories · risk: High
 
-## ✅ Shipped (6)
+## ✅ Shipped (7)
 
+- [Can the newspaper read one reader's feeds? ✅](../../01-reading-experience/spike-personalized-editorial/README.md) — 01 Reading experience · 6/6 stories · risk: Low
 - [Click an article and the content is already there ✅](../../01-reading-experience/article-autofetch/README.md) — 01 Reading experience · 7/7 stories · risk: High · wave-2026-09-panfleto
 - [How should unwall.app reach the reader? ✅](../../01-reading-experience/spike-unwall-app/README.md) — 01 Reading experience · 2/2 stories · risk: Low · wave-2026-09-panfleto
 - [Read the comments without leaving the reader ✅](../../01-reading-experience/inline-comments/README.md) — 01 Reading experience · 3/3 stories · risk: High · wave-2026-09-panfleto

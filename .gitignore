@@ -10,3 +10,5 @@ deploy/oauth.env
 # Playwright run artefacts
 test-results/
 playwright-report/
+.vercel
+.env*
