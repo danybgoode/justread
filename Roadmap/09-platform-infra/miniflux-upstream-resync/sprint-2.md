@@ -1,6 +1,6 @@
 # Put panfleto-core back on upstream's timeline — Sprint 2: Rebase forward to main
 
-**Status:** 🚧 in progress — 2.1 ✅ · 2.2 deployed (#2, `6c53c96`), soaking per D11 · 2.3 built + rehearsed, PR pending the soak
+**Status:** 🚧 in progress — 2.1 ✅ · 2.2 ✅ deployed (#2, `6c53c96`) + soaked · 2.3 built + rehearsed + reviewed, deploying (#3)
 
 > **Build contract (locked by the architect before the builder started)**
 >
@@ -106,7 +106,12 @@ git rebase v2.3.3
 - `git -C /opt/panfleto submodule status` → `e219eb3d (resync-hop1-v2.3.3)`; `miniflux -version` → `2.3.x-dev`.
 - `npx playwright test --project=api` against `https://app.panfleto.win` → **6/6**. `https://panfleto.win` → 200.
 - Log in the first 10 minutes: only the spec's own deliberate anonymous `/v1/version` 401. Nothing else above INFO.
-- **Soak (D11):** SOAK_RESULT_PENDING
+- **Soak (D11): ✅ passed 2026-09-15 02:37 UTC.** (a) 131–132 applied cleanly (above). (b) `reader-health` 6/6
+  against production. (c) One full scheduler cycle: `Created a batch of feeds rows_count=48` at 02:37, and
+  48/48 feeds checked within minutes. Since the deploy: **291 new entries and 62 new enclosures written
+  through the new sha256-hex unique index**, 0 `enclosure` log lines, feeds with parsing errors unchanged at 4,
+  and **no ERROR lines** (the 24 h pre-deploy baseline had 1). The only WARNs are explained: the spec's own
+  anonymous `/v1/version` 401s, and one `Not Found` from S3's `feeds.json` spec probing production before S3 existed.
 
 **Risk:** high
 
