@@ -31,8 +31,8 @@ VM, no monthly bill, no cold starts.
 - **Auto-categorisation** — new feeds are sorted into News, Tech, Business,
   Science and Reddit rather than landing in one flat list.
 - **Ad filtering** — a global block rule keeps sponsored posts out of Unread.
-- **Paywall handling** — original-content fetching is enabled everywhere, and
-  known hard-paywall feeds get an `archive.ph` fallback link appended.
+- **Paywall handling** — every article carries a bypass rail (archive.ph ·
+  archive.is · unwall.app), rendered by the entry template.
 - **Starter feeds on signup** — a new account arrives with 16 curated feeds
   already categorised, not an empty screen.
 
@@ -123,11 +123,9 @@ instance principal — no API keys on the host — and expire after 30 days.
 
 ```bash
 node scripts/enhance_miniflux.js    # re-run categorisation and ad-block rules
-node scripts/archive_appender.js    # inject archive.ph fallbacks (also runs
-                                    # every 3h via GitHub Actions)
 ```
 
-Both read `MINIFLUX_URL` and `MINIFLUX_API_KEY` from the environment. Generate
+It reads `MINIFLUX_URL` and `MINIFLUX_API_KEY` from the environment. Generate
 a key at **app.panfleto.win → Settings → API Keys**.
 
 ## Credentials

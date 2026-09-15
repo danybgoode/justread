@@ -77,7 +77,9 @@ The reader owns article content. **Presentation** belongs in a template
 (`internal/reader/processor/`). A script that reaches in over the API and rewrites stored content is
 an irreversible, unattributable edit to the reader's own data, and it silently fights anything that
 later replaces that content. This rule exists because `scripts/archive_appender.js` did exactly that
-every three hours for months — see `Roadmap/00-ideas/seeds/paywall-rail-single-source.md`.
+every three hours for months — see `Roadmap/01-reading-experience/paywall-rail-single-source/`, the
+worked example. It is enforced: `scripts/content-write-guard.mjs` fails `guards.yml` when anything
+under `scripts/` issues a `PUT`/`PATCH` to `/entries` with a `content` field.
 
 ### 3. A panfleto-owned migration is a permanent rebase conflict. Treat one as HIGH and escalate.
 `internal/database/migrations.go` is an append-only slice and `schemaVersion = len(migrations)`.

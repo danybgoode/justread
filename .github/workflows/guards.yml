@@ -60,6 +60,10 @@ jobs:
         if: steps.areas.outputs.roadmap == 'true'
         run: node scripts/build-order.mjs --check
 
+      - name: scripts/ — no script writes entries.content (AGENTS.md rule 2)
+        if: steps.areas.outputs.scripts == 'true'
+        run: node scripts/content-write-guard.mjs
+
       - name: scripts/ — CLI/tooling node:test
         if: steps.areas.outputs.scripts == 'true'
         run: |
