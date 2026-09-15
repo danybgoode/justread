@@ -110,18 +110,24 @@ sprint-3.
 
 **Moving the pin back is NOT enough once a hop's migrations have run** (fresh-review finding on PR #2,
 rehearsed 2026-09-15). The old binary still boots, because it only refuses a schema *older* than its own.
-But migration 131 (and later 134) rebuilds `enclosures_user_entry_url_unique_idx` on an expression the
-old `createEnclosure` `ON CONFLICT (user_id, entry_id, md5(url))` no longer matches. So every feed
-refresh that touches an enclosure fails with `42P10`, while `/healthcheck` and `reader-health.spec.ts`
-stay green. **Rollback therefore runs down-SQL before the old image starts:**
+But migration 131 rebuilds `enclosures_user_entry_url_unique_idx` on `encode(sha256(url::bytea),'hex')`,
+which the pre-resync `createEnclosure` `ON CONFLICT (user_id, entry_id, md5(url))` no longer matches.
+Migration 134 then rebuilds it again on raw `sha256(url::bytea)`, which v2.3.3's hex expression no
+longer matches. So every feed refresh that touches an enclosure fails with `42P10`, while `/healthcheck`
+and `reader-health.spec.ts` stay green. **Rollback therefore runs down-SQL before the old image starts,
+and builds that image first so the reader is down for seconds, not a rebuild** (fresh review on #3):
 
 ```bash
-# on the VM — stop the reader, un-apply the hop's migrations, then deploy the old pin
-docker compose -f /opt/panfleto/deploy/docker-compose.yml stop miniflux
-docker compose -f /opt/panfleto/deploy/docker-compose.yml exec -T postgres \
-  psql -v ON_ERROR_STOP=1 -U miniflux miniflux < down-hopN.sql
-# then: move the pin back in a commit on main, merge, update.sh
+# 1. commit the pin-back on a branch, merge to main — then on the VM, while the reader keeps serving:
+cd /opt/panfleto && git fetch origin && git reset --hard origin/main && git submodule update --init --force
+docker compose -f deploy/docker-compose.yml build miniflux
+# 2. the only downtime: stop, un-apply the hop's migrations, start the already-built old image
+docker compose -f deploy/docker-compose.yml stop miniflux
+docker compose -f deploy/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U miniflux miniflux < down-hopN.sql
+docker compose -f deploy/docker-compose.yml up -d miniflux
 ```
+**Never across the 04:43 UTC backup** — the down-SQL's `DROP INDEX` on `enclosures` takes the same
+ACCESS EXCLUSIVE lock as the forward migrations, and a running `pg_dump` would stall it.
 
 *Hop 1 (132 → 130, back to `pre-resync`):*
 ```sql
@@ -142,11 +148,15 @@ CREATE INDEX IF NOT EXISTS entries_user_status_changed_idx ON entries (user_id, 
 UPDATE schema_version SET version = 132;
 COMMIT;
 ```
-**Rehearsed for hop 1 on a restored copy of production, on the VM.** The image migrates 130→132. The old
-`ON CONFLICT md5(url)` upsert then fails with 42P10 (the trap is real). The down-SQL runs in 0.12 s, after
-which the same upsert returns `INSERT 0 0`, the pre-resync image boots cleanly, and rolling forward
-replays 131–132. **A rollback is only verified when** the log shows no `unable to create enclosure`
-after the next hourly refresh; a green healthcheck proves nothing here.
+**Both rehearsed on a restored copy of production, on the VM.** *Hop 1:* the image migrates 130→132; the
+pre-resync `ON CONFLICT md5(url)` upsert then fails with 42P10 (the trap is real); the down-SQL runs in
+0.12 s, after which the same upsert returns `INSERT 0 0`, the pre-resync image boots cleanly, and rolling
+forward replays 131–132. *Hop 2:* the hop-2 image migrates 132→134 in 0.45 s; the v2.3.3 hex upsert fails
+with 42P10 while the hop-2 raw-digest upsert returns `INSERT 0 0`; the hop-2 SQL above — copied to the VM
+byte-for-byte as a file — runs in 0.25 s, restores `entries_user_status_changed_idx`, and the v2.3.3 upsert
+returns `INSERT 0 0`; the hop-1 image boots on it and the hop-2 image rolls forward again to 134.
+**A rollback is only verified when** the log shows no `unable to create enclosure` after the next
+hourly refresh; a green healthcheck proves nothing here.
 
 The dump restore (S2.1) stays the last resort. It is lossy: up to 24 h of read/star state, new signups,
 and any "Panfleto MCP" API keys minted in that window, which silently breaks MCP URLs already handed out.

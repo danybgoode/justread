@@ -1,6 +1,6 @@
 # Put panfleto-core back on upstream's timeline — Sprint 2: Rebase forward to main
 
-**Status:** 🚧 in progress — 2.1 ✅ · 2.2 built, gate green, rehearsed against restored production data; deploy pending · 2.3 not started
+**Status:** 🚧 in progress — 2.1 ✅ · 2.2 ✅ deployed (#2, `6c53c96`) + soaked · 2.3 built + rehearsed + reviewed, deploying (#3)
 
 > **Build contract (locked by the architect before the builder started)**
 >
@@ -99,6 +99,20 @@ git rebase v2.3.3
 - **Local logged-in smoke at v2.3.3.** `/about` 2.3.x-dev, logo `panfleto`, MCP panel with a token URL, 17
   suggestions, the favicon renders the panfleto albatross, CSP counts identical to the D10 baseline (0/0/20/4/0).
 
+**Deployed to production (2026-09-15 01:36 UTC, `update.sh`, merge `6c53c96`):**
+- Build + restart **61 s**; the old container served throughout the build.
+- Boot log: `Running database migrations current_version=130 latest_version=132` → `Starting HTTP server`, no error.
+- `schema_version` **132**; `enclosures_user_entry_url_unique_idx` = `encode(sha256(url::bytea),'hex')`.
+- `git -C /opt/panfleto submodule status` → `e219eb3d (resync-hop1-v2.3.3)`; `miniflux -version` → `2.3.x-dev`.
+- `npx playwright test --project=api` against `https://app.panfleto.win` → **6/6**. `https://panfleto.win` → 200.
+- Log in the first 10 minutes: only the spec's own deliberate anonymous `/v1/version` 401. Nothing else above INFO.
+- **Soak (D11): ✅ passed 2026-09-15 02:37 UTC.** (a) 131–132 applied cleanly (above). (b) `reader-health` 6/6
+  against production. (c) One full scheduler cycle: `Created a batch of feeds rows_count=48` at 02:37, and
+  48/48 feeds checked within minutes. Since the deploy: **291 new entries and 62 new enclosures written
+  through the new sha256-hex unique index**, 0 `enclosure` log lines, feeds with parsing errors unchanged at 4,
+  and **no ERROR lines** (the 24 h pre-deploy baseline had 1). The only WARNs are explained: the spec's own
+  anonymous `/v1/version` 401s, and one `Not Found` from S3's `feeds.json` spec probing production before S3 existed.
+
 **Risk:** high
 
 ### Story 2.3 — Rebase to upstream/main, deploy, verify
@@ -108,9 +122,30 @@ sync in S3 has zero backlog to work through on its first run.
 **Acceptance:**
 - `git rebase upstream/main` completes; `git log --oneline upstream/main..panfleto` lists **only**
   the five panfleto topic commits — that single command is the whole proof of this epic
+  *(fresh review on #3: that command also passes at hop 1, since v2.3.3 is an ancestor of main. The
+  proof is the pair: `git rev-list --count panfleto..upstream/main` = **0** at the time of the rebase,
+  **and** the five-commit log — plus `panfleto` actually moved to the hop-2 tip)*
 - Gate clean again; deployed; migrations applied; the smoke walkthrough passes again
 - The submodule pin in this repo is updated and committed
 - If anything here fights back, **stop and re-shape** rather than extending the appetite in flight
+
+**Result so far (2026-09-15):**
+- **Rebase.** `resync-hop1-v2.3.3` (`e219eb3d`) onto `upstream/main` `76889f08`: **no conflicts**. `range-diff`:
+  all five commits `=`. Tip `2ee92c9b`, tag `resync-hop2-main`. `rev-list --count 2ee92c9b..upstream/main` = 0.
+  The fresh reviewer's predicted `b3039d6c` conflict didn't happen: the panfleto table is a pure addition, and
+  upstream's seven new `aria-label`s are present.
+- **Gate.** `go build` / `vet` / `test ./...` exit 0.
+- **Auth.** `76889f08` rejects Basic auth when `DISABLE_LOCAL_AUTH` is set. The landing page signup uses Basic
+  auth (as admin, then as the new user). Production doesn't set it (variable *names* read from the VM), so
+  nothing breaks. **Latent trap recorded:** `deploy/oauth.env.example` now warns against setting it until
+  `/api/register` uses an API key. The MCP route uses `X-Auth-Token`, and onboarding is in-process, so both
+  are unaffected.
+- **Rehearsal on a restored production copy** (VM, throwaway containers): 130→134 boot, 133–134 in 0.45 s;
+  the hop-1 upsert 42P10 at 134, hop-2 upsert `INSERT 0 0`; the README's hop-2 down-SQL as a file 134→132 in
+  0.25 s → the hop-1 upsert works, the hop-1 image boots, and the hop-2 image rolls forward again; hop-2
+  `/healthcheck` 200.
+- **Deploy step not to forget:** move `panfleto` on the fork to `2ee92c9b` (force-with-lease from `e219eb3d`),
+  so `.gitmodules`' `branch = panfleto` and S3's sync start from hop 2.
 
 **Risk:** high
 
