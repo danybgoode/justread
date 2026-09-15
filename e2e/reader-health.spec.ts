@@ -13,8 +13,9 @@ import { expect, test } from '@playwright/test'
  * reader, the MCP panel). Those steps are owed to the product owner by name in sprint-2.md.
  */
 
-// Upstream Miniflux's own favicon path data. If a rebase ever takes upstream's icon.svg, this shows up.
-const UPSTREAM_MINIFLUX_LOGO = 'M178.24,117'
+// panfleto's icon.svg wraps the panfleto PNG; upstream's is a vector Miniflux logo. The server minifies
+// SVGs, so assert on what survives minification (the embedded PNG), not on upstream's path data.
+const PANFLETO_SVG_MARKER = 'data:image/png;base64,'
 
 test('the healthcheck answers OK', async ({ request }) => {
   const res = await request.get('/healthcheck')
@@ -49,13 +50,13 @@ test('the web manifest carries the panfleto identity', async ({ request }) => {
   expect(manifest.short_name).toBe('panfleto')
 })
 
-test('every favicon the page links resolves, and none is upstream Miniflux logo', async ({ request }) => {
+test('every favicon the page links resolves, and an SVG favicon is the panfleto one, not upstream', async ({ request }) => {
   const html = await (await request.get('/', { headers: { Accept: 'text/html' } })).text()
   const hrefs = [...html.matchAll(/<link rel="(?:icon|apple-touch-icon)"[^>]*href="([^"]+)"/g)].map((m) => m[1])
   expect(hrefs.length).toBeGreaterThan(0)
   for (const href of hrefs) {
     const res = await request.get(href)
     expect(res.status(), href).toBe(200)
-    if (href.endsWith('.svg')) expect(await res.text(), href).not.toContain(UPSTREAM_MINIFLUX_LOGO)
+    if (href.endsWith('.svg')) expect(await res.text(), href).toContain(PANFLETO_SVG_MARKER)
   }
 })

@@ -1,6 +1,6 @@
 # Put panfleto-core back on upstream's timeline — Sprint 2: Rebase forward to main
 
-**Status:** ⬜ not started
+**Status:** 🚧 in progress — 2.1 ✅ · 2.2 built, gate green, rehearsed against restored production data; deploy pending · 2.3 not started
 
 > **Build contract (locked by the architect before the builder started)**
 >
@@ -36,6 +36,23 @@ deployed, **so that** the one irreversible part of this epic has a way back.
 - **Row counts are recorded here** — they are what decides whether the migrations are cheap (D6)
 - The pre-rebase submodule SHA is written into the epic README's *Rollback* section (D7)
 
+**Result (2026-09-14/15):** ✅ performed **on the VM**, in a throwaway `postgres:17-alpine` container with
+`--network none`, so production data never left the host. Removed afterwards.
+
+| | restored copy | live (at restore time) |
+|---|---|---|
+| object | `db/miniflux-2026-09-14T04-43-01Z.sql.gz` (39 MB, the nightly 04:43 UTC run) | — |
+| `schema_version` | **130** | 130 |
+| `entries` | **30,065** | 31,353 (+1,288 in the ~20 h since the dump — hourly polling) |
+| `feeds` / `users` / `categories` | **52 / 3 / 17** | 52 / 3 / 17 |
+| `enclosures` | **24,585** | 25,824 |
+| public indexes | **42** | 42 |
+| restore errors · orphaned entries · `status='removed'` entries | **0 · 0 · 0** | — |
+
+D6 follows from this: at 25k enclosures, the index rebuilds in 131 and 134 finish in under a second.
+Migration v127's orphan guard (`79d920bc`) matters for restored databases, and this one has no orphans.
+D7: the pre-rebase SHA `bdf23f75` is recorded in the README's *Rollback* section and tagged `pre-resync`.
+
 **Risk:** high
 
 ### Story 2.2 — Rebase to v2.3.3, deploy, verify
@@ -54,7 +71,29 @@ git rebase v2.3.3
 - Deployed via `update.sh`; first boot applies the new upstream migrations with no error in the log
 - `app.panfleto.win/about` reports 2.3.3
 - The product-owner smoke walkthrough below passes end to end
-- **Then stop.** Live on 2.3.3 for a few days before 2.3.
+- **Then stop.** Live on 2.3.3 for a few days before 2.3. *(Re-shaped by README D11: bounded by evidence, not by the calendar.)*
+
+**Result so far (2026-09-15):**
+- **Rebase.** `panfleto` → `c1b100fe` (tag `resync-hop1-v2.3.3`). **Scope correction:** the build contract's
+  "conflicts only in the three named files" was incomplete. `aa509b88` is the named `layout.html` commit, but it also
+  **deleted five favicon PNGs** that the branding commit modifies (modify/delete conflicts) and switched the browser
+  favicon to upstream's `icon.svg`. `layout.html` itself merged without conflict. This isn't a bad S1 replay: the
+  audit only counted text files. Resolution: take the deletions, and make `icon.svg` an SVG that embeds
+  panfleto's existing `icon-192.png`. Taking upstream's file as-is would have silently changed the favicon
+  to Miniflux's logo. `git range-diff`: commits 2–4 identical, commit 1 differs only in those icons, commit 5
+  only in upstream context lines. Delta at v2.3.3: **12 files + 17 icon files** (16 PNG/ICO + `icon.svg`).
+- **Gate.** `go build` / `go vet` / `go test ./...` clean (exit 0). A fresh clone of the S2 branch with
+  `--recurse-submodules` → `docker compose build miniflux` → 132 migrations on an empty DB.
+- **Rehearsal against production data (added, not in the scaffold).** On the VM: build the hop-1 image, restore last
+  night's dump into a throwaway Postgres, boot the image against it. Log: `Running database migrations
+  current_version=130 latest_version=132` → `Starting HTTP server`. `schema_version` 132, the enclosures index now
+  `encode(sha256(url::bytea),'hex')`, `/healthcheck` 200, sign-in page branded. Removed afterwards.
+- **Spec.** `e2e/reader-health.spec.ts`, 6 tests, green locally at v2.3.3 and against production at S1.
+  **Observed red:** (1) upstream `icon.svg` swapped back in → the favicon test fails; (2) reader stopped → 6/6 fail.
+  **Scope correction:** the scaffolded spec said "`/about` returns a version string" anonymously. It
+  doesn't: `/about` 302s to sign-in. The spec asserts that redirect, plus `/v1/version` → 401 JSON.
+- **Local logged-in smoke at v2.3.3.** `/about` 2.3.x-dev, logo `panfleto`, MCP panel with a token URL, 17
+  suggestions, the favicon renders the panfleto albatross, CSP counts identical to the D10 baseline (0/0/20/4/0).
 
 **Risk:** high
 
