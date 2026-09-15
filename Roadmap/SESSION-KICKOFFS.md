@@ -40,6 +40,33 @@ A **fixed-scope** ask (bug, chore, clear story) skips Bet by design — see §1.
   short layer. If one starts failing, that is a refund ask, not a licence to substitute — see
   WAYS-OF-WORKING § *Review & merge*.
 
+## ⚠️ panfleto deviations from the generated epic kickoff
+
+`emit-epic-kickoff.mjs` writes a prompt that assumes the template's default deploy rail. panfleto's
+differs in two ways that appear in the generated §5. **Paste this correction directly under any
+generated epic kickoff, in the same message** — do not rely on the builder inferring it.
+
+1. **"Apply migrations BEFORE merging (merging deploys)" is wrong here.** Merging to `main` deploys
+   nothing; a human runs `/opt/panfleto/deploy/update.sh` on the VM. Upstream Miniflux migrations
+   apply on container boot via `RUN_MIGRATIONS=1` — *after* the deploy, not before the merge. The
+   order is merge → deploy → migrations run → verify live. And per `AGENTS.md` rule 3, panfleto
+   should not be adding migrations of its own at all.
+2. **"You are pre-authorized to merge on a green gate" is not a standing grant.** Per
+   WAYS-OF-WORKING § *Review & merge*, HIGH tier is a product-owner merge unless the product owner
+   pre-authorizes a **named** epic-mode run. Either say so explicitly when you paste the kickoff, or
+   strike that paragraph. A useful middle setting: pre-authorize the low-risk sprints, keep the one
+   that deploys to production.
+
+Two more worth carrying into every builder prompt on this project:
+
+- **The gate is local; CI does not cover `panfleto-core/`.** `guards.yml` checks the roadmap board and
+  `scripts/` tests only. The real gate is `go build ./... && go vet ./... && go test ./...` plus
+  `docker compose build miniflux` from a fresh submodule clone. Say that in the PR body rather than
+  letting a green badge imply more than it checked.
+- **Tell cross-family reviewers it's Go inside a Miniflux fork**, and that `AGENTS.md` rule 1 (keep
+  the delta small) is a standing constraint — otherwise you get idiomatic-refactor findings that grow
+  the fork.
+
 ## Command shorthands
 A small, fixed vocabulary so the *instruction* half of a message is unambiguous — each verb just
 **points** at a numbered kickoff/action below (same thin-pointer principle; vendor-neutral).
