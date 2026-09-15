@@ -21,6 +21,9 @@
 >   `layout.html` ← `aa509b88`. **A conflict anywhere else means the S1 replay was wrong — stop and
 >   check rather than resolving.**
 > - **The build happens on the production host.** Deploy while someone is watching.
+> - **Never deploy across the nightly backup (04:43 UTC).** Migrations 131 and 134 `DROP INDEX` on
+>   `enclosures`, which needs an ACCESS EXCLUSIVE lock, while a running `pg_dump` holds ACCESS SHARE on every
+>   table. Boot would stall and Caddy would 502 until the dump finished (fresh-review finding, PR #2).
 
 ## Stories
 
@@ -69,7 +72,7 @@ git rebase v2.3.3
 - `go build ./... && go vet ./... && go test ./...` clean
 - `docker compose build miniflux` succeeds from a fresh clone
 - Deployed via `update.sh`; first boot applies the new upstream migrations with no error in the log
-- `app.panfleto.win/about` reports 2.3.3
+- ~~`app.panfleto.win/about` reports 2.3.3~~ → README **D9**: `/about` reports `2.3.x-dev`; a hop is proven by `schema_version` and the submodule pin
 - The product-owner smoke walkthrough below passes end to end
 - **Then stop.** Live on 2.3.3 for a few days before 2.3. *(Re-shaped by README D11: bounded by evidence, not by the calendar.)*
 
@@ -81,7 +84,8 @@ git rebase v2.3.3
   audit only counted text files. Resolution: take the deletions, and make `icon.svg` an SVG that embeds
   panfleto's existing `icon-192.png`. Taking upstream's file as-is would have silently changed the favicon
   to Miniflux's logo. `git range-diff`: commits 2–4 identical, commit 1 differs only in those icons, commit 5
-  only in upstream context lines. Delta at v2.3.3: **12 files + 17 icon files** (16 PNG/ICO + `icon.svg`).
+  only in upstream context lines. Delta at v2.3.3: **12 files + 17 icon files** (16 PNG/ICO + `icon.svg`). After review, `icon.svg`
+  embeds the 23 KB `icon-120.png` rather than the 192 px one (72 KB → 31 KB); the tip is now `e219eb3d`.
 - **Gate.** `go build` / `go vet` / `go test ./...` clean (exit 0). A fresh clone of the S2 branch with
   `--recurse-submodules` → `docker compose build miniflux` → 132 migrations on an empty DB.
 - **Rehearsal against production data (added, not in the scaffold).** On the VM: build the hop-1 image, restore last
@@ -112,10 +116,10 @@ sync in S3 has zero backlog to work through on its first run.
 
 ## Sprint QA
 - **api spec(s):** `e2e/reader-health.spec.ts` — the first real spec in this repo. Anonymous,
-  API-level, no login: asserts `/healthcheck` is 200, that `/` redirects to the login page rather
-  than 500ing, and that `/about` returns a version string. Thin on purpose — it is the spec that
+  API-level, no login: asserts `/healthcheck` is 200, that `/` renders the sign-in page rather
+  than 500ing, and that `/about` redirects to sign-in. Thin on purpose — it is the spec that
   would have caught a failed migration or a half-started container, and it runs against both
-  `localhost:8080` and `app.panfleto.win`.
+  `localhost:8080` and `app.panfleto.win`. *(Scope correction: `/about` is behind sign-in, so the spec asserts its 302 plus `/v1/version` → 401 — see 2.2's results.)*
 - **browser smoke owed:** yes, to the product owner — **the Auth0 SSO login and the authenticated
   reader**. An anonymous `request` fixture cannot drive Miniflux session auth or the Auth0
   round-trip, and there is no disposable test account. Steps 2–7 below are owed by name.
@@ -140,8 +144,10 @@ Env: production · `https://app.panfleto.win` — **run this after each of the t
 7. **(auth path — owed to the product owner by name)** Go to Settings → Integrations.
    → The "Panfleto AI Assistant (MCP)" panel shows an MCP URL containing a token.
 8. Go to `https://app.panfleto.win/about`.
-   → After deploy 1: version 2.3.3. After deploy 2: a version newer than 2.3.3.
+   → `2.3.x-dev` after either deploy (it read `2.2.x-dev` before this epic). The version string can't
+   tell the two hops apart (README D9); step 9 can.
 9. Check the container log for the first boot after each deploy.
-   → Migration lines present, no error, and the reader answered step 1 afterwards.
+   → `Running database migrations current_version=130 latest_version=132` after deploy 1, `132 → 134`
+   after deploy 2; no error; and, after the next hourly refresh, no `unable to create enclosure` lines.
 
 If any step fails, note the step number + what you saw — that's the bug report.

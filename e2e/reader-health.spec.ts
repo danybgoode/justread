@@ -14,8 +14,8 @@ import { expect, test } from '@playwright/test'
  */
 
 // panfleto's icon.svg wraps the panfleto PNG; upstream's is a vector Miniflux logo. The server minifies
-// SVGs, so assert on what survives minification (the embedded PNG), not on upstream's path data.
-const PANFLETO_SVG_MARKER = 'data:image/png;base64,'
+// SVGs, so assert on what survives minification: a slice of the embedded panfleto PNG, not upstream's path data.
+const PANFLETO_SVG_MARKER = '2o+jXLn32JJMclsjO5GhAR5Z4q6tSmeu' // a slice of icon-120.png's base64 image data
 
 test('the healthcheck answers OK', async ({ request }) => {
   const res = await request.get('/healthcheck')
