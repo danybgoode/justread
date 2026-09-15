@@ -1,6 +1,6 @@
 # Read the comments without leaving the reader — Sprint 2: Reddit, and a cache that survives
 
-**Status:** ⬜ not started
+**Status:** ✅ shipped 2026-09-15 · story 2.1 in fork `06593003`, merged with sprint 1 in PR #11 · story 2.2 cut (product owner)
 
 > **Build contract (locked by the architect before the builder started)**
 >
@@ -58,19 +58,17 @@ Reddit-adjacent categories in the starter set stop sending me out to a browser t
 - **deterministic gate:** `go build` + `go vet` + `go test` + `docker compose build`.
 
 ## Sprint 2 — Smoke walkthrough (do these in order)
-Env: production · `https://app.panfleto.win`
+Env: production · `https://app.panfleto.win` and the VM
 
-1. **(auth path — owed to the product owner by name)** Sign in and open an article from a **Reddit** feed.
-   → The comments section is there and expands into the thread.
+1. **(auth path — owed to the product owner by name)** Sign in, open a Hacker News article and expand Comments.
+   → The thread loads.
 2. Reload the page and expand again.
-   → It appears noticeably faster, and the VM log shows **no** outbound Reddit request. That's the cache.
-3. Open a **Hacker News** article and expand.
-   → Still works exactly as it did after Sprint 1. No regression.
-4. On the VM: `docker compose logs miniflux | grep -ic reddit` over an hour of normal use.
-   → The count matches the number recorded in story 2.2, not a multiple of it.
-5. If D1 was a migration: check `app.panfleto.win` came back up after the deploy and the migration line is in the log with no error.
-   → Clean start. **If this step exists at all, the product owner approved it beforehand.**
-6. Open an article from a feed with no comments.
+   → Noticeably faster. On the VM, `docker compose logs miniflux | grep "Comments fetched" | tail` shows **no** new line for that item. Cache hits log at Debug, so they don't appear.
+3. Restart the reader (`docker compose up -d miniflux`) and expand the same thread.
+   → A new `Comments fetched` line: an in-process cache (D1) misses after a restart, by design.
+4. Open an article from a **Reddit** feed.
+   → No Comments section. Reddit was cut (D4), and its entries carry no comments URL anyway.
+5. Open an article from a feed with no comments.
    → Still nothing. Unchanged.
 
 If any step fails, note the step number + what you saw — that's the bug report.

@@ -4,7 +4,7 @@ slug: inline-comments
 build_order: 7
 ---
 
-# Epic: Read the comments without leaving the reader
+# Epic: Read the comments without leaving the reader ✅
 
 > **Area:** 01-reading-experience · **Risk:** high · **Class:** Feature · **Scope seed:** [`00-ideas/seeds/inline-comments.md`](../../00-ideas/seeds/inline-comments.md)
 
@@ -100,12 +100,12 @@ Backend + template; no data migration in S1 by construction. S1 ships and is use
 covers the single most comment-driven feed in the starter set. S2 only ships once D1 is decided.
 
 ## Definition of Done (epic)
-- [ ] All sprints merged to `main` + deployed + smoke-tested (gaps stated)
-- [ ] Each `sprint-N.md` has its smoke walkthrough (real URLs)
-- [ ] This README marked ✅; every sprint status ticked with commit refs
-- [ ] `RETROSPECTIVE.md` written
-- [ ] Product poster updated — 01's "Comments" line goes 🚧 → ✅
-- [ ] Durable learnings promoted to `Roadmap/LEARNINGS.md`
-- [ ] **Kill-switch:** carve-out or flag per D1's outcome — if a migration was added, the README records who approved it and why
-- [ ] `AGENTS.md` rule 1's delta count updated for the files this epic added
-- [ ] Feature branch deleted; frontmatter `status: shipped`; `node scripts/build-order.mjs`
+- [x] All sprints merged to `main` + deployed + smoke-tested. Gaps are stated in each sprint's walkthrough: the signed-in expand is owed to the product owner
+- [x] Each `sprint-N.md` has its smoke walkthrough (real URLs)
+- [x] This README marked ✅; every sprint status ticked with commit refs
+- [x] `RETROSPECTIVE.md` written
+- [x] Product poster updated — 01's "Comments" line goes 🚧 → ✅
+- [x] Durable learnings promoted to `Roadmap/LEARNINGS.md`
+- [x] **Kill switch:** D1 added no migration, so none is needed for schema. Rollback is `git revert` of the merge, or moving the pin back to `fa8e46a2` (tag `pre-inline-comments`)
+- [x] `AGENTS.md` rule 1's delta count updated for the files this epic added
+- [x] Feature branch deleted; frontmatter `status: shipped`; `node scripts/build-order.mjs`

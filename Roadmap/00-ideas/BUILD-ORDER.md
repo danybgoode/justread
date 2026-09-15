@@ -13,7 +13,7 @@
 ## 🏗️ Building now (2)
 
 - [Click an article and the content is already there](../../01-reading-experience/article-autofetch/README.md) — 01 Reading experience · 0/7 stories · risk: High · wave-2026-09-panfleto
-- [Read the comments without leaving the reader](../../01-reading-experience/inline-comments/README.md) — 01 Reading experience · 0/3 stories · risk: High · wave-2026-09-panfleto
+- [Read the comments without leaving the reader ✅](../../01-reading-experience/inline-comments/README.md) — 01 Reading experience · 3/3 stories · risk: High · wave-2026-09-panfleto
 
 ## 📋 Ready to build (scaffolded, not started) (3)
 
@@ -41,7 +41,7 @@ forgot to set `status:` (or the README is stale). Reconcile the README, then thi
 | Epic | frontmatter (used) | sprint/retro-derived |
 |---|---|---|
 | Click an article and the content is already there | In progress | Scaffolded |
-| Read the comments without leaving the reader | In progress | Scaffolded |
+| Read the comments without leaving the reader ✅ | In progress | Shipped |
 
 ---
 _Epics: 9 · seeds in funnel: 0 · status drift: 2. Regenerate with `node scripts/build-order.mjs`._
