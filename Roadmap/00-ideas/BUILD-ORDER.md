@@ -14,8 +14,9 @@
 
 _None._
 
-## 📋 Ready to build (scaffolded, not started) (3)
+## 📋 Ready to build (scaffolded, not started) (4)
 
+- [Your own feeds, as a newspaper](../../01-reading-experience/personalized-edition/README.md) — 01 Reading experience · 0/9 stories · risk: High
 - [A new signup should not be a coin flip](../../02-onboarding-and-signup/onboarding-provisioning-reliability/README.md) — 02 Onboarding & signup · 0/2 stories · risk: Low
 - [MCP tokens shouldn't travel in query strings](../../03-agent-surface/mcp-token-handling/README.md) — 03 Agent surface · 0/4 stories · risk: High
 - [Stop compiling Go on the production VM](../../09-platform-infra/ci-build-pipeline/README.md) — 09 Platform & Infra · 0/4 stories · risk: High
@@ -30,9 +31,9 @@ _None._
 - [The ad-block rule is silently dropping real articles ✅](../../01-reading-experience/adblock-rule-false-positives/README.md) — 01 Reading experience · 2/2 stories · risk: Low · wave-2026-09-panfleto
 - [Put panfleto-core back on upstream's timeline ✅](../../09-platform-infra/miniflux-upstream-resync/README.md) — 09 Platform & Infra · 9/9 stories · risk: High · wave-2026-09-panfleto
 
-## ⬜ Funnel — seeds not yet scaffolded (0)
+## ⬜ Funnel — seeds not yet scaffolded (1)
 
-_None._
+- [An edition, not a river with quotas](seeds/editorial-ranking-tuning.md) — Ready · Feature · appetite M
 
 ---
-_Epics: 10 · seeds in funnel: 0 · status drift: 0. Regenerate with `node scripts/build-order.mjs`._
+_Epics: 11 · seeds in funnel: 1 · status drift: 0. Regenerate with `node scripts/build-order.mjs`._
