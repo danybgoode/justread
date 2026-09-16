@@ -58,12 +58,12 @@ Promoted to `Roadmap/LEARNINGS.md`:
 
 ## Gaps / follow-ups
 - **Owed to the product owner:**
-  - Turning the flag on in Production (set it, then redeploy), then the Sprint 1 and 3 walkthroughs on
-    their own account. The real sign-in and the judgement on their own edition can't be automated.
-  - The Production `EDITORIAL_SESSION_SECRET` is write-only; it is proven the first time a Production
-    connect succeeds.
+  - ~~Turning the flag on in Production~~: done 2026-09-16 (deployment `oct5722u6`). A wrong token got
+    `?error=token`, not `?error=config`, which proves the Production secret works. Still owed: the Sprint 1
+    and 3 walkthroughs on their own account. The real sign-in and the judgement on their own edition can't
+    be automated.
   - Delete the leftover `spike-probe` API key on user 2 (panfleto Settings → API keys).
-  - `codex login`: its token is revoked, not capped.
+  - ~~`codex login`~~: done by the product owner, 2026-09-16.
 - **Discoverability:** nothing links to `/tu-edicion/conectar` yet (no header entry, no link from the
   reader's Settings). Deliberate for a dark launch; it needs one before real readers can find it.
 - **Every page on the editorial site loads its document twice** in a real browser. This predates the
