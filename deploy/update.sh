@@ -38,8 +38,11 @@ cd deploy
 [ -f .env ] || { echo "deploy/.env is missing - see .env.example" >&2; exit 1; }
 
 # Which image? A hand-set MINIFLUX_IMAGE_PIN (a deliberate rollback) beats the submodule pin.
+# Tolerate the shapes a human actually types into a .env at 3am: surrounding quotes, trailing spaces,
+# a trailing \r from an editor that saved CRLF.
 pinned_sha=$(git -C ../panfleto-core rev-parse HEAD)
-override=$(sed -n 's/^MINIFLUX_IMAGE_PIN=//p' .env | tail -n1)
+override=$(sed -n 's/^[[:space:]]*MINIFLUX_IMAGE_PIN=//p' .env | tail -n1 \
+  | tr -d '\r' | sed -e 's/[[:space:]]*$//' -e 's/^["'"'"']//' -e 's/["'"'"']$//' -e 's/[[:space:]]*$//')
 image=${override:-$REGISTRY_IMAGE:$pinned_sha}
 if [ -n "$override" ]; then
   echo "==> MINIFLUX_IMAGE_PIN is set in .env - deploying $image instead of the submodule pin ($pinned_sha)"
@@ -47,19 +50,33 @@ else
   echo "==> submodule pin $pinned_sha -> $image"
 fi
 
+# Fetch BEFORE touching .env. If CI has not finished building this commit (or GHCR is down), the pull
+# fails here, .env still names the image that is actually running, and the live container is left
+# alone - a deploy that does not happen, rather than a stack that cannot start.
+if ! docker pull "$image"; then
+  echo "" >&2
+  echo "==> Could not pull $image. Nothing has changed; the reader is still serving." >&2
+  echo "    Check https://github.com/danybgoode/panfleto-core/actions - the image is built on push," >&2
+  echo "    so a commit whose workflow is still running (or failed) has no image yet." >&2
+  exit 1
+fi
+
 # Rewrite the managed MINIFLUX_IMAGE line in place, preserving the file's mode.
 tmp=$(mktemp)
-cp -p .env "$tmp"
-grep -v '^MINIFLUX_IMAGE=' "$tmp" > "$tmp.new" || true
-printf 'MINIFLUX_IMAGE=%s\n' "$image" >> "$tmp.new"
-cat "$tmp.new" > .env          # `cat >` keeps .env's own inode, owner and 600 mode
-rm -f "$tmp" "$tmp.new"
+grep -v '^[[:space:]]*MINIFLUX_IMAGE=' .env > "$tmp" || true
+printf 'MINIFLUX_IMAGE=%s\n' "$image" >> "$tmp"
+cat "$tmp" > .env          # `cat >` keeps .env's own inode, owner and 600 mode
+rm -f "$tmp"
 
-# The reader is pulled; only the landing page is built here.
-docker compose pull miniflux
+# The reader is already pulled; only the landing page is built here.
 docker compose build landing
 docker compose up -d
-docker image prune -f
+docker image prune -f          # dangling layers only - every SHA tag stays, which is what makes
+                               # a rollback a restart instead of a rebuild
 
 docker compose ps
-echo "==> running: $(docker compose exec -T miniflux miniflux -version 2>/dev/null || echo '(version unavailable)')"
+for _ in 1 2 3 4 5; do
+  running=$(docker compose exec -T miniflux miniflux -version 2>/dev/null) && break
+  sleep 2
+done
+echo "==> running: ${running:-(version unavailable - check docker compose logs miniflux)}"
