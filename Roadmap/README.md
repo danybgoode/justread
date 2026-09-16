@@ -63,8 +63,9 @@ independently shippable slice of value.
   each card says why it's there, and one reader's edition can't reach another. The key never reaches
   the browser in readable form, and a revoked token stops working within 10 minutes. Behind
   `EDITORIAL_PERSONALIZED_ENABLED`: `true` in Production since 2026-09-16, `false` in Preview and
-  Development. A **Tu edición** link in the site header (desktop and mobile) leads to it, and appears
-  only while the flag is on. Ranking tuning is wave 3
+  Development. A **Tu edición** link in the newspaper's header (shown only while the flag is on) leads
+  to it. So does a **Tu edición** item in the reader's own menu at `app.panfleto.win`, and a line in the
+  MCP token panel, where readers get the token the connect page asks for Ranking tuning is wave 3
 
 ### 02 · Onboarding & signup
 - ✅ Landing page and one-click signup at `panfleto.win`

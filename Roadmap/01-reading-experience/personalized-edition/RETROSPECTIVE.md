@@ -66,8 +66,13 @@ Promoted to `Roadmap/LEARNINGS.md`:
   - ~~`codex login`~~: done by the product owner, 2026-09-16.
 - **Discoverability:** ~~no link~~. A **Tu edición** header link shipped 2026-09-16 (`editorial-panfleto`
   PR #13, gated by the flag). Because `/` is prerendered, the link follows the flag as of the last build
-  or 10-minute revalidation, the same "set, then redeploy" rule. A link from the reader's own Settings
-  page would be fork delta and was not added.
+  or 10-minute revalidation, the same "set, then redeploy" rule. **The reader links to it too** (2026-09-16,
+  justread #22, pin `6c9cfc7b`, rollback tag `pin/pre-edition-reader-link`). There is a menu item and a
+  line in the MCP token panel, folded into the existing branding and MCP-panel topic commits, so the fork
+  gained no file (still 49 files). Two things to know:
+  - The reader can't see editorial's flag, so turning the flag off makes the link lead to a 404.
+  - Upstream's `app.js` turns every header-menu click into `window.location = href`, so the link opens
+    in the same tab unless Cmd/Ctrl is held, despite `target="_blank"`.
 - **Every page on the editorial site loads its document twice** in a real browser. This predates the
   epic (production's anonymous `/` does it). On the personalized path it doubles dynamic renders per
   view. Worth a look on its own.
