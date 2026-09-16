@@ -109,8 +109,11 @@ back to the planning tier, and record the decision in the epic README before wri
 ### 4. Secrets live on the host, never in the repo.
 Runtime config is read from `deploy/.env` and `deploy/oauth.env` on the VM — both `600`, both
 git-ignored; `deploy/.env.example` documents every value. **MCP tokens are credentials**: they are
-API keys minted per user by `internal/ui/integration_show.go`. Never log one, never paste one into a
-doc, never commit a fixture containing one.
+API keys minted per user by `internal/ui/integration_show.go` — **on request since 2026-09-16, never
+as a side effect of viewing a page**. Never log one, never paste one into a doc, never commit a
+fixture containing one. Two traps found the hard way (`03-agent-surface/mcp-token-handling`): a
+credential rendered into a page is in the DOM on every load, disclosure widget or not; and Node quotes
+a rejected header's *value* in its exception, so an unsanitised catch logs whatever the caller sent.
 
 ### 5. Done means deployed, not merged.
 Merging to `main` changes nothing in production. A story is done when the change is on `main`, the

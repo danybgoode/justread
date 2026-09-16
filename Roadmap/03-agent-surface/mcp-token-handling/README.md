@@ -1,10 +1,10 @@
 ---
-status: in-progress
+status: shipped
 slug: mcp-token-handling
 build_order: 10
 ---
 
-# Epic: MCP tokens shouldn't travel in query strings
+# Epic: MCP tokens shouldn't travel in query strings ✅
 
 > **Area:** 03-agent-surface · **Risk:** high · **Class:** Chore · **Archetype:** Maintainer · **Scope seed:** [`00-ideas/seeds/mcp-token-handling.md`](../../00-ideas/seeds/mcp-token-handling.md)
 
@@ -120,12 +120,18 @@ D3's window, so if header auth turns out to be broken for some client, the fallb
 and nothing needs flipping. Do not shorten that window to "ship it faster" — it is the safety
 mechanism, not politeness.
 
-## Definition of Done (epic)
-- [ ] Sprints merged to `main` + deployed + smoke-tested (gaps stated)
-- [ ] Each `sprint-N.md` has its smoke walkthrough (real URLs)
-- [ ] This README marked ✅; every sprint status ticked with commit refs
-- [ ] `RETROSPECTIVE.md` written
-- [ ] Product poster updated — 03's "Token handling" 🚧 line is corrected
-- [ ] Durable learnings promoted to `Roadmap/LEARNINGS.md`
-- [ ] **No token appears in any doc, log fixture or commit** — check the diff before every push (rule 4)
-- [ ] Feature branch deleted; frontmatter `status: shipped`; `node scripts/build-order.mjs`
+## Definition of Done (epic) — ✅ complete 2026-09-16
+- [x] S1 and S2.1 merged to `main` (PR #17, `fadf787`) + deployed (pin `c7d18f88`) + smoke-tested live,
+      20/20, on two disposable accounts. **S2.2 cut on D2's research**, recorded above. Gap stated:
+      connecting a real third-party assistant is owed to the product owner
+- [x] Each `sprint-N.md` has its walkthrough, with the executed live confirmation recorded against
+      real URLs and a before/after table from a real account
+- [x] This README marked ✅; both sprint statuses ticked
+- [x] `RETROSPECTIVE.md` written
+- [x] Product poster updated — 03's "Token handling" 🚧 line is now ✅
+- [x] Durable learnings promoted to `Roadmap/LEARNINGS.md`
+- [x] **No token appears in any doc, log fixture or commit.** Checked on the diff before every push,
+      and verified on the host afterwards: Caddy's access log carries zero lines containing the test
+      token, and the landing log carries zero forged lines despite the spec firing a CRLF payload at
+      production. Fixtures use the synthetic literals `not-a-real-token` and `TOKENVALUEFORTHISTESTONLY`
+- [x] Feature branch deleted; frontmatter `status: shipped`; `node scripts/build-order.mjs`
