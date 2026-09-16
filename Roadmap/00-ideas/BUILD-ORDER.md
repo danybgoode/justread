@@ -5,21 +5,20 @@
 
 # Build order — generated status board
 
-> **Generated 2026-09-15 — do not hand-edit.** Epic status SSOT = the epic `README.md` frontmatter
+> **Generated 2026-09-16 — do not hand-edit.** Epic status SSOT = the epic `README.md` frontmatter
 > `status:` field (set at epic close). To change what this shows, edit that field (or a seed for the
 > funnel), then run `node scripts/build-order.mjs`. This board and the Notion "Marketplace Roadmap"
 > DB are both *derived views* — never hand-edit the board.
 
-## 🏗️ Building now (0)
+## 🏗️ Building now (1)
 
-_None._
+- [Stop compiling Go on the production VM](../../09-platform-infra/ci-build-pipeline/README.md) — 09 Platform & Infra · 0/4 stories · risk: High
 
-## 📋 Ready to build (scaffolded, not started) (4)
+## 📋 Ready to build (scaffolded, not started) (3)
 
 - [Your own feeds, as a newspaper](../../01-reading-experience/personalized-edition/README.md) — 01 Reading experience · 0/9 stories · risk: High
 - [A new signup should not be a coin flip](../../02-onboarding-and-signup/onboarding-provisioning-reliability/README.md) — 02 Onboarding & signup · 0/2 stories · risk: Low
 - [MCP tokens shouldn't travel in query strings](../../03-agent-surface/mcp-token-handling/README.md) — 03 Agent surface · 0/4 stories · risk: High
-- [Stop compiling Go on the production VM](../../09-platform-infra/ci-build-pipeline/README.md) — 09 Platform & Infra · 0/4 stories · risk: High
 
 ## ✅ Shipped (7)
 
@@ -35,5 +34,15 @@ _None._
 
 - [An edition, not a river with quotas](seeds/editorial-ranking-tuning.md) — Ready · Feature · appetite M
 
+## ⚠️ Status drift — README frontmatter vs sprint/retro-derived (1)
+
+These epics’ authoritative README-frontmatter `status:` disagrees with what the sprint/retro
+derivation infers. The board trusts the **frontmatter**; a mismatch usually means a close-out
+forgot to set `status:` (or the README is stale). Reconcile the README, then this advisory clears.
+
+| Epic | frontmatter (used) | sprint/retro-derived |
+|---|---|---|
+| Stop compiling Go on the production VM | In progress | Scaffolded |
+
 ---
-_Epics: 11 · seeds in funnel: 1 · status drift: 0. Regenerate with `node scripts/build-order.mjs`._
+_Epics: 11 · seeds in funnel: 1 · status drift: 1. Regenerate with `node scripts/build-order.mjs`._
