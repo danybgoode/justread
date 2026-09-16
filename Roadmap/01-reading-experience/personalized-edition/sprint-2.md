@@ -1,6 +1,6 @@
 # Your own feeds, as a newspaper — Sprint 2: The per-user edition cache
 
-**Status:** ⬜ not started
+**Status:** ✅ shipped 2026-09-16, merged dark: `editorial-panfleto` `8bc0cd0` (+ review fixes `b3bc8d0`), PR #12, merge `84225f4`
 
 > **Why this sprint exists, in one number:** this reader's last 24 hours is **1,156 entries, ~9.5 MB,
 > two requests, 759 ms p50** from Vercel — and `limit=100` covers only **2 h 7 min** of it. A render
@@ -58,19 +58,34 @@ reading.
 - **deterministic gate:** `pnpm typecheck` + `pnpm build` + Playwright `api` green before merge.
 - **Merge:** HIGH tier ⇒ the product owner merges; fresh reviewer subagent mandatory.
 
-## Sprint 2 — Smoke walkthrough (do these in order)
-Env: production · https://editorial.panfleto.win
+## Live confirmation (2026-09-16, flag-on preview, disposable readers)
+- **Built once (2.1):**
+  - First connect built and rendered in 1.4–1.7 s (217 and 71 entries).
+  - The stored value (`pe:v1:preview:edition:7`) was 56 KB gzipped. It holds no key and has a 48 h TTL.
+- **Refresh (2.2):**
+  - An edition aged to 15 minutes was served over plain HTTP in **518 ms**, showing "Actualizada hace 15 min".
+  - The store then showed an incremental rebuild about 1 s later: `fullBuiltAt` stayed unchanged and `builtAt` moved to the request time.
+- **Isolation (2.3):**
+  - Each reader's cards came only from their own feeds.
+  - An anonymous `/` fetched after both readers' views was still curated.
+  - A signed-in `/` answers `private, no-cache, no-store`.
+- **A trap for whoever verifies SWR next:** in a real browser the page reported "hace 0 min" even when the server
+  had just sent the stale copy. Every page on this site loads its document **twice**; production's
+  anonymous `/` does it too, before this epic. By the second load the refresh had already landed. Verify
+  freshness over plain HTTP, not in a browser.
 
-1. Signed in, open https://editorial.panfleto.win and note how long the page takes.
-   → It loads as a page, not a spinner.
-2. Reload it.
-   → The second load is visibly faster than the first — it came from the cache.
-3. Wait for the freshness window to pass, then reload.
-   → The page still appears immediately, and newer stories have appeared (served stale, refreshed behind).
-4. Sign out, sign in as the second test reader, open the same URL. **(data boundary — owed to the
-   product owner)**
-   → You see **that** reader's edition. Not a warm copy of the first reader's.
-5. Open the same URL signed out, in a private window.
-   → The anonymous curated edition. No personalized content at all.
+## Sprint 2 — Smoke walkthrough (do these in order)
+Env: production · https://editorial-panfleto.vercel.app (flag on, connected)
+
+1. Open https://editorial-panfleto.vercel.app.
+   → Your edition appears as a page within a couple of seconds, saying "Actualizada hace 0 min".
+2. Reload.
+   → Faster, and still "hace 0 min"/"hace 1 min": it came from the stored edition.
+3. Come back after more than 10 minutes and reload.
+   → The page still appears at once. Reload again a few seconds later: the "Actualizada" time has reset and any new stories are in.
+4. Press **Salir**, then connect with the second account's token. **(data boundary — owed to the product owner)**
+   → That account's edition, not a warm copy of the first.
+5. Open the same URL in a private window.
+   → The curated edition. Nothing personal.
 
 If any step fails, note the step number + what you saw — that's the bug report.

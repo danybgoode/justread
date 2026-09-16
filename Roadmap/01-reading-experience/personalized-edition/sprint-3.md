@@ -1,6 +1,6 @@
 # Your own feeds, as a newspaper — Sprint 3: The edition renders behind auth
 
-**Status:** ⬜ not started
+**Status:** ✅ shipped 2026-09-16, merged dark: `editorial-panfleto` `d20f914` (+ review fixes `b3bc8d0`), PR #12, merge `84225f4`, production deployment `o3j9jzobf`. Flag `EDITORIAL_PERSONALIZED_ENABLED` = `false` in all three environments
 
 > **Ship v1's ranking exactly as the spike ran it.** D3's verdict was *worth reading with tuning*, and
 > that tuning is wave 3 (`editorial-ranking-tuning`). Pulling it forward here is how this M becomes an
@@ -57,22 +57,35 @@ a new surface handling a live credential can't go live by accident.
 - **deterministic gate:** `pnpm typecheck` + `pnpm build` + Playwright `api` green before merge.
 - **Merge:** HIGH tier ⇒ the product owner merges; fresh reviewer subagent mandatory.
 
-## Sprint 3 — Smoke walkthrough (do these in order)
-Env: production · https://editorial.panfleto.win
+## Live confirmation (2026-09-16)
+**Production, flag off, after the deploy:**
+- `/` was still a cache `HIT` and showed **the same 23 curated headlines as the snapshot taken just before the merge**, with no personal text.
+- `/tu-edicion` answered `307 → /`, and `/tu-edicion/conectar` answered 404.
+- A forged cookie and a real preview-sealed cookie both got the curated page.
+- `/admin` login rendered.
 
-1. With the flag **disabled**, signed in, open https://editorial.panfleto.win.
-   → The anonymous curated edition. Nothing personalized. This is what merging dark looks like.
-2. Flip `editorial.personalized_enabled` on in Production. **(config change — owed to the product owner)**
-   → Reload: the front page is now built from your feeds.
+**Flag-on preview:**
+- **Edition renders (3.1):**
+  - Reader A: 26 cards from 11 feeds. Reader B: 6 cards (the quotas at work on 3 feeds).
+  - Every card says why it's there ("reciente", "N medios: …", "N comentarios en HN").
+  - Reader B's two BBC feeds shared 4 stories that day. Each showed once, BBC never corroborated BBC, and an HN item linking a BBC article correctly read "2 medios: BBC, ycombinator.com".
+  - Ranking parity with the spike: exact on its saved day (1,067 stories, 13 clusters, identical front and sections).
+- **Flag-off preview (3.3):** a valid session got the curated `/`.
+
+## Sprint 3 — Smoke walkthrough (do these in order)
+Env: production · https://editorial-panfleto.vercel.app
+
+1. With the flag **off** (as shipped), open https://editorial-panfleto.vercel.app, signed in or not.
+   → The curated edition. https://editorial-panfleto.vercel.app/tu-edicion/conectar is a 404. This is what merging dark looks like.
+2. In Vercel → editorial-panfleto → Settings → Environment Variables, set `EDITORIAL_PERSONALIZED_ENABLED` to `true` for **Production only**, then **redeploy** production (an env change reaches only a new deployment). **(config change — owed to the product owner)**
+   → https://editorial-panfleto.vercel.app/tu-edicion/conectar now shows the connect form. Connect (Sprint 1, step 2); `/` is now built from your feeds.
 3. Read the lead stories.
-   → You recognise your own sources. Stories carried by several of your publishers sit above stories
-   that are merely recent.
-4. Find a story you know appeared in more than one of your feeds.
-   → It appears **once**, with its other publishers listed — and if you subscribe to two feeds from the
-   same outlet, that outlet does not corroborate itself.
-5. Open the same URL signed out, private window.
+   → You recognise your own sources. Stories several of your publishers ran sit above ones that are merely recent. Each card says why it's there.
+4. Find a story you know ran in more than one of your feeds.
+   → It appears **once**, with its publishers listed. Two feeds from the same outlet don't count as two.
+5. Open https://editorial-panfleto.vercel.app in a private window.
    → The curated edition, unchanged from step 1.
-6. Flip the flag back off, reload.
-   → Everyone is back to the anonymous edition immediately.
+6. Set the flag back to `false` and redeploy.
+   → Everyone gets the curated edition again, and connected readers' sessions go dormant. Turning it back on revives them until they expire (30 days).
 
 If any step fails, note the step number + what you saw — that's the bug report.

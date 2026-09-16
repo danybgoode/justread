@@ -57,9 +57,13 @@ independently shippable slice of value.
 - ✅ **Comments** — a Hacker News article opens its thread inside the reader: lazy, nested 5 deep, sanitized, cached 10 minutes. Other sites keep the outbound link, and Reddit was cut (it blocks panfleto's IP)
 - ✅ The entry page says when an article is still being fetched ("Loading…"), or when automatic fetching found nothing and the paywall rail is the way in
 
-- 🚧 **A personalized newspaper edition** — decided, not built. A reader's own feeds rendered in the
-  editorial layout at `editorial.panfleto.win`, live from Miniflux with nothing durable stored. Shaped by
-  `spike-personalized-editorial`; bet as three waves behind `mcp-token-handling`
+- 🚧 **A personalized newspaper edition — built and in production, switched off.** A reader connects once
+  with their own panfleto token at `editorial-panfleto.vercel.app/tu-edicion/conectar`. After that, the
+  newspaper's front page is built from their feeds: stories several of their publishers ran go on top,
+  each card says why it's there, and one reader's edition can't reach another. The key never reaches
+  the browser in readable form, and a revoked token stops working within 10 minutes. Behind
+  `EDITORIAL_PERSONALIZED_ENABLED`, `false` everywhere, until the product owner turns it on. Nothing
+  links to it yet. Ranking tuning is wave 3
 
 ### 02 · Onboarding & signup
 - ✅ Landing page and one-click signup at `panfleto.win`
@@ -93,6 +97,13 @@ independently shippable slice of value.
 
 ## Recent highlights
 
+- **2026-09-16** — `personalized-edition`: the newspaper can now be built from one reader's own feeds,
+  and it is in production, switched off. Two premises in the scoped epic were false: the subdomain it
+  named doesn't exist, and "map the reader's email to their account" gives no way to read their feeds.
+  The product owner picked the zero-Go path, a token the reader pastes once. The ranking reproduces the
+  spike's edition story for story. The fresh review earned its place: it found that a revoked token
+  could keep reading a cached edition, and that a Cloudflare challenge would have signed every reader
+  out. Both were fixed before merge and confirmed on a live preview.
 - **2026-09-16** — `mcp-token-handling`: the reader stops handing you a credential for looking at a
   settings page. Confirmed on a real account first — opening `/integrations` really did mint a
   64-character token and render it into the page, alongside the four CSP violations. Now: generate on

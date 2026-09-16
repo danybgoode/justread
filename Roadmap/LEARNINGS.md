@@ -165,6 +165,10 @@ to any project carrying someone else's codebase.*
   of one real reader's day; the day held 1,156 entries across 26 feeds. Any "daily" page designed against a
   round limit is silently a "last two hours" page. Measure the span N covers for a real account first — and
   check the API's ceiling (Miniflux refuses `limit > 1000`) before assuming a day fits in one request.
+  **Its sibling: an incremental refresh keyed on PUBLISH time misses late arrivals.** (2026-09-16,
+  personalized-edition) 90 of one day's entries were published more than 6 h before Miniflux stored them,
+  because feeds poll hourly and publishers backdate. Key the delta on insertion order (`after_entry_id`),
+  and keep publish time only as the window.
 - **Corroboration must count publishers, not feeds.** (2026-09-15) Two BBC feeds and two NYT feeds in one
   account made BBC stories look corroborated by BBC. Any cross-source signal needs a publisher identity
   above the feed row, or duplicate subscriptions manufacture agreement.
@@ -195,6 +199,18 @@ to any project carrying someone else's codebase.*
 - **"The upstream is down" must never be reported as "your credential is wrong".** (2026-09-16) The
   user's fix for "unauthorized" is to rotate — so during someone else's outage they destroy a working
   token. Split the outcomes, and say *do not rotate it* in the message.
+  **Sharpened 2026-09-16 (personalized-edition): know which status the ORIGIN uses for a bad credential,
+  and treat every other status as an outage.** Miniflux answers a bad key with 401 only. A 403 on that
+  path comes from Cloudflare in front of it (a challenge on a cloud provider's egress). Mapping 403 to
+  "token rejected" would have signed every reader out during a WAF event.
+- **A cache that outlives the credential check keeps serving a revoked credential.** (2026-09-16,
+  personalized-edition) The edition was only re-fetched, and so only re-authorized, when it went stale.
+  Anyone else's views kept it fresh, so a rotated-away key read it indefinitely. Re-verify the credential
+  at view time on its own short TTL (remember the result under an HMAC of the key, never the key), and
+  bind it to the identity the cache is keyed on.
+- **Node's AES-GCM decipher accepts a truncated auth tag** unless you pass `authTagLength` (Node 24 prints
+  only a deprecation warning). A 4-byte tag turns forging a sealed cookie into a feasible online guess.
+  Check IV and tag lengths before `setAuthTag`. (2026-09-16, found by the fresh reviewer)
 - **A test asserting "an error came back" goes green during an outage.** (2026-09-16) Four auth specs
   would have passed while the server was unreachable, proving nothing about the credential. Assert the
   specific error code, not merely that an error envelope arrived.
@@ -261,6 +277,20 @@ to any project carrying someone else's codebase.*
   silently store or report EMPTY values** through a convenience CLI command even when the underlying
   API call "succeeds." Verify by value **length** where you can't read the value directly (a scoped
   read token may be needed), not just by exit code.
+  **Vercel specifics (2026-09-16, personalized-edition):** `vercel api …/env?decrypt=true` still returns
+  ciphertext for encrypted values, so it proves nothing. `vercel env pull --environment=development` into a
+  temp file, checking the length, then deleting the file, does. A deployment-scoped `vercel deploy --env
+  FLAG=true` gives a real flag-on preview without touching project settings, which is how you smoke a
+  surface that must stay merged dark. And an env change reaches only a NEW deployment: "flip the flag"
+  means set it, then redeploy.
+- **A repo's own `.env.local` can hold an expired `VERCEL_OIDC_TOKEN` that silently overrides the fresh
+  one** `vercel env run` injects. Symptom: a protected preview serves the Vercel login page, as if the
+  trusted-source header were ignored. Pull a fresh token to a temp file instead of editing the
+  project's env file. (2026-09-16)
+- **Verify stale-while-revalidate over plain HTTP, not in a browser.** (2026-09-16) On a site whose pages
+  load their document twice (the editorial app does, before any of this), the second load arrives after
+  the background refresh. So the browser shows "just updated" while the server correctly sent the stale
+  copy in 518 ms. Age the cached value directly, then `fetch` once.
 - **A "sensitive"/write-only secret is confirmable by presence/type but not by value** — you can check
   it exists and which environment it targets, but not its actual content, from a CLI or API. Read the
   provider's dashboard, or have the app surface the cause on use (missing key → a specific, classifiable

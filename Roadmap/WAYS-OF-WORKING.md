@@ -60,7 +60,10 @@ Plan → Branch + scaffold docs → Build story → Verify → QA/smoke-test (pr
      no preview URL and no protection-bypass token. The whole stack is one Docker Compose deployment
      on one Oracle VM, and it only changes when a human runs `update.sh` (see step 7). This is the
      "build-on-merge container platform" shape the template names, and it has three consequences,
-     all of which are **correct, not gaps**:
+     all of which are **correct, not gaps**. **One exception, a sibling repo:** `editorial-panfleto`
+     (the newspaper, `editorial-panfleto.vercel.app`) *is* on Vercel. There, merging to `main` is the
+     production deploy, every push builds a preview, and those previews run `payload migrate` against
+     the production database. See `01-reading-experience/personalized-edition` for how to smoke it safely:
      1. **The pre-merge gate runs locally.** `go build ./...` + `go vet ./...` + `go test ./...` for
         the reader, `npx tsc --noEmit` + `npm run build` for the landing page, and the Playwright
         `api` project against a local `docker compose up`
@@ -266,6 +269,12 @@ author's context-bias hides. Two layers do this, and they're complementary:
     diff **plus** `git -C panfleto-core diff <old-pin> <new-pin>` (paywall-rail-single-source, 2026-09-15).
   - **Codex capped again (2026-09-15, until 2026-10-09)**; agy's Gemini tier returned empty and it fell
     back to GPT-OSS 120B, which then 503'd once under load. Retry agy once before calling the layer dark.
+  - **Codex login revoked (2026-09-16, personalized-edition)**, which is a different failure from capped:
+    `cross-review.mjs` printed `Codex unavailable (token revoked)` and fell back to agy on its own, so the
+    fallback is automatic but the downgrade is only in stderr. Restore with `codex login`. agy 1.2.4
+    returned a real review. Its two "blocking" findings were stale framework knowledge (it insisted Next
+    16's `proxy.ts` must be `middleware.ts`), so check a confident framework claim against the installed
+    `node_modules/next/dist/docs` before acting on it.
   - _(pin versions here as they bite — a young CLI's print contract breaks on minor bumps.)_
 
 - **Fresh reviewer subagent (context independence) — HIGH tier only:** an agent that did **not** hold the
