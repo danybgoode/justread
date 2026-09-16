@@ -83,13 +83,20 @@ independently shippable slice of value.
 - ✅ **Upstream sync workflow** — on the fork: rebases onto `miniflux/v2` `main` and runs `go build`/`vet`/`test`; quiet when there's nothing to do, a PR when clean and green, an issue naming the conflicting file or failed step otherwise; `accept` refuses a moved base and tags the old tip first. Every path observed on real runs
 - 🚧 **…on a weekly schedule** — cron Mon 06:17 UTC is configured; the first scheduled run has not been observed yet
 - 🚧 **Feed categorisation and ad filtering** — `enhance_miniflux.js` writes a tested, label-shaped block rule to the field Miniflux actually reads; feeds added after 2026-09-15 (including new signups' starter feeds) don't get it until the rule is re-applied
-- ❌ **No CI build** — `update.sh` compiles Go on the production VM; a compile error takes the reader down and there is no artifact to roll back to
+- ✅ **The reader is built in CI, not on the production VM** — a `panfleto image` workflow on the fork builds `linux/arm64` natively (~33 s, free: public repo) and pushes `ghcr.io/danybgoode/panfleto-core` at both the commit SHA and a moving tag; `update.sh` resolves the tag from the submodule pin and pulls it in seconds. The package is public, so the VM holds no registry credential. Rollback is pinning a previous tag — **performed on production, 5 s, with ~1 s of downtime**
 - ✅ **Nothing outside Miniflux writes article content** — `scripts/content-write-guard.mjs` fails `guards` and pre-push on a script that would
 
 ---
 
 ## Recent highlights
 
+- **2026-09-16** — `ci-build-pipeline`: production stopped compiling Go. The reader's image is built
+  by CI on a native arm64 runner and pulled by the VM, so a bad commit can no longer take the reader
+  down at build time and a rollback is a 5-second restart instead of another slow rebuild — both
+  measured on production, including a deliberate roll-back-and-forward. 76 s of contended VM CPU
+  became a 2.2 s pull. `/about` finally reports a version, with no change to upstream's Dockerfile.
+  Review found the sharp edge that mattered: a compose `:?` would have broken the nightly `pg_dump`,
+  the only recovery path on this host.
 - **2026-09-15** — `spike-personalized-editorial`: decided how a reader's own feeds could become a
   newspaper. The editorial site already had a full Miniflux→Payload ingestion pipeline nobody had
   counted; it stays the *anonymous* edition's, and the personalized one renders live instead, writing

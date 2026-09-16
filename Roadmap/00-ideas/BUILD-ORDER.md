@@ -10,9 +10,9 @@
 > funnel), then run `node scripts/build-order.mjs`. This board and the Notion "Marketplace Roadmap"
 > DB are both *derived views* — never hand-edit the board.
 
-## 🏗️ Building now (1)
+## 🏗️ Building now (0)
 
-- [Stop compiling Go on the production VM](../../09-platform-infra/ci-build-pipeline/README.md) — 09 Platform & Infra · 2/4 stories · risk: High
+_None._
 
 ## 📋 Ready to build (scaffolded, not started) (3)
 
@@ -20,7 +20,7 @@
 - [A new signup should not be a coin flip](../../02-onboarding-and-signup/onboarding-provisioning-reliability/README.md) — 02 Onboarding & signup · 0/2 stories · risk: Low
 - [MCP tokens shouldn't travel in query strings](../../03-agent-surface/mcp-token-handling/README.md) — 03 Agent surface · 0/4 stories · risk: High
 
-## ✅ Shipped (7)
+## ✅ Shipped (8)
 
 - [Can the newspaper read one reader's feeds? ✅](../../01-reading-experience/spike-personalized-editorial/README.md) — 01 Reading experience · 6/6 stories · risk: Low
 - [Click an article and the content is already there ✅](../../01-reading-experience/article-autofetch/README.md) — 01 Reading experience · 7/7 stories · risk: High · wave-2026-09-panfleto
@@ -29,6 +29,7 @@
 - [Tell the paywall rail once, in the template, correctly ✅](../../01-reading-experience/paywall-rail-single-source/README.md) — 01 Reading experience · 5/5 stories · risk: High · wave-2026-09-panfleto
 - [The ad-block rule is silently dropping real articles ✅](../../01-reading-experience/adblock-rule-false-positives/README.md) — 01 Reading experience · 2/2 stories · risk: Low · wave-2026-09-panfleto
 - [Put panfleto-core back on upstream's timeline ✅](../../09-platform-infra/miniflux-upstream-resync/README.md) — 09 Platform & Infra · 9/9 stories · risk: High · wave-2026-09-panfleto
+- [Stop compiling Go on the production VM ✅](../../09-platform-infra/ci-build-pipeline/README.md) — 09 Platform & Infra · 4/4 stories · risk: High
 
 ## ⬜ Funnel — seeds not yet scaffolded (1)
 
