@@ -1,6 +1,6 @@
 # Stop compiling Go on the production VM — Sprint 1: Build the image in CI
 
-**Status:** ⬜ not started
+**Status:** ✅ shipped — `panfleto-image.yml` amended into the fork's CI topic commit (`danybgoode/panfleto-core@9cd35eef`), pin moved here
 
 > **Build contract (locked by the architect before the builder started)**
 >
@@ -48,6 +48,49 @@ not surprised by a quota email.
   rather than proceeding quietly
 
 **Risk:** low
+
+#### Results — measured 2026-09-16 (three runs)
+
+| Run | Trigger | Build step | Whole job |
+|---|---|---|---|
+| [35049301731](https://github.com/danybgoode/panfleto-core/actions/runs/35049301731) | push | **35 s** | 43 s |
+| [35049677945](https://github.com/danybgoode/panfleto-core/actions/runs/35049677945) | dispatch | **32 s** | 42 s |
+| [35049763832](https://github.com/danybgoode/panfleto-core/actions/runs/35049763832) | dispatch | **34 s** | 45 s |
+
+**Cost: free.** Both repos are public (`gh repo view danybgoode/justread --json isPrivate` → `false`),
+so Actions minutes are unmetered and the minutes-per-month arithmetic the story asks for is **N/A**.
+No narrower trigger is needed; D3 stays "build on every push to `panfleto`".
+
+**D4 answered: the native arm64 runner is worth it and costs nothing.** `ubuntu-24.04-arm` is free for
+public repos and builds the Go binary in ~34 s with **no QEMU at all**. Nobody had to measure the
+QEMU alternative to reject it: emulated arm64 Go builds run several times slower, and the native
+runner was available for the asking.
+
+**The number that actually matters is the comparison, not the CI time.** On the production VM, with a
+cold builder, `docker compose build miniflux` took **76 s** of its 2 OCPU — shared with the Postgres
+serving readers. The same artifact now reaches the VM as a **2.2 s `docker pull`**. CI spends 34 s of
+somebody else's CPU so production spends two seconds of its own.
+
+#### Verification log
+
+- **GHCR push** — `ghcr.io/danybgoode/panfleto-core`, tagged `:9cd35eef…` (full SHA) **and**
+  `:panfleto` (moving), per D2.
+- **The package is public, so the pull is anonymous.** Proven without the VM's credentials: an
+  anonymous `ghcr.io/token` grant fetches the manifest with HTTP 200. **No registry credential exists
+  on the production host, and `.env.example` therefore documents none** — the best possible answer to
+  the story's "or the credential it needs is documented".
+- **The VM really pulls it** — `docker pull …:9cd35eef…` on `159.54.158.4` completed in **2.2 s**, and
+  `docker image inspect` reports `arm64 / linux`, label `org.opencontainers.image.version=panfleto-9cd35eef`.
+- **Docs-only pushes really are skipped** — exercised rather than assumed: a throwaway commit touching
+  only a `.md` file was pushed to `panfleto`, **no `panfleto image` run was queued**, and the branch was
+  reset. (PRs cannot trigger it at all — the workflow has no `pull_request` trigger.)
+- **D7 is proven, with no fork delta**: the workflow tags the commit locally, the existing
+  `Makefile`'s `git describe` picks it up, and `miniflux -version` inside the built image prints
+  `panfleto-9cd35eef`. `packaging/docker/alpine/Dockerfile` is untouched.
+- **D6 in practice**: Dependabot's inherited config had already opened
+  [danybgoode/panfleto-core#14](https://github.com/danybgoode/panfleto-core/pull/14); closed
+  unreviewed, since gomod bumps arrive through the weekly rebase. `docker.yml` and
+  `codeberg_mirror.yml` stay inert on the fork (owner guard / skipped).
 
 ## Sprint QA
 - **api spec(s):** none — no application behaviour changes in this sprint.

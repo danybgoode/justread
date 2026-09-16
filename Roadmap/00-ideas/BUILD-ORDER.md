@@ -12,7 +12,7 @@
 
 ## 🏗️ Building now (1)
 
-- [Stop compiling Go on the production VM](../../09-platform-infra/ci-build-pipeline/README.md) — 09 Platform & Infra · 0/4 stories · risk: High
+- [Stop compiling Go on the production VM](../../09-platform-infra/ci-build-pipeline/README.md) — 09 Platform & Infra · 2/4 stories · risk: High
 
 ## 📋 Ready to build (scaffolded, not started) (3)
 
@@ -34,15 +34,5 @@
 
 - [An edition, not a river with quotas](seeds/editorial-ranking-tuning.md) — Ready · Feature · appetite M
 
-## ⚠️ Status drift — README frontmatter vs sprint/retro-derived (1)
-
-These epics’ authoritative README-frontmatter `status:` disagrees with what the sprint/retro
-derivation infers. The board trusts the **frontmatter**; a mismatch usually means a close-out
-forgot to set `status:` (or the README is stale). Reconcile the README, then this advisory clears.
-
-| Epic | frontmatter (used) | sprint/retro-derived |
-|---|---|---|
-| Stop compiling Go on the production VM | In progress | Scaffolded |
-
 ---
-_Epics: 11 · seeds in funnel: 1 · status drift: 1. Regenerate with `node scripts/build-order.mjs`._
+_Epics: 11 · seeds in funnel: 1 · status drift: 0. Regenerate with `node scripts/build-order.mjs`._
