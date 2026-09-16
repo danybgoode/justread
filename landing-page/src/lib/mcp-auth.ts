@@ -54,11 +54,22 @@ function bearerToken(headerValue: string | null): string | null {
  */
 export const LEGACY_QUERY_MARKER = "mcp-auth: legacy query-string token";
 
+export const BOTH_FORMS_MARKER = "mcp-auth: both credential forms sent, header used";
+
 export function legacyUseLogLine(userAgent: string | null): string {
-  // The user agent identifies the CLIENT, not the user: it is what tells you whether the remaining
-  // legacy traffic is one stale connector or everybody.
-  const client = (userAgent ?? "unknown").replace(/[\r\n]/g, " ").slice(0, 120);
-  return `${LEGACY_QUERY_MARKER} client=${JSON.stringify(client)}`;
+  return `${LEGACY_QUERY_MARKER} client=${JSON.stringify(clientOf(userAgent))}`;
+}
+
+// The user agent identifies the CLIENT, not the user: it is what tells you whether the remaining
+// legacy traffic is one stale connector or everybody. Newlines are stripped so a hostile value cannot
+// forge a second log line, and the length is capped.
+function clientOf(userAgent: string | null): string {
+  return (userAgent ?? "unknown").replace(/[\r\n]/g, " ").slice(0, 120);
+}
+
+/** A client sending both forms is mid-migration - distinguishable from one that only knows the old way. */
+export function bothFormsLogLine(userAgent: string | null): string {
+  return `${BOTH_FORMS_MARKER} client=${JSON.stringify(clientOf(userAgent))}`;
 }
 
 /**
@@ -70,3 +81,22 @@ export function legacyUseLogLine(userAgent: string | null): string {
 export const AUTH_ERROR_MESSAGE =
   "Unauthorized. Send your panfleto MCP token as an Authorization: Bearer header (recommended), " +
   "or as a ?token= query parameter. Get or rotate your token at https://app.panfleto.win/integrations";
+
+/**
+ * JSON-RPC error codes.
+ *
+ * -32600 ("Invalid Request") means the payload failed structural validation, so using it for an
+ * authentication failure tells the client its own protocol is broken and sends it looking in the
+ * wrong place. -32000..-32099 is the reserved implementation-defined server-error block, which is
+ * what both of these actually are.
+ */
+export const JSONRPC_AUTH_FAILED = -32001;
+export const JSONRPC_UPSTREAM_UNAVAILABLE = -32002;
+
+/**
+ * Deliberately distinct from AUTH_ERROR_MESSAGE. If the reader is down and we answer "unauthorized",
+ * the user rotates a perfectly good token and breaks the connector they were trying to fix.
+ */
+export const READER_UNAVAILABLE_MESSAGE =
+  "panfleto's reader could not be reached to verify your token. This is not a problem with your " +
+  "token - do not rotate it. Try again shortly; if it persists, check https://app.panfleto.win/healthcheck";

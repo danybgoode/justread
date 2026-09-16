@@ -44,6 +44,23 @@ test('a garbage Bearer header is rejected too, and tools stay hidden', async ({ 
   expect(JSON.stringify(body)).not.toContain('get_unread_entries')
 })
 
+test('a rejection echoes the request id, so the client can match it to its request', async ({ request }) => {
+  // An MCP client correlates responses by id. An error carrying `id: null` is a response the client
+  // drops on the floor, so the user sees a hang instead of the reason their token was refused.
+  const res = await request.post(`${MCP_URL}?token=not-a-real-token`, { data: rpc('initialize', 'req-42') })
+  const body = await res.json()
+  expect(body.id).toBe('req-42')
+  expect(body.error).toBeTruthy()
+})
+
+test('an auth failure uses a server-error code, not "Invalid Request"', async ({ request }) => {
+  // -32600 would tell the client its own payload was malformed and send it looking in the wrong place.
+  const res = await request.post(`${MCP_URL}?token=not-a-real-token`, { data: rpc('initialize') })
+  const { error } = await res.json()
+  expect(error.code).toBeLessThanOrEqual(-32000)
+  expect(error.code).toBeGreaterThanOrEqual(-32099)
+})
+
 test('the rejection does not reveal which credential form was wrong', async ({ request }) => {
   const [noneRes, queryRes, headerRes] = await Promise.all([
     request.post(MCP_URL, { data: rpc('initialize') }),

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { resolveToken, legacyUseLogLine, AUTH_ERROR_MESSAGE } from "@/lib/mcp-auth";
+import { resolveToken, legacyUseLogLine, bothFormsLogLine, AUTH_ERROR_MESSAGE, READER_UNAVAILABLE_MESSAGE, JSONRPC_AUTH_FAILED, JSONRPC_UPSTREAM_UNAVAILABLE } from "@/lib/mcp-auth";
 
 const MINIFLUX_URL = "https://app.panfleto.win/v1";
 
@@ -10,16 +10,28 @@ const MINIFLUX_URL = "https://app.panfleto.win/v1";
  * any string at all - handing the full tool schema to an anonymous caller and making "is this token
  * still valid?" unanswerable, which matters the moment a token can be rotated.
  * (Roadmap/03-agent-surface/mcp-token-handling.)
+ *
+ * Three outcomes, not two. "The reader is down" must never be reported as "your token is wrong": a
+ * user told their credential is unauthorized will rotate it, which breaks the connector they were
+ * trying to fix and costs them a working setup during someone else's outage.
  */
-async function authenticate(token: string): Promise<boolean> {
+type AuthOutcome = "ok" | "invalid" | "unavailable";
+
+async function authenticate(token: string): Promise<AuthOutcome> {
   try {
     const res = await fetch(`${MINIFLUX_URL}/me`, {
       headers: { "X-Auth-Token": token },
       signal: AbortSignal.timeout(10_000),
     });
-    return res.ok;
-  } catch {
-    return false;
+    if (res.ok) return "ok";
+    // Only the reader's own "no" means the token is bad. A 5xx is the reader having a bad day.
+    if (res.status === 401 || res.status === 403) return "invalid";
+    console.error(`mcp-auth: Miniflux answered HTTP ${res.status} while validating a token`);
+    return "unavailable";
+  } catch (e) {
+    // A timeout or a transport failure - never the token's fault.
+    console.error(`mcp-auth: could not reach Miniflux to validate a token: ${e instanceof Error ? e.message : String(e)}`);
+    return "unavailable";
   }
 }
 
@@ -623,14 +635,36 @@ function jsonRpcResult(id: unknown, result: unknown) {
 }
 
 export async function POST(req: NextRequest) {
-  // 1. Find the credential. Header first (D2/story 2.1); the query form still works because it is the
+  // 1. Parse the body FIRST, so every reply - including a rejection - can echo the request's `id`.
+  //    MCP clients correlate responses by id; an error with `id: null` is a response the client drops
+  //    on the floor, and the user sees a hang instead of the reason.
+  let body: any;
+  try {
+    body = await req.json();
+  } catch {
+    // A body we could not parse genuinely has no id. This is the one case where null is correct.
+    return jsonRpcError(null, -32700, "Parse error: invalid JSON");
+  }
+
+  const { jsonrpc, method, params, id } = body ?? {};
+  if (jsonrpc !== "2.0") {
+    return jsonRpcError(id ?? null, -32600, "Invalid Request: jsonrpc must be '2.0'");
+  }
+
+  // 2. Find the credential. Header first (D2/story 2.1); the query form still works because it is the
   //    only one claude.ai can use today, and it is deliberately given no removal date.
   const auth = resolveToken(req.headers.get("authorization"), req.nextUrl.searchParams.get("token"));
 
-  // One reply for every failure - no credential, wrong credential, wrong form - so nothing here can be
-  // used to probe which part was wrong.
-  if (!auth.token || !(await authenticate(auth.token))) {
-    return jsonRpcError(null, -32600, AUTH_ERROR_MESSAGE);
+  // One reply for every authentication failure - no credential, wrong credential, wrong form - so
+  // nothing here can be used to probe which part was wrong. "Reader unavailable" is a DIFFERENT
+  // answer on purpose: telling someone their token is bad when it isn't makes them rotate a working
+  // credential.
+  const outcome = auth.token ? await authenticate(auth.token) : "invalid";
+  if (outcome === "unavailable") {
+    return jsonRpcError(id ?? null, JSONRPC_UPSTREAM_UNAVAILABLE, READER_UNAVAILABLE_MESSAGE);
+  }
+  if (outcome !== "ok") {
+    return jsonRpcError(id ?? null, JSONRPC_AUTH_FAILED, AUTH_ERROR_MESSAGE);
   }
 
   if (auth.source === "query") {
@@ -638,20 +672,12 @@ export async function POST(req: NextRequest) {
     // question with an answer instead of a guess.
     console.log(legacyUseLogLine(req.headers.get("user-agent")));
   }
-  const token = auth.token;
-
-  // 2. Parse JSON-RPC body
-  let body: any;
-  try {
-    body = await req.json();
-  } catch {
-    return jsonRpcError(null, -32700, "Parse error: invalid JSON");
+  if (auth.bothPresent) {
+    // A client configured with both forms is mid-migration; worth seeing separately from a pure
+    // legacy client, because it will keep working when the query form eventually goes.
+    console.log(bothFormsLogLine(req.headers.get("user-agent")));
   }
-
-  const { jsonrpc, method, params, id } = body;
-  if (jsonrpc !== "2.0") {
-    return jsonRpcError(id, -32600, "Invalid Request: jsonrpc must be '2.0'");
-  }
+  const token = auth.token as string;
 
   // 3. Handle MCP methods
   try {
