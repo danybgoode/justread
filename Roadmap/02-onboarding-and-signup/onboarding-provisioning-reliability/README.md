@@ -1,10 +1,10 @@
 ---
-status: in-progress
+status: shipped
 slug: onboarding-provisioning-reliability
 build_order: 9
 ---
 
-# Epic: A new signup should not be a coin flip
+# Epic: A new signup should not be a coin flip ✅
 
 > **Area:** 02-onboarding-and-signup · **Risk:** low · **Class:** Chore · **Scope seed:** [`00-ideas/seeds/onboarding-provisioning-reliability.md`](../../00-ideas/seeds/onboarding-provisioning-reliability.md)
 
@@ -101,13 +101,16 @@ file**: `TELEGRAM_BOT_TOKEN` and `RESEND_API_KEY` are listed under the `landing`
 | 1 | 1.1 — Onboarding that reports itself | low |
 | 1 | 1.2 — A dead starter feed found before a user meets it | low |
 
-## Definition of Done (epic)
-- [ ] Sprint merged to `main` + deployed + smoke-tested (gaps stated)
-- [ ] `sprint-1.md` has its smoke walkthrough
-- [ ] This README marked ✅; sprint status ticked with commit refs
-- [ ] `RETROSPECTIVE.md` written
-- [ ] Product poster updated — 02's "fire-and-forget" 🚧 line is corrected
-- [ ] Durable learnings promoted to `Roadmap/LEARNINGS.md`
-- [ ] `AGENTS.md` rule 1's delta count re-checked (this epic should not change it — it edits an
-      existing delta file)
-- [ ] Feature branch deleted; frontmatter `status: shipped`; `node scripts/build-order.mjs`
+## Definition of Done (epic) — ✅ complete 2026-09-16
+- [x] Sprint merged to `main` (PR #15, `d66b02a`) + deployed (pin `4e012f63`) + smoke-tested with a
+      real disposable signup. **Two gaps stated, not glossed:** `TELEGRAM_BOT_TOKEN` is empty in
+      production so no ping fires yet, and the Auth0 half of the smoke needs a real SSO identity
+- [x] `sprint-1.md` has its smoke walkthrough, corrected to 16 feeds / six categories, with the
+      executed live confirmation recorded above it
+- [x] This README marked ✅; sprint status ticked
+- [x] `RETROSPECTIVE.md` written
+- [x] Product poster updated — 02's "fire-and-forget" line is now two ✅ lines and one honest 🚧
+- [x] Durable learnings promoted to `Roadmap/LEARNINGS.md`
+- [x] `AGENTS.md` rule 1's delta count re-checked — it **did** change, 28 → 29 (`user_onboarding_test.go`),
+      as D5 decided. The DoD's expectation of no change was wrong and is corrected here rather than quietly
+- [x] Feature branch deleted; frontmatter `status: shipped`; `node scripts/build-order.mjs`

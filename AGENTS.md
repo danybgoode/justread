@@ -54,13 +54,15 @@ Before planning or building, read these — they are the source of truth and cha
 ### 1. Upstream Miniflux owns the reader. The fork's delta is a budget, not a canvas.
 `panfleto-core` tracks `miniflux/v2` and is rebased onto upstream `main` — weekly, by the
 `panfleto upstream sync` workflow on the fork. As of 2026-09-16 the delta is **eight topic commits**
-touching **28 code and template files**, plus `internal/ui/static/bin/feeds.json` (the one list of recommended
+touching **29 code and template files**, plus `internal/ui/static/bin/feeds.json` (the one list of recommended
 feeds), **two** workflows, and 17 branding icons — and that number is the budget. It was 12 until
 `article-autofetch` and `inline-comments` added two genuinely new capabilities: 9 new panfleto-owned files
 (`internal/reader/{autofetch,prefetch,comments}/`, `internal/ui/entry_comments.go`) and 6 upstream files
 touched for the first time (`cli/daemon.go`, `config/options.go`, `reader/handler/handler.go`,
 `reader/processor/processor.go`, `ui/ui.go`, `ui/static/js/app.js`). The upstream-owned ones are the rebase risk.
-`ci-build-pipeline` then added the 28th, `.github/workflows/panfleto-image.yml` — deliberately a
+`onboarding-provisioning-reliability` added the 29th, `internal/ui/user_onboarding_test.go` — the
+cheapest kind of delta, a `_test.go` beside a file the fork already owns, which upstream has no file
+named. `ci-build-pipeline` added the 28th, `.github/workflows/panfleto-image.yml` — deliberately a
 panfleto-owned file in a directory upstream's own workflows also live in, and the *cheapest* way to
 move the reader's build off the production VM: `packaging/docker/alpine/Dockerfile` is untouched.
 `git -C panfleto-core fetch -q https://github.com/miniflux/v2 main && git -C panfleto-core diff --stat FETCH_HEAD...HEAD`
@@ -77,8 +79,8 @@ Before changing a file under `panfleto-core/`, exhaust these in order:
 | An **upstream PR** to `miniflux/v2` | Carrying a patch forever |
 
 If you must patch, keep it to a file the fork already owns, and put it in the topic commit it belongs
-to, never a new one on top. Say in the PR body which of the 28 it touches — or that the delta just grew
-to 29 and why that was worth it.
+to, never a new one on top. Say in the PR body which of the 29 it touches — or that the delta just grew
+to 30 and why that was worth it.
 
 ### 2. Never mutate `entries.content` from outside Miniflux.
 The reader owns article content. **Presentation** belongs in a template

@@ -128,6 +128,25 @@ to any project carrying someone else's codebase.*
   the script's last run, and the "rule dropping articles" had never reached a feed. Seconds of `psql`
   removed a HIGH-tier write and turned a bug fix into a first-time rollout. Ask *which install did this
   ever run against*, not just *what does the code do*.
+- **`fetch` rejects on transport errors only — a non-2xx is a silent success unless you check it.**
+  (2026-09-16, onboarding-provisioning-reliability) `/api/register` wrapped its feed subscription in a
+  `try/catch` and read Miniflux's 500-for-an-unreachable-feed as a win for months. The pattern is
+  sticky: the same fix was applied to the feed loop and *missed* on the Telegram and Resend calls
+  fifteen lines below, in the same commit. When you find one, grep the whole file for `await fetch(`.
+- **A notification path has two failure modes, and the invisible one is "configured to nowhere".**
+  (2026-09-16) The code was right, the container wiring was right, and the ping still went nowhere
+  because the token was present-but-empty in `.env`. A silent channel and an unused channel look
+  identical from outside — verify a credential's *length*, not just that the key exists, and make the
+  code log which of the two it is.
+- **A docs table can be load-bearing in the wrong direction.** (2026-09-16) `AGENTS.md` said two
+  credentials reached the `landing` container; they did, and the code that needed them ran in another
+  one. The table read as reassurance, so nobody checked for months. When a table names where a value
+  lives, it is an assertion about runtime — treat it as testable, not as prose.
+- **A health checker that cries wolf is worse than no checker**, because the next real failure is
+  ignored. (2026-09-16) Two versions in one script: real RSS starts `<?xml …?>` not `<rss>`, so a
+  naive root check called all 16 feeds dead; and one network blip on a runner would have opened an
+  issue naming a healthy feed. Run a new checker against real data before trusting its green, and
+  retry weather (transport errors, timeouts, 5xx) but never a 4xx.
 - **An API that ignores unknown JSON fields turns a wrong field name into a silent success.** (2026-09-15,
   adblock) `PUT /v1/feeds/{id}` with `block_rules` returned 200 for months and changed nothing — Go's
   `encoding/json` drops unknown keys. Read back what a script wrote, or test its payload's field names
