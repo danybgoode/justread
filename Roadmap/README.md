@@ -67,7 +67,9 @@ independently shippable slice of value.
 - ✅ 16 starter feeds across Tech · News · Business · Comics · Culture · Podcasts, categorised on arrival — the same set for password and Auth0 signups, from one `feeds.json`
 - 🚧 **Welcome email (Resend) and a Telegram ping** — sent for password signups (the landing page); **not for Auth0 signups**, because the reader's onboarding code never receives `RESEND_API_KEY`/`TELEGRAM_BOT_TOKEN` (compose passes them only to `landing`)
 - ✅ Suggested-feeds gallery on the subscribe page — 23 feeds from the same `feeds.json`, Quick Add and Review with no inline script (no CSP violations)
-- 🚧 **Onboarding is fire-and-forget** — provisioning runs in an unsupervised goroutine with no timeout, retry or error surfacing; a partial feed list is invisible
+- ✅ **Onboarding reports itself** — both signup paths (password via `/api/register`, Auth0 via the reader) collect per-feed results and send one message carrying the outcome: `14/16 starter feeds added, 2 failed: <urls>`. Provisioning runs under a deadline, the two notifications fail independently of each other and of the feeds, and the credentials now reach the container that actually runs the Go onboarding. Confirmed by a real disposable signup: 16/16, six categories, no empty one
+- ✅ **A dead starter feed is found before a user meets it** — `scripts/starter-feed-health.mjs` checks every feed in `feeds.json` weekly and opens a GitHub issue naming the broken ones. Today: all 16 alive
+- 🚧 **…but `TELEGRAM_BOT_TOKEN` is empty in `deploy/.env`**, so the signup ping fires on neither path until the product owner fills it in. The code, the wiring and the message are shipped; the credential is the last inch
 
 ### 03 · Agent surface
 - ✅ MCP endpoint at `panfleto.win/api/mcp?token=…` with feed-management and search tools
@@ -90,6 +92,14 @@ independently shippable slice of value.
 
 ## Recent highlights
 
+- **2026-09-16** — `onboarding-provisioning-reliability`: a signup now says what it actually
+  provisioned. The epic was scoped around one goroutine; the path its own smoke walkthrough uses
+  turned out to be a second, unmentioned implementation with the same bug, so both were fixed. The
+  root cause on the password path was that `fetch` rejects on transport errors only — Miniflux
+  answering 500 for a dead feed had read as success for months. A real disposable signup provisioned
+  16/16 feeds across six categories. The starter list is now checked weekly; all 16 are alive. The
+  smoke found one thing the epic did not know: the Telegram token is *empty* in production, so the
+  channel this epic reports to has to be switched on before it can report.
 - **2026-09-16** — `ci-build-pipeline`: production stopped compiling Go. The reader's image is built
   by CI on a native arm64 runner and pulled by the VM, so a bad commit can no longer take the reader
   down at build time and a rollback is a 5-second restart instead of another slow rebuild — both

@@ -140,6 +140,50 @@ the host. `--telegram` exists for host-side runs, where the token already lives.
   the Telegram message arrive with real counts.
 - **deterministic gate:** `go build ./... && go vet ./... && go test ./...` + `node --test scripts/*.test.mjs` + `docker compose build miniflux`.
 
+#### Live confirmation — production, 2026-09-16 (PR #15, `d66b02a`, deployed as pin `4e012f63`)
+
+A **real disposable signup at `https://panfleto.win`**, then deleted:
+
+| Step | Result |
+|---|---|
+| `POST /api/register` | `{"success":true,"userId":4}`, HTTP 200 in **30.7 s** |
+| Feeds provisioned | **16 of 16** |
+| Categories | all six populated — Tech 5, News 4, Podcasts 3, Business 2, Comics 1, Culture 1. **No empty category** |
+| Landing container log | `Onboarding finished: 16/16 feeds added for smoke-onboarding-…` |
+| Welcome email | accepted by Resend (no rejection logged) |
+| Cleanup | test user deleted (`DELETE /v1/users/4` → 204); the account now answers 401 |
+| `api` Playwright suite against production | 8 passed |
+
+**The 30.7 s is the honest number for this path** and it is not new: Miniflux fetches each feed as it
+is subscribed, and the landing page has always waited for that. What is new is that it is now
+*bounded* — 15 s per call, 60 s for the loop — where before it was unbounded.
+
+#### ⚠️ Found by the smoke, and owed to the product owner: `TELEGRAM_BOT_TOKEN` is EMPTY in production
+
+The epic's premise was that Auth0 signups notify nobody because the token reaches only the `landing`
+container. That container split was real and is fixed. **But the token is also blank on the host** —
+`deploy/.env` has the line `TELEGRAM_BOT_TOKEN=` with a zero-length value (checked by length, never by
+reading it). So the ping fires on *neither* path today, and the landing log says so out loud:
+
+```
+TELEGRAM_BOT_TOKEN is not set in environment variables
+```
+
+`RESEND_API_KEY` is set (36 characters), which is why the welcome email works and the Telegram ping
+does not. **Acceptance "the Telegram notification fires at all — verified, not assumed" is therefore
+NOT verified**, and cannot be by an agent: the value is a credential that lives on the host.
+
+To finish it, on the VM:
+
+```bash
+# Fill in the EXISTING empty line (don't append a second one - the last wins, but two is confusing):
+sudo -e /opt/panfleto/deploy/.env            # set TELEGRAM_BOT_TOKEN=<the bot token>
+cd /opt/panfleto/deploy && docker compose up -d   # a restart, not a rebuild
+```
+
+Then register one more disposable account and the message arrives, carrying the count. Everything
+between the signup and that HTTP call is now shipped and exercised.
+
 ## Sprint 1 — Smoke walkthrough (do these in order)
 Env: production · `https://panfleto.win` and `https://app.panfleto.win`
 
