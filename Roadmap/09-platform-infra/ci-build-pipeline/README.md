@@ -1,10 +1,10 @@
 ---
-status: in-progress
+status: shipped
 slug: ci-build-pipeline
 build_order: 8
 ---
 
-# Epic: Stop compiling Go on the production VM
+# Epic: Stop compiling Go on the production VM ✅
 
 > **Area:** 09-platform-infra · **Risk:** high · **Class:** Chore · **Archetype:** Maintainer · **Scope seed:** [`00-ideas/seeds/ci-build-pipeline.md`](../../00-ideas/seeds/ci-build-pipeline.md)
 
@@ -93,14 +93,14 @@ comment once a pull-based deploy has succeeded twice.
 | 2 | 2.1 — The VM pulls instead of building | high |
 | 2 | 2.2 — Rollback by tag, proven | high |
 
-## Definition of Done (epic)
-- [ ] Both sprints merged to `main` + deployed + smoke-tested (gaps stated)
-- [ ] Each `sprint-N.md` has its smoke walkthrough (real URLs)
-- [ ] This README marked ✅; every sprint status ticked with commit refs
-- [ ] `RETROSPECTIVE.md` written
-- [ ] Product poster updated — 09's "No CI build" ❌ line is **removed**
-- [ ] `AGENTS.md`'s deploy note and rule 5 updated to describe a pull, not a build
-- [ ] `Roadmap/WAYS-OF-WORKING.md` § *Deploy rail* updated — the "compiles on the production host"
-      consequence no longer applies, and that paragraph currently says it does
-- [ ] Durable learnings promoted to `Roadmap/LEARNINGS.md`
-- [ ] Feature branch deleted; frontmatter `status: shipped`; `node scripts/build-order.mjs`
+## Definition of Done (epic) — ✅ complete 2026-09-16
+- [x] Both sprints merged to `main` (PR #13, `84911dc`) + deployed + smoke-tested (one gap stated: the
+      sign-in check is owed to the product owner)
+- [x] Each `sprint-N.md` has its smoke walkthrough, with the executed steps recorded against real URLs
+- [x] This README marked ✅; both sprint statuses ticked with refs
+- [x] `RETROSPECTIVE.md` written
+- [x] Product poster updated — 09's "No CI build" ❌ line is replaced by what is now true
+- [x] `AGENTS.md`'s deploy note, rule 1's delta count (27 → 28) and rule 5 updated to describe a pull
+- [x] `Roadmap/WAYS-OF-WORKING.md` § *Deploy rail* updated
+- [x] Durable learnings promoted to `Roadmap/LEARNINGS.md`
+- [x] Feature branch deleted; frontmatter `status: shipped`; `node scripts/build-order.mjs`

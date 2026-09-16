@@ -270,7 +270,34 @@ to any project carrying someone else's codebase.*
   time, not after the first failed push.
 - **A deploy script that `git reset --hard`s its own checkout runs the OLD script on that run.** (2026-09-15)
   bash keeps reading the replaced inode. When a change edits the deploy script itself, deploy by resetting
-  first and then invoking the new script.
+  first and then invoking the new script. (Confirmed in practice 2026-09-16, ci-build-pipeline.)
+- **A rollback path needs a rollback TARGET, and the registry is the only authoritative list of them.**
+  (2026-09-16, ci-build-pipeline) The runbook said "pick a previous commit with `git log`" while the
+  container registry held exactly one tag — every older commit predated the build workflow. A rollback
+  recipe whose input doesn't exist reads as proven and fails at the worst moment. Check the artifact
+  store, and build a second artifact before calling rollback exercised.
+- **`${VAR:?}` in a compose file is not local to the service that uses it.** (2026-09-16) Compose
+  interpolates the whole file for nearly every subcommand, so a required-variable image reference broke
+  `docker compose exec` for the nightly `pg_dump` — the host's only recovery path — before the first
+  deploy had written the variable. Loud beats silent *except* when the loud thing sits in the recovery
+  path; give those a sane fallback and assert the result afterwards instead.
+- **A script that rewrites a secrets file in place is handling the host's only copy of it.** (2026-09-16)
+  `grep -v … > "$tmp.new"` creates a 644 file holding every secret (redirection ignores `mktemp`'s 600),
+  and `cat > .env` truncates before it writes. Build the replacement in the `mktemp` file itself, refuse
+  to install it unless it still contains a known-required key, and keep a `.bak` — database backups do
+  not cover the environment file.
+- **An override with no expiry is a drift mechanism, not an escape hatch.** (2026-09-16) A rollback pin
+  in an ignored `.env` wins on *every* later deploy and survives `git reset --hard`, so a rollback nobody
+  un-does silently ships the old build forever. Make the override announce itself on each run, and
+  compare what is actually running against what was asked for.
+- **`cancel-in-progress: false` protects a RUNNING job, not a pending one.** (2026-09-16) GitHub keeps
+  only the most recent pending run per concurrency group, so rapid pushes can still leave a middle commit
+  unbuilt — which matters when a downstream pin may name any commit.
+- **A checkout inside a Docker build context carries a live token.** (2026-09-16) `actions/checkout`
+  defaults to `persist-credentials: true`, so `.git/config` holds the `GITHUB_TOKEN`; with no
+  `.dockerignore` and an `ADD .`, it lands in a build layer. Harmless only until someone adds
+  `--target build` or a cache export. `persist-credentials: false` costs nothing when only `git describe`
+  needs the repo.
 - **A copy-once template clobbers same-named files — diff before you trust the copy.** (2026-09-15,
   the ways-of-work bootstrap) `cp -R template/. .` silently replaced the project's `README.md` with
   the template's. `git diff --stat` caught it; nothing else would have. Check `.gitignore` too — if
