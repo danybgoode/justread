@@ -14,8 +14,12 @@ const FEEDS_JSON_URL = new URL("/icon/feeds/feeds.json", MINIFLUX_API_URL).toStr
 // the registration request open for as long as the runtime allowed; now each call has a deadline and
 // a dead feed costs the new reader that feed, not their signup.
 // (Roadmap/02-onboarding-and-signup/onboarding-provisioning-reliability, D1.)
-const FEED_TIMEOUT_MS = 20_000;
+const FEED_TIMEOUT_MS = 15_000;
 const NOTIFY_TIMEOUT_MS = 20_000;
+// Unlike the Auth0 path, this one runs inside the request the new reader is waiting on, so the loop
+// needs a wall-clock budget as well as a per-call timeout: without it, several slow feeds add up to a
+// signup somebody abandons. Feeds past the budget are reported as skipped, not silently dropped.
+const ONBOARDING_BUDGET_MS = 60_000;
 
 // Both were hardcoded in this file. Defaults are the values that were here, so nothing changes
 // unless the host sets them.
@@ -86,35 +90,56 @@ export async function POST(req: Request) {
     // what didn't, because a failing starter feed is a feeds.json problem that affects everybody.
     const results: FeedResult[] = [];
 
+    // The whole loop has a budget, not just each call: 16 feeds x a 15s timeout is a signup the
+    // user would abandon. Once the budget is spent the rest are recorded, not attempted - the same
+    // shape as the Go path's context deadline (D1).
+    const deadline = Date.now() + ONBOARDING_BUDGET_MS;
+    // A category that already failed must fail the rest of its feeds immediately rather than
+    // re-attempting a call we know is broken.
+    const failedCategories = new Set<string>();
+
     for (const feed of await loadStarterFeeds()) {
-      // Create category if not exists
-      if (!categoryMap[feed.category]) {
-        const catRes = await fetch(`${MINIFLUX_API_URL}/categories`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: userAuthHeader,
-          },
-          body: JSON.stringify({ title: feed.category }),
-          signal: AbortSignal.timeout(FEED_TIMEOUT_MS),
-        });
-        
-        if (catRes.ok) {
-          const cat = await catRes.json();
-          categoryMap[feed.category] = cat.id;
-        } else {
-          // If category already exists or error, fetch it
-          const catsRes = await fetch(`${MINIFLUX_API_URL}/categories`, {
-            headers: { Authorization: userAuthHeader },
+      if (Date.now() > deadline) {
+        results.push({ url: feed.url, reason: "onboarding deadline reached" });
+        continue;
+      }
+
+      // Create category if not exists. Every call in here is awaited inside a try: the account has
+      // already been created at this point, so a throw would 500 a signup that actually succeeded
+      // and take every collected result with it.
+      if (!categoryMap[feed.category] && !failedCategories.has(feed.category)) {
+        try {
+          const catRes = await fetch(`${MINIFLUX_API_URL}/categories`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: userAuthHeader,
+            },
+            body: JSON.stringify({ title: feed.category }),
+            signal: AbortSignal.timeout(FEED_TIMEOUT_MS),
           });
-          if (catsRes.ok) {
-            const cats = await catsRes.json();
-            const existingCat = cats.find((c: any) => c.title === feed.category);
-            if (existingCat) {
-              categoryMap[feed.category] = existingCat.id;
+
+          if (catRes.ok) {
+            const cat = await catRes.json();
+            categoryMap[feed.category] = cat.id;
+          } else {
+            // If category already exists or error, fetch it
+            const catsRes = await fetch(`${MINIFLUX_API_URL}/categories`, {
+              headers: { Authorization: userAuthHeader },
+              signal: AbortSignal.timeout(FEED_TIMEOUT_MS),
+            });
+            if (catsRes.ok) {
+              const cats = await catsRes.json();
+              const existingCat = cats.find((c: any) => c.title === feed.category);
+              if (existingCat) {
+                categoryMap[feed.category] = existingCat.id;
+              }
             }
           }
+        } catch (e) {
+          console.error(`Failed to resolve category ${feed.category}:`, describeError(e));
         }
+        if (!categoryMap[feed.category]) failedCategories.add(feed.category);
       }
 
       // Add feed
@@ -148,7 +173,7 @@ export async function POST(req: Request) {
         results.push({ url: feed.url });
       } catch (e) {
         results.push({ url: feed.url, reason: describeError(e) });
-        console.error(`Failed to add feed ${feed.url}:`, e);
+        console.error(`Failed to add feed ${feed.url}:`, describeError(e));
       }
     }
 

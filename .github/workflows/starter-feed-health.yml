@@ -65,7 +65,11 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           title="Starter feeds: one or more are broken"
-          existing=$(gh issue list --state open --search "$title in:title" --json number -q '.[0].number')
+          # `// empty` matters: with a bare `.[0].number`, some gh versions print the literal string
+          # "null" for an empty list, and `[ -n "null" ]` is true - which would comment on issue
+          # "null" instead of opening one. Belt and braces, since this runs unattended.
+          existing=$(gh issue list --state open --search "$title in:title" --json number -q '.[0].number // empty')
+          if [ "$existing" = "null" ]; then existing=""; fi
 
           if [ "$HEALTHY" = "true" ]; then
             if [ -n "$existing" ]; then
