@@ -1,6 +1,6 @@
 # MCP tokens shouldn't travel in query strings — Sprint 2: Bearer header, query string deprecated
 
-**Status:** ⬜ not started
+**Status:** ◑ **2.1 shipped, 2.2 cut on D2's research** — the header is accepted; the query string keeps working with no removal date
 
 > **Build contract (locked by the architect before the builder started)**
 >
@@ -33,6 +33,23 @@ appearing in proxy logs, browser history and referrer headers.
 
 **Risk:** high
 
+#### What was built
+
+`/api/mcp` accepts `Authorization: Bearer <token>` and authenticates it identically to `?token=`.
+
+- **Precedence, documented:** when both forms are present the **header wins**, and the fact that both
+  were sent is visible to the handler. Stated in `mcp-auth.ts` and asserted in its tests.
+- **A bare `Authorization: <token>` with no scheme is rejected**, deliberately. Honouring it would keep
+  a misconfigured client working against panfleto and broken against every other MCP server.
+- **One rejection for every failure.** No credential, wrong credential, wrong form — the same
+  `AUTH_ERROR_MESSAGE`, so nothing here can be used to probe which part was wrong. `e2e/mcp-auth.spec.ts`
+  asserts the three messages are byte-identical.
+- **The GET document leads with the header form** and keeps the query form documented as fully
+  supported, not as legacy — see the panel note in 2.2 for why that wording is deliberate.
+- **"Verified against at least two real clients" is OWED**, and cannot be closed by an agent: it means
+  configuring Cursor/Continue with a real credential. The automated half — that a *garbage* header is
+  rejected exactly like a garbage query token — is in the api spec.
+
 ### Story 2.2 — Query string deprecated, loudly
 **As the** product owner, **I want** existing users moved off the query-string URL before it goes away,
 **so that** nobody's assistant breaks without warning.
@@ -47,6 +64,28 @@ appearing in proxy logs, browser history and referrer headers.
   what makes the removal decision possible
 
 **Risk:** high
+
+#### ✂️ CUT, on D2's research — and the half that shipped
+
+**The deprecation is cut. The query string keeps working, with no end date.** Cursor, Continue and
+Claude Code all send custom headers; **claude.ai custom connectors do not reliably** — request-header
+auth is a limited beta and there is an open report that the configured header is never sent. claude.ai
+is the client this very panel links to. The sprint contract says the deprecation window is the safety
+mechanism and must not be shortened for tidiness; naming a date the flagship client cannot meet is the
+same mistake with the sign flipped, so no date is named and the panel does **not** label the URL form
+"legacy" — for the biggest client it is not legacy, it is the only thing that works.
+
+**What did ship is the half that makes the decision possible later:** every query-string
+authentication writes one line — `mcp-auth: legacy query-string token client="<user agent>"` — the
+**fact and the client, never the token**. Counting them on the VM is:
+
+```bash
+docker compose -f /opt/panfleto/deploy/docker-compose.yml logs landing \
+  | grep -c 'mcp-auth: legacy query-string token'
+```
+
+Revisit when claude.ai's request headers leave beta. That is a product-owner decision with a number
+behind it, which is exactly what story 2.2 was for.
 
 ## Sprint QA
 - **api spec(s):** extend `e2e/mcp-auth.spec.ts` — a garbage Bearer header is rejected; a request with

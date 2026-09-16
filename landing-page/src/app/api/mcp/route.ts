@@ -1,6 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
+import { resolveToken, legacyUseLogLine, AUTH_ERROR_MESSAGE } from "@/lib/mcp-auth";
 
 const MINIFLUX_URL = "https://app.panfleto.win/v1";
+
+/**
+ * Authenticate the credential before doing anything with it.
+ *
+ * Before this, only a tool call touched Miniflux, so `initialize` and `tools/list` answered happily to
+ * any string at all - handing the full tool schema to an anonymous caller and making "is this token
+ * still valid?" unanswerable, which matters the moment a token can be rotated.
+ * (Roadmap/03-agent-surface/mcp-token-handling.)
+ */
+async function authenticate(token: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${MINIFLUX_URL}/me`, {
+      headers: { "X-Auth-Token": token },
+      signal: AbortSignal.timeout(10_000),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
 
 // ─── Miniflux API helper ────────────────────────────────────────────────────
 
@@ -602,11 +623,22 @@ function jsonRpcResult(id: unknown, result: unknown) {
 }
 
 export async function POST(req: NextRequest) {
-  // 1. Extract auth token from query param
-  const token = req.nextUrl.searchParams.get("token");
-  if (!token) {
-    return jsonRpcError(null, -32600, "Missing ?token= query parameter. Generate your API key at app.panfleto.win/settings/api-keys");
+  // 1. Find the credential. Header first (D2/story 2.1); the query form still works because it is the
+  //    only one claude.ai can use today, and it is deliberately given no removal date.
+  const auth = resolveToken(req.headers.get("authorization"), req.nextUrl.searchParams.get("token"));
+
+  // One reply for every failure - no credential, wrong credential, wrong form - so nothing here can be
+  // used to probe which part was wrong.
+  if (!auth.token || !(await authenticate(auth.token))) {
+    return jsonRpcError(null, -32600, AUTH_ERROR_MESSAGE);
   }
+
+  if (auth.source === "query") {
+    // The fact, never the token. This count is what makes "can the query form go away yet?" a
+    // question with an answer instead of a guess.
+    console.log(legacyUseLogLine(req.headers.get("user-agent")));
+  }
+  const token = auth.token;
 
   // 2. Parse JSON-RPC body
   let body: any;
@@ -681,16 +713,26 @@ export async function POST(req: NextRequest) {
 
 // GET: basic info for browsers visiting the URL directly
 export async function GET(req: NextRequest) {
-  const token = req.nextUrl.searchParams.get("token");
+  // A browser visiting the URL. Deliberately says nothing about whether the credential it was given is
+  // valid - that is what POST is for, and answering here would make this a token oracle.
+  const auth = resolveToken(req.headers.get("authorization"), req.nextUrl.searchParams.get("token"));
   return NextResponse.json({
     name: "Panfleto MCP Server",
     version: "1.0.0",
     protocol: "MCP Streamable HTTP (2024-11-05)",
     description: "Connect your AI assistant to your Panfleto RSS reader",
-    status: token ? "token_provided" : "no_token",
+    status: auth.token ? "token_provided" : "no_token",
     usage: {
-      url: "https://panfleto.win/api/mcp?token=YOUR_API_KEY",
-      how_to_get_token: "Visit https://app.panfleto.win/settings/api-keys",
+      recommended: {
+        url: "https://panfleto.win/api/mcp",
+        header: "Authorization: Bearer YOUR_PANFLETO_MCP_TOKEN",
+        note: "Supported by Cursor and Continue. Keeps the credential out of proxy logs, browser history and referrer headers.",
+      },
+      also_supported: {
+        url: "https://panfleto.win/api/mcp?token=YOUR_PANFLETO_MCP_TOKEN",
+        note: "Still fully supported, with no removal date - it is the form claude.ai custom connectors can use today. If both are sent, the header wins.",
+      },
+      how_to_get_token: "Visit https://app.panfleto.win/integrations",
       compatible_clients: ["Claude.ai", "Claude Code", "Cursor", "Continue", "any MCP-compatible client"],
     },
     tools: TOOLS.map((t) => ({ name: t.name, description: t.description })),

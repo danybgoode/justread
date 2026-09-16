@@ -1,0 +1,77 @@
+import { expect, test } from '@playwright/test'
+
+/**
+ * MCP credential handling — anonymous, API-level, no real token anywhere in this file.
+ *
+ * panfleto's MCP server lives on the LANDING origin (panfleto.win), not the reader's
+ * (app.panfleto.win), so every request here names its origin explicitly rather than using baseURL.
+ *
+ * What these assert is the property that makes rotation mean anything: an unauthenticated caller gets
+ * nothing — not the tool list, not a hint about which credential form was wrong. Before
+ * Roadmap/03-agent-surface/mcp-token-handling, `initialize` and `tools/list` answered happily to any
+ * string at all, so a revoked token still looked like it worked until the first tool call.
+ *
+ * Deliberately NOT tested here: that a VALID token works. That needs a real credential, and
+ * AGENTS.md rule 4 says one never goes in a fixture. It is the product owner's smoke step.
+ */
+const MCP_URL = process.env.PANFLETO_MCP_URL ?? 'https://panfleto.win/api/mcp'
+
+const rpc = (method: string, id: number | string = 1) => ({ jsonrpc: '2.0', id, method })
+
+test('a request with no credential is rejected', async ({ request }) => {
+  const res = await request.post(MCP_URL, { data: rpc('initialize') })
+  // MCP puts the error in the body with a 200; the assertion is on the envelope, not the status.
+  expect(res.status()).toBe(200)
+  const body = await res.json()
+  expect(body.error, JSON.stringify(body)).toBeTruthy()
+  expect(body.result).toBeUndefined()
+})
+
+test('a garbage token in the query string is rejected, including for initialize', async ({ request }) => {
+  const res = await request.post(`${MCP_URL}?token=not-a-real-token`, { data: rpc('initialize') })
+  const body = await res.json()
+  expect(body.error, JSON.stringify(body)).toBeTruthy()
+  expect(body.result).toBeUndefined()
+})
+
+test('a garbage Bearer header is rejected too, and tools stay hidden', async ({ request }) => {
+  const res = await request.post(MCP_URL, {
+    headers: { Authorization: 'Bearer not-a-real-token' },
+    data: rpc('tools/list'),
+  })
+  const body = await res.json()
+  expect(body.error, JSON.stringify(body)).toBeTruthy()
+  expect(JSON.stringify(body)).not.toContain('get_unread_entries')
+})
+
+test('the rejection does not reveal which credential form was wrong', async ({ request }) => {
+  const [noneRes, queryRes, headerRes] = await Promise.all([
+    request.post(MCP_URL, { data: rpc('initialize') }),
+    request.post(`${MCP_URL}?token=not-a-real-token`, { data: rpc('initialize') }),
+    request.post(MCP_URL, { headers: { Authorization: 'Bearer not-a-real-token' }, data: rpc('initialize') }),
+  ])
+  const [none, query, header] = await Promise.all([noneRes.json(), queryRes.json(), headerRes.json()])
+  expect(query.error.message).toBe(none.error.message)
+  expect(header.error.message).toBe(none.error.message)
+})
+
+test('a malformed Authorization header is not quietly treated as a bare token', async ({ request }) => {
+  // Honouring `Authorization: <token>` would keep a misconfigured client working here and broken
+  // against every other MCP server.
+  const res = await request.post(MCP_URL, {
+    headers: { Authorization: 'not-a-real-token' },
+    data: rpc('initialize'),
+  })
+  expect((await res.json()).error).toBeTruthy()
+})
+
+test('the GET landing document recommends the header form and keeps the query form documented', async ({ request }) => {
+  const res = await request.get(MCP_URL)
+  expect(res.status()).toBe(200)
+  const body = await res.json()
+  expect(body.usage.recommended.header).toContain('Authorization: Bearer')
+  expect(body.usage.also_supported.url).toContain('?token=')
+  // No removal date: claude.ai's custom-connector request headers are a limited beta with an open bug,
+  // and it is the client the settings panel links to.
+  expect(JSON.stringify(body.usage.also_supported)).toContain('no removal date')
+})
