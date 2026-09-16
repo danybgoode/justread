@@ -74,7 +74,8 @@ independently shippable slice of value.
 ### 03 · Agent surface
 - ✅ MCP endpoint at `panfleto.win/api/mcp?token=…` with feed-management and search tools
 - ✅ Per-user MCP token auto-provisioned and shown in Settings → Integrations
-- 🚧 **Token handling** — the credential travels in a query string and is minted implicitly on page view; no rotate control
+- ✅ **Token handling** — nothing is minted by opening Settings any more: you press "Generate", you see when the token was created and last used, you reveal it deliberately (it is not written into the page otherwise), and you can rotate it — which revokes the old one immediately and is a POST with CSRF, not a prefetchable link. `/api/mcp` accepts `Authorization: Bearer` and authenticates **every** request, so a rotated token stops working at once instead of only at the next tool call
+- 🚧 **…the query-string URL stays, with no removal date** — claude.ai's custom-connector request headers are a limited beta with an open bug, and it is the client panfleto links to. Legacy use is counted in the log so the decision can be made on a number later
 
 ### 09 · Platform & Infra
 - ✅ Single Oracle Always Free ARM VM (2 OCPU / 12 GB), Docker Compose, Caddy with automatic TLS
@@ -92,6 +93,14 @@ independently shippable slice of value.
 
 ## Recent highlights
 
+- **2026-09-16** — `mcp-token-handling`: the reader stops handing you a credential for looking at a
+  settings page. Confirmed on a real account first — opening `/integrations` really did mint a
+  64-character token and render it into the page, alongside the four CSP violations. Now: generate on
+  purpose, see its age and last use, reveal it deliberately, rotate it and have the old one die
+  immediately. `Authorization: Bearer` is accepted; the query-string form stays with no removal date,
+  because claude.ai cannot reliably send headers yet — researched rather than assumed, and it cut a
+  planned story. The fix that mattered most wasn't in scope: `/api/mcp` authenticated only on tool
+  calls, so a rotated token would have kept looking valid.
 - **2026-09-16** — `onboarding-provisioning-reliability`: a signup now says what it actually
   provisioned. The epic was scoped around one goroutine; the path its own smoke walkthrough uses
   turned out to be a second, unmentioned implementation with the same bug, so both were fixed. The

@@ -80,11 +80,49 @@ isn't permanent.
   reconnecting a real assistant with the new URL. Credential-gated; not automatable.
 - **deterministic gate:** `go build ./... && go vet ./... && go test ./...` + `docker compose build miniflux` + the api spec.
 
+#### Live confirmation — production, 2026-09-16 (PR #17, `fadf787`, deployed as pin `c7d18f88`)
+
+The whole walkthrough was executed against `https://app.panfleto.win`, on **two** disposable accounts,
+both deleted afterwards. No token value was printed anywhere — the checks assert lengths and equality.
+
+**Before the deploy**, on a real account, to have something to compare against:
+
+| | Before | After |
+|---|---|---|
+| Opening `/integrations` | **minted a 64-character credential** and rendered it into the page | mints nothing; a new account is offered a button |
+| Inline `style=` on the page | **present** | gone |
+| `onclick` on the page | **present** | gone |
+| The token in the page's HTML | on **every** visit | only on the load where you asked for it |
+| Created / last-used | not shown | both shown; never-used says so |
+| Rotation | did not exist | issues a new token; the old one dies immediately |
+
+**After the deploy — 20 of 20 checks passed**, including: a new account sees a Generate button and
+**no** token; after generating, an ordinary page load still contains no credential; revealing it is a
+POST and a later load hides it again; the query form and the `Authorization: Bearer` header both
+authenticate; the header wins when both are sent; last-used updates after a real request; rotation
+issues a different token and **the old one is rejected immediately**, in both credential forms.
+
+**Existing users are not broken** — checked on the account whose token had been minted implicitly by
+the old code: the panel finds their key (no Generate button), shows its age and last use, keeps it out
+of the page until asked, and **their existing connector URL still works**.
+
+**Rule 4, verified on the host rather than asserted:** Caddy's access log contains **zero** lines
+carrying the token value. The landing log's legacy-use counter shows the two query-form calls the
+smoke made — and **zero forged lines**, though `e2e/mcp-auth.spec.ts` deliberately fired the CRLF
+payload at production.
+
+`e2e/mcp-auth.spec.ts`: **9 of 9 green** post-deploy (all 9 were red beforehand, against the old code).
+Full `api` suite: 17 passed.
+
 ## Sprint 1 — Smoke walkthrough (do these in order)
 Env: production · `https://app.panfleto.win`
 
 **Do not paste your token anywhere while doing this, including into a bug report.** Refer to it as
 "the token".
+
+> Steps 1–6 were executed against production on 2026-09-16 and are recorded above. **Step 3 (and its
+> mirror in sprint 2) is owed to the product owner**: connecting a *real* assistant is the only way to
+> know a third-party client does what its docs claim, and it is credential-gated.
 
 1. **(auth path — owed to the product owner by name)** Sign in and go to Settings → Integrations.
    → The MCP panel shows the created date and last-used (or says plainly that last-used isn't tracked).

@@ -182,6 +182,26 @@ to any project carrying someone else's codebase.*
   lost the full text. List everything that ran after the inline call and give each one a deferred equivalent, or
   write down why it doesn't need one.
 
+- **A disclosure widget is not masking.** (2026-09-16, mcp-token-handling) Hiding a credential behind
+  a `<details>` leaves it in the DOM on every page load, where an extension, a screenshot or a shared
+  screen picks it up. If a control only changes what is painted, it is hygiene — make revealing a real
+  request if the claim is "masked until revealed".
+- **Node puts a rejected header's VALUE in its exception message.** (2026-09-16) A caller-supplied
+  token containing CRLF reached `fetch`, and the catch logged it verbatim — the embedded newline
+  forging a second log line that matched the exact marker a retirement decision was to be counted
+  from. Sanitise at the boundary (refuse input that cannot be a credential) rather than at the log
+  line, and grep your own file: it already stripped newlines from the user agent, with a comment
+  saying why.
+- **"The upstream is down" must never be reported as "your credential is wrong".** (2026-09-16) The
+  user's fix for "unauthorized" is to rotate — so during someone else's outage they destroy a working
+  token. Split the outcomes, and say *do not rotate it* in the message.
+- **A test asserting "an error came back" goes green during an outage.** (2026-09-16) Four auth specs
+  would have passed while the server was unreachable, proving nothing about the credential. Assert the
+  specific error code, not merely that an error envelope arrived.
+- **A unique constraint turns a double-click into a 500 unless you decide otherwise.** (2026-09-16)
+  Two tabs both read "no row" and both insert; the loser's outcome is still the state the user asked
+  for, so treat the constraint violation as success rather than reporting your own race to them.
+
 ## Tooling gotchas
 - **Under a strict Trusted Types CSP a policy name is a singleton, and a bare fragment route has no CSP.**
   (2026-09-15, inline-comments) `trusted-types html url` forbids a second `createPolicy('html')`, and upstream's
