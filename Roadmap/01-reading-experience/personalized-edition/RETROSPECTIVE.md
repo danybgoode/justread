@@ -64,8 +64,10 @@ Promoted to `Roadmap/LEARNINGS.md`:
     be automated.
   - Delete the leftover `spike-probe` API key on user 2 (panfleto Settings → API keys).
   - ~~`codex login`~~: done by the product owner, 2026-09-16.
-- **Discoverability:** nothing links to `/tu-edicion/conectar` yet (no header entry, no link from the
-  reader's Settings). Deliberate for a dark launch; it needs one before real readers can find it.
+- **Discoverability:** ~~no link~~. A **Tu edición** header link shipped 2026-09-16 (`editorial-panfleto`
+  PR #13, gated by the flag). Because `/` is prerendered, the link follows the flag as of the last build
+  or 10-minute revalidation, the same "set, then redeploy" rule. A link from the reader's own Settings
+  page would be fork delta and was not added.
 - **Every page on the editorial site loads its document twice** in a real browser. This predates the
   epic (production's anonymous `/` does it). On the personalized path it doubles dynamic renders per
   view. Worth a look on its own.
