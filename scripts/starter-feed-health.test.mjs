@@ -6,7 +6,7 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { classify, feedRoot, formatReport, readFeeds, FEEDS_JSON } from './starter-feed-health.mjs'
+import { classify, feedRoot, formatReport, readFeeds, FEEDS_JSON, UNTERMINATED } from './starter-feed-health.mjs'
 import { existsSync } from 'node:fs'
 
 const skip = existsSync(FEEDS_JSON) ? false : 'panfleto-core submodule not checked out'
@@ -17,6 +17,16 @@ test('feedRoot skips the XML declaration, comments and a doctype', () => {
   assert.ok(feedRoot('﻿<?xml version="1.0"?><!-- built by a CMS --><feed xmlns="x">').startsWith('<feed'))
   assert.ok(feedRoot('<?xml version="1.0"?>\n<?xml-stylesheet href="x"?>\n<rss>').startsWith('<rss'))
   assert.ok(feedRoot('<!DOCTYPE html>\n<html>').startsWith('<html'))
+})
+
+test('a prolog longer than the bytes read is "could not see", not "not a feed"', () => {
+  // The body is truncated before classify() sees it, so a >8 KB stylesheet PI or licence comment can
+  // hide the root element. Calling that feed broken would be the cry-wolf failure in a new costume.
+  const truncated = '<?xml version="1.0"?><?xml-stylesheet href="' + 'x'.repeat(200)
+  assert.equal(feedRoot(truncated), UNTERMINATED)
+  const got = classify({ status: 200, contentType: 'application/rss+xml', body: truncated })
+  assert.equal(got.healthy, true)
+  assert.match(got.warning, /prolog longer/)
 })
 
 test('a real feed behind an XML declaration is healthy', () => {

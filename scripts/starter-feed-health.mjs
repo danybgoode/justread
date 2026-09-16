@@ -45,13 +45,22 @@ export function feedRoot(body) {
   for (;;) {
     const before = head
     head = head.trimStart()
-    if (head.startsWith('<?')) head = head.slice(head.indexOf('?>') + 2)
-    else if (head.startsWith('<!--')) head = head.slice(head.indexOf('-->') + 3)
-    else if (/^<!doctype/i.test(head)) head = head.slice(head.indexOf('>') + 1)
-    if (head === before) break
+    // A terminator we cannot see - because the body was truncated mid-prolog - must not be treated as
+    // "found at -1", which would leave a head that matches nothing and report a healthy feed broken.
+    const after = (open, close) => {
+      const end = head.indexOf(close)
+      return end === -1 ? UNTERMINATED : head.slice(end + close.length)
+    }
+    if (head.startsWith('<?')) head = after('<?', '?>')
+    else if (head.startsWith('<!--')) head = after('<!--', '-->')
+    else if (/^<!doctype/i.test(head)) head = after('<!doctype', '>')
+    if (head === UNTERMINATED || head === before) break
   }
-  return head.trimStart().slice(0, 400)
+  return head === UNTERMINATED ? head : head.trimStart().slice(0, 400)
 }
+
+/** A prolog whose end is past the truncation window. Reported as "could not read" rather than "not a feed". */
+export const UNTERMINATED = 'panfleto:unterminated-prolog'
 
 /**
  * Decide whether one fetched response is a usable feed. Pure, so the interesting cases (a 200 that is
@@ -66,6 +75,9 @@ export function classify({ status, contentType = '', body = '', error = null }) 
   const type = contentType.toLowerCase().split(';')[0].trim()
   const looksLikeFeedType = FEED_CONTENT_TYPES.some((t) => type.includes(t))
   const head = feedRoot(body)
+  if (head === UNTERMINATED) {
+    return { healthy: true, warning: 'prolog longer than the bytes read — could not see the root element' }
+  }
   const lowered = head.toLowerCase()
   const looksLikeFeedBody = FEED_ROOTS.some((r) => lowered.startsWith(r))
 
@@ -88,7 +100,7 @@ export function readFeeds(path = FEEDS_JSON, { all = false } = {}) {
   return all ? feeds : feeds.filter((f) => f.starter)
 }
 
-async function check(feed, timeoutMs) {
+async function attempt(feed, timeoutMs) {
   const started = Date.now()
   try {
     const res = await fetch(feed.url, {
@@ -96,12 +108,27 @@ async function check(feed, timeoutMs) {
       headers: { 'user-agent': 'panfleto-starter-feed-health/1.0 (+https://panfleto.win)' },
       signal: AbortSignal.timeout(timeoutMs),
     })
-    const body = (await res.text()).slice(0, 2000)
+    const body = (await res.text()).slice(0, 8000)
     return { ...feed, ms: Date.now() - started, status: res.status, ...classify({ status: res.status, contentType: res.headers.get('content-type') ?? '', body }) }
   } catch (e) {
     const reason = e?.name === 'TimeoutError' ? `no response in ${timeoutMs / 1000}s` : String(e?.message ?? e)
     return { ...feed, ms: Date.now() - started, status: 0, ...classify({ status: 0, error: reason }) }
   }
+}
+
+/**
+ * Check one feed, retrying once on a failure that could be weather rather than death - a transport
+ * error, a timeout, or a 5xx. Without this, one Cloudflare 503 on a runner opens an issue naming a
+ * feed that is perfectly fine, and "a checker that cries wolf is worse than none" stops being a
+ * comment at the top of this file and becomes a description of it. A 404 is not retried: that is an
+ * answer, not weather.
+ */
+async function check(feed, timeoutMs) {
+  const first = await attempt(feed, timeoutMs)
+  if (first.healthy || (first.status >= 400 && first.status < 500)) return first
+  await new Promise((r) => setTimeout(r, 2000))
+  const second = await attempt(feed, timeoutMs)
+  return second.healthy ? { ...second, warning: `first attempt failed (${first.reason}), retry succeeded` } : second
 }
 
 /** The report body, as markdown. Pure, so the workflow's issue text is testable. */
@@ -151,7 +178,12 @@ async function main(argv) {
   const asJson = argv.includes('--json')
   const telegram = argv.includes('--telegram')
   const ti = argv.indexOf('--timeout')
-  const timeoutMs = (ti === -1 ? 20 : Number(argv[ti + 1] || 20)) * 1000
+  const seconds = ti === -1 ? 20 : Number(argv[ti + 1])
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    // `--timeout --json` would otherwise consume the flag as its value, yield NaN, and fail all 16.
+    throw new Error(`--timeout needs a positive number of seconds, got ${JSON.stringify(argv[ti + 1])}`)
+  }
+  const timeoutMs = seconds * 1000
 
   const feeds = readFeeds(FEEDS_JSON, { all })
   const checked = []
@@ -172,5 +204,12 @@ async function main(argv) {
 // Guard main() so the co-located test file can import the pure helpers without running a crawl.
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href
 if (isMain) {
-  main(process.argv.slice(2)).then((code) => { process.exitCode = code })
+  main(process.argv.slice(2))
+    .then((code) => { process.exitCode = code })
+    .catch((e) => {
+      // Without this, a missing submodule exits with a raw stack trace that the weekly workflow
+      // captures and posts verbatim under the title "Starter feeds: one or more are broken".
+      console.error(`starter-feed-health could not run: ${e?.message ?? e}`)
+      process.exitCode = 2
+    })
 }

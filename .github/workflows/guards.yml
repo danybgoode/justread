@@ -70,13 +70,15 @@ jobs:
       - name: landing-page/ — pure-logic node:test
         if: steps.areas.outputs.landing == 'true'
         run: |
-          shopt -s nullglob
-          files=(landing-page/src/lib/*.test.mjs)
-          if [ "${#files[@]}" -eq 0 ]; then
+          # `find`, not a glob: the step must cover the whole tree the trigger watches, or it reports
+          # green having run nothing. (`**` needs globstar, and these paths have no spaces.)
+          files=$(find landing-page/src -type f -name '*.test.mjs' | sort)
+          if [ -z "$files" ]; then
             echo "No landing-page pure-logic tests yet — nothing to run."
             exit 0
           fi
-          node --test "${files[@]}"
+          echo "$files"
+          node --test $files
 
       - name: scripts/ — CLI/tooling node:test
         if: steps.areas.outputs.scripts == 'true'

@@ -11,8 +11,9 @@ const ADMIN_PASSWORD = process.env.MINIFLUX_ADMIN_PASSWORD || "admin_password";
 const FEEDS_JSON_URL = new URL("/icon/feeds/feeds.json", MINIFLUX_API_URL).toString();
 
 // Signup provisioning is not allowed to hang. One unreachable starter feed used to be able to hold
-// the registration request open for as long as the runtime allowed; now each call has a deadline and
-// a dead feed costs the new reader that feed, not their signup.
+// the registration request open for as long as the runtime allowed - Node's fetch has no default
+// timeout - so every outbound call in this route now carries a deadline, and the feed loop carries a
+// wall-clock budget on top of it. A dead feed costs the new reader that feed, not their signup.
 // (Roadmap/02-onboarding-and-signup/onboarding-provisioning-reliability, D1.)
 const FEED_TIMEOUT_MS = 15_000;
 const NOTIFY_TIMEOUT_MS = 20_000;
@@ -34,7 +35,7 @@ type SuggestedFeed = { url: string; title: string; category: string; starter: bo
 
 async function loadStarterFeeds(): Promise<SuggestedFeed[]> {
   try {
-    const res = await fetch(FEEDS_JSON_URL, { cache: "no-store" });
+    const res = await fetch(FEEDS_JSON_URL, { cache: "no-store", signal: AbortSignal.timeout(FEED_TIMEOUT_MS) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const feeds = (await res.json()) as SuggestedFeed[];
     const starters = feeds.filter((feed) => feed.starter);
@@ -68,6 +69,7 @@ export async function POST(req: Request) {
         password: password,
         is_admin: false,
       }),
+      signal: AbortSignal.timeout(FEED_TIMEOUT_MS),
     });
 
     if (!userRes.ok) {
@@ -185,7 +187,7 @@ export async function POST(req: Request) {
       const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
 
       if (telegramToken) {
-        await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
+        const tgRes = await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -196,6 +198,10 @@ export async function POST(req: Request) {
           }),
           signal: AbortSignal.timeout(NOTIFY_TIMEOUT_MS),
         });
+        // A wrong token or chat id answers 401/400, and `fetch` does not reject on either. Silence in
+        // the channel would then be indistinguishable from "nobody signed up" - the very failure this
+        // epic exists to remove, one function further down the same file.
+        if (!tgRes.ok) console.error(`Telegram rejected the signup notification: HTTP ${tgRes.status}`);
       } else {
         console.warn("TELEGRAM_BOT_TOKEN is not set in environment variables");
       }
@@ -208,7 +214,7 @@ export async function POST(req: Request) {
     try {
       const resendApiKey = process.env.RESEND_API_KEY;
       if (resendApiKey) {
-        await fetch("https://api.resend.com/emails", {
+        const mailRes = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${resendApiKey}`,
@@ -250,6 +256,8 @@ export async function POST(req: Request) {
           }),
           signal: AbortSignal.timeout(NOTIFY_TIMEOUT_MS),
         });
+        // Same again: an unverified domain is a 403 and a bad payload a 422, neither of which rejects.
+        if (!mailRes.ok) console.error(`Resend rejected the welcome email: HTTP ${mailRes.status}`);
       } else {
          console.warn("RESEND_API_KEY is not set in environment variables");
       }
