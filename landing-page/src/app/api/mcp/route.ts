@@ -1,6 +1,58 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  resolveToken,
+  looksLikeToken,
+  logSafe,
+  legacyUseLogLine,
+  bothFormsLogLine,
+  AUTH_ERROR_MESSAGE,
+  READER_UNAVAILABLE_MESSAGE,
+  JSONRPC_AUTH_FAILED,
+  JSONRPC_UPSTREAM_UNAVAILABLE,
+} from "@/lib/mcp-auth";
 
 const MINIFLUX_URL = "https://app.panfleto.win/v1";
+
+/**
+ * Authenticate the credential before doing anything with it.
+ *
+ * Before this, only a tool call touched Miniflux, so `initialize` and `tools/list` answered happily to
+ * any string at all - handing the full tool schema to an anonymous caller and making "is this token
+ * still valid?" unanswerable, which matters the moment a token can be rotated.
+ * (Roadmap/03-agent-surface/mcp-token-handling.)
+ *
+ * Three outcomes, not two. "The reader is down" must never be reported as "your token is wrong": a
+ * user told their credential is unauthorized will rotate it, which breaks the connector they were
+ * trying to fix and costs them a working setup during someone else's outage.
+ */
+type AuthOutcome = "ok" | "invalid" | "unavailable";
+
+async function authenticate(token: string): Promise<AuthOutcome> {
+  // Refuse a string that cannot be a credential BEFORE it reaches fetch. Two reasons, and the second
+  // is the one that bites: Node rejects a header containing CRLF and quotes the offending value in
+  // the exception, so an unsanitised catch would write a caller-controlled string - complete with a
+  // forged second line matching the legacy-use marker - straight into the log D3's future decision
+  // is counted from. It is also simply the right answer: a malformed token is invalid, not "the
+  // reader is down".
+  if (!looksLikeToken(token)) return "invalid";
+
+  try {
+    const res = await fetch(`${MINIFLUX_URL}/me`, {
+      headers: { "X-Auth-Token": token },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (res.ok) return "ok";
+    // Only the reader's own "no" means the token is bad. A 5xx is the reader having a bad day.
+    if (res.status === 401 || res.status === 403) return "invalid";
+    console.error(`mcp-auth: Miniflux answered HTTP ${res.status} while validating a token`);
+    return "unavailable";
+  } catch (e) {
+    // A timeout or a transport failure - never the token's fault.
+    // logSafe even here: defence in depth, since this message is not ours.
+    console.error(`mcp-auth: could not reach Miniflux to validate a token: ${logSafe(e instanceof Error ? e.message : String(e))}`);
+    return "unavailable";
+  }
+}
 
 // ─── Miniflux API helper ────────────────────────────────────────────────────
 
@@ -602,24 +654,49 @@ function jsonRpcResult(id: unknown, result: unknown) {
 }
 
 export async function POST(req: NextRequest) {
-  // 1. Extract auth token from query param
-  const token = req.nextUrl.searchParams.get("token");
-  if (!token) {
-    return jsonRpcError(null, -32600, "Missing ?token= query parameter. Generate your API key at app.panfleto.win/settings/api-keys");
-  }
-
-  // 2. Parse JSON-RPC body
+  // 1. Parse the body FIRST, so every reply - including a rejection - can echo the request's `id`.
+  //    MCP clients correlate responses by id; an error with `id: null` is a response the client drops
+  //    on the floor, and the user sees a hang instead of the reason.
   let body: any;
   try {
     body = await req.json();
   } catch {
+    // A body we could not parse genuinely has no id. This is the one case where null is correct.
     return jsonRpcError(null, -32700, "Parse error: invalid JSON");
   }
 
-  const { jsonrpc, method, params, id } = body;
+  const { jsonrpc, method, params, id } = body ?? {};
   if (jsonrpc !== "2.0") {
-    return jsonRpcError(id, -32600, "Invalid Request: jsonrpc must be '2.0'");
+    return jsonRpcError(id ?? null, -32600, "Invalid Request: jsonrpc must be '2.0'");
   }
+
+  // 2. Find the credential. Header first (D2/story 2.1); the query form still works because it is the
+  //    only one claude.ai can use today, and it is deliberately given no removal date.
+  const auth = resolveToken(req.headers.get("authorization"), req.nextUrl.searchParams.get("token"));
+
+  // One reply for every authentication failure - no credential, wrong credential, wrong form - so
+  // nothing here can be used to probe which part was wrong. "Reader unavailable" is a DIFFERENT
+  // answer on purpose: telling someone their token is bad when it isn't makes them rotate a working
+  // credential.
+  const outcome = auth.token ? await authenticate(auth.token) : "invalid";
+  if (outcome === "unavailable") {
+    return jsonRpcError(id ?? null, JSONRPC_UPSTREAM_UNAVAILABLE, READER_UNAVAILABLE_MESSAGE);
+  }
+  if (outcome !== "ok") {
+    return jsonRpcError(id ?? null, JSONRPC_AUTH_FAILED, AUTH_ERROR_MESSAGE);
+  }
+
+  if (auth.source === "query") {
+    // The fact, never the token. This count is what makes "can the query form go away yet?" a
+    // question with an answer instead of a guess.
+    console.log(legacyUseLogLine(req.headers.get("user-agent")));
+  }
+  if (auth.bothPresent) {
+    // A client configured with both forms is mid-migration; worth seeing separately from a pure
+    // legacy client, because it will keep working when the query form eventually goes.
+    console.log(bothFormsLogLine(req.headers.get("user-agent")));
+  }
+  const token = auth.token as string;
 
   // 3. Handle MCP methods
   try {
@@ -681,16 +758,26 @@ export async function POST(req: NextRequest) {
 
 // GET: basic info for browsers visiting the URL directly
 export async function GET(req: NextRequest) {
-  const token = req.nextUrl.searchParams.get("token");
+  // A browser visiting the URL. Deliberately says nothing about whether the credential it was given is
+  // valid - that is what POST is for, and answering here would make this a token oracle.
+  const auth = resolveToken(req.headers.get("authorization"), req.nextUrl.searchParams.get("token"));
   return NextResponse.json({
     name: "Panfleto MCP Server",
     version: "1.0.0",
     protocol: "MCP Streamable HTTP (2024-11-05)",
     description: "Connect your AI assistant to your Panfleto RSS reader",
-    status: token ? "token_provided" : "no_token",
+    status: auth.token ? "token_provided" : "no_token",
     usage: {
-      url: "https://panfleto.win/api/mcp?token=YOUR_API_KEY",
-      how_to_get_token: "Visit https://app.panfleto.win/settings/api-keys",
+      recommended: {
+        url: "https://panfleto.win/api/mcp",
+        header: "Authorization: Bearer YOUR_PANFLETO_MCP_TOKEN",
+        note: "Supported by Cursor and Continue. Keeps the credential out of proxy logs, browser history and referrer headers.",
+      },
+      also_supported: {
+        url: "https://panfleto.win/api/mcp?token=YOUR_PANFLETO_MCP_TOKEN",
+        note: "Still fully supported, with no removal date - it is the form claude.ai custom connectors can use today. If both are sent, the header wins.",
+      },
+      how_to_get_token: "Visit https://app.panfleto.win/integrations",
       compatible_clients: ["Claude.ai", "Claude Code", "Cursor", "Continue", "any MCP-compatible client"],
     },
     tools: TOOLS.map((t) => ({ name: t.name, description: t.description })),

@@ -1,6 +1,6 @@
 # MCP tokens shouldn't travel in query strings — Sprint 1: A token you can see and rotate
 
-**Status:** ⬜ not started
+**Status:** ✅ shipped — the panel no longer mints a credential for looking at it, and rotation actually revokes
 
 > **Build contract (locked by the architect before the builder started)**
 >
@@ -46,6 +46,31 @@ isn't permanent.
 - No token appears in the response headers or in Caddy's access log for the rotate request
 
 **Risk:** high — this is auth surface; the product owner merges
+
+#### What was built
+
+- **"Rotate now" is a POST form with CSRF**, inside a `<details>` whose text states the consequence
+  **before** the button: *"Rotating issues a new token and revokes the current one immediately. Every
+  assistant configured with the old URL will stop working until you paste the new one in."* The button
+  restates it. A prefetching browser cannot destroy a credential, because there is no link to prefetch
+  — the render test asserts that too.
+- **D4 as decided: the old key is deleted, then the new one created.** No grace period; a token you
+  rotate is a token you believe has leaked. **The window is real and is named here rather than
+  hidden:** `api_keys` has `unique (user_id, description)`, so two rows with this description cannot
+  coexist and delete-first is forced by the schema. If the create then fails the user momentarily has
+  no token — so it retries once, and if that also fails they land back on the panel showing its
+  Generate button, which is a visible and recoverable state rather than a silent one.
+- **Generating twice is not an error.** Two tabs or a fast double-click both see "no key" and both
+  insert; the unique constraint rejects the loser. That is our race, not the user's, so a lost race
+  whose outcome is "you now have exactly one token" redirects normally instead of showing a 500.
+- **The old token genuinely stops authenticating — and that needed a second fix.** `/api/mcp` only
+  touched Miniflux on a *tool call*, so `initialize` and `tools/list` answered any string at all. A
+  rotated token would have kept *looking* like it worked until the first real request. Every POST now
+  authenticates against `/v1/me` first (D6). Without it, "rotation revokes" would have been true in
+  the database and false in the user's experience.
+- **Neither the redirect nor the URL carries the token**: both actions POST to
+  `/integration/mcp/{generate,rotate}` and redirect to `/integrations`, so Caddy's access log sees two
+  paths with no query string.
 
 ## Sprint QA
 - **api spec(s):** `e2e/mcp-auth.spec.ts` — assert `/api/mcp` with **no** token is rejected, and with

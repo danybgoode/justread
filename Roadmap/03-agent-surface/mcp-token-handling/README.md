@@ -1,5 +1,5 @@
 ---
-status: scaffolded
+status: in-progress
 slug: mcp-token-handling
 build_order: 10
 ---
@@ -66,14 +66,35 @@ not be enabled until `/api/register` uses an admin API key — see the warning i
   storage and auth all exist; nothing new is needed on the reader side
 - `landing-page/src/app/api/mcp/route.ts` — the endpoint that reads the token
 
-## Architecture decisions — to be LOCKED before any builder starts
+## Architecture decisions — LOCKED 2026-09-16 (D2 by research, not memory)
 
-| # | Decision | State |
+### D2 first, because it decides whether S2 exists
+
+The sprint contract said to web-search this rather than answer from memory. Done, 2026-09-16:
+
+| Client | Custom headers on a remote MCP URL? |
+|---|---|
+| **Cursor** | **Yes.** `headers` in `mcp.json`, with `${env:VAR}` expansion, on streamable-HTTP servers |
+| **Continue** | **Yes.** `requestOptions.headers` on a `type: streamable-http` server |
+| **Claude Code** | **Yes.** `--header` on a remote MCP server |
+| **claude.ai custom connectors** | **Partly, and unreliably.** Request-header auth exists but is a **limited beta** — organisations without access do not see the field at all — and there is an open report (July 2026) that a configured header is **never sent**: claude.ai instead starts an OAuth flow against the server's origin, using the header's *name* as the `client_id` |
+
+**Verdict: build story 2.1, cut story 2.2's deprecation.** Accepting the header is additive, risk-free
+and immediately useful to Cursor/Continue/Claude Code users. But claude.ai is the client panfleto's
+own settings panel links to, so **the query string cannot be given a removal date** — naming a date
+the flagship client cannot meet is precisely what the sprint contract says not to do. What story 2.2
+*can* deliver is its other half, and it is the useful half: the legacy form is **counted in the log**,
+so the removal decision becomes answerable later instead of guessed.
+
+| # | Decision | Locked answer |
 |---|---|---|
-| **D1** | Stop minting implicitly, or keep it and just expose management | **To lock** — implicit creation is convenient and is also the consent problem. A "Generate MCP token" button is one more click and a much clearer contract |
-| **D2** | Client header support | **To lock** — the research question above. Decides whether S2 exists |
-| **D3** | Deprecation window for `?token=` | **To lock** — existing connectors are configured with query-string URLs. Breaking them without warning breaks a working integration for every current user |
-| **D4** | Whether rotation revokes the old key immediately | **To lock** — immediate is safer, and it breaks the user's connector until they repaste. Say which, in the UI, at the moment they click |
+| **D1** | Stop minting implicitly, or just expose management | **Stop minting implicitly.** The panel shows a **"Generate MCP token"** button and creates nothing until it is pressed. Implicit creation *is* the consent problem: a reader who opened Settings once had a long-lived credential they never asked for. Existing tokens are untouched and keep working — this changes what happens for people who do not have one |
+| **D2** | Client header support | **Header accepted, query string kept with no removal date.** See the table above |
+| **D3** | Deprecation window for `?token=` | **No window, deliberately.** A window implies an end date, and setting one now would break claude.ai users. The panel labels the header form *recommended where your client supports it* rather than calling the URL form legacy, because for the biggest client it is not legacy — it is the only one that works. Revisit when claude.ai's request headers leave beta |
+| **D4** | Does rotation revoke the old key immediately | **Yes, immediately** — delete, then create. A token you rotate is a token you think has leaked, and a grace period is a window for whoever leaked it. The consequence is stated in plain words *above* the button, not after the click |
+| **D5** | *(new)* How the panel avoids JS entirely | **Native `<details>` disclosures and real POST forms.** No `onclick`, no inline `style`, so the four CSP violations go and no nonce is needed — the same shape resync S3 used for the subscribe page. Revealing the URL is a `<details>`, not a script, so the token never enters the URL bar or a JS path. The cost, stated: the old click-to-select convenience is gone |
+| **D6** | *(new)* Authenticating before doing anything | **`/api/mcp` validates the credential on every POST**, against Miniflux `/v1/me`. It did not before: `initialize` and `tools/list` answered any string at all, which handed the tool schema to anonymous callers and — the reason it matters here — made a **rotated token look like it still worked** until the first tool call. Rotation is meaningless without this |
+| **D7** | *(new)* The fork's delta grows by one | **29 → 30 files**, for `internal/template/panfleto_integrations_test.go`. The CSP acceptance criterion ("the panel's 4 violations are gone") is otherwise only checkable by opening devtools, and the panel is behind a session so no anonymous smoke can reach it. The test renders all three panel states and fails on any inline `style=`/`onclick` — which is also what stops a future upstream rebase reintroducing one quietly |
 
 ## Scope — stories
 
