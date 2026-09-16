@@ -12,7 +12,7 @@
 
 ## 🏗️ Building now (1)
 
-- [A new signup should not be a coin flip](../../02-onboarding-and-signup/onboarding-provisioning-reliability/README.md) — 02 Onboarding & signup · 0/2 stories · risk: Low
+- [A new signup should not be a coin flip](../../02-onboarding-and-signup/onboarding-provisioning-reliability/README.md) — 02 Onboarding & signup · 2/2 stories · risk: Low
 
 ## 📋 Ready to build (scaffolded, not started) (2)
 
@@ -42,7 +42,7 @@ forgot to set `status:` (or the README is stale). Reconcile the README, then thi
 
 | Epic | frontmatter (used) | sprint/retro-derived |
 |---|---|---|
-| A new signup should not be a coin flip | In progress | Scaffolded |
+| A new signup should not be a coin flip | In progress | Shipped |
 
 ---
 _Epics: 11 · seeds in funnel: 1 · status drift: 1. Regenerate with `node scripts/build-order.mjs`._

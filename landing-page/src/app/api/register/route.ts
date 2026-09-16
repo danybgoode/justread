@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { formatOnboardingSummary, type FeedResult } from "@/lib/onboarding-summary";
 
 const MINIFLUX_API_URL = process.env.MINIFLUX_API_URL || "http://localhost:8080/v1";
 const ADMIN_USERNAME = process.env.MINIFLUX_ADMIN_USERNAME || "admin";
@@ -8,6 +9,22 @@ const ADMIN_PASSWORD = process.env.MINIFLUX_ADMIN_PASSWORD || "admin_password";
 // The reader embeds it and serves it with its other static assets, so signup reads it from there
 // rather than keeping a copy that drifts. The checksum path segment only drives caching.
 const FEEDS_JSON_URL = new URL("/icon/feeds/feeds.json", MINIFLUX_API_URL).toString();
+
+// Signup provisioning is not allowed to hang. One unreachable starter feed used to be able to hold
+// the registration request open for as long as the runtime allowed; now each call has a deadline and
+// a dead feed costs the new reader that feed, not their signup.
+// (Roadmap/02-onboarding-and-signup/onboarding-provisioning-reliability, D1.)
+const FEED_TIMEOUT_MS = 20_000;
+const NOTIFY_TIMEOUT_MS = 20_000;
+
+// Both were hardcoded in this file. Defaults are the values that were here, so nothing changes
+// unless the host sets them.
+const TELEGRAM_CHAT_ID = process.env.PANFLETO_TELEGRAM_CHAT_ID?.trim() || "1517743559";
+const EMAIL_FROM = process.env.PANFLETO_EMAIL_FROM?.trim() || "Panflo <hello@panfleto.win>";
+
+function describeError(e: unknown): string {
+  return e instanceof Error ? e.message : String(e);
+}
 
 type SuggestedFeed = { url: string; title: string; category: string; starter: boolean };
 
@@ -64,6 +81,10 @@ export async function POST(req: Request) {
 
     // 2. Setup Categories & Feeds
     const categoryMap: Record<string, number> = {};
+    // Per-feed outcomes, collected rather than discarded - the whole point of this epic. A partial
+    // provision is still a provision (D2): the user keeps what worked, and the product owner is told
+    // what didn't, because a failing starter feed is a feeds.json problem that affects everybody.
+    const results: FeedResult[] = [];
 
     for (const feed of await loadStarterFeeds()) {
       // Create category if not exists
@@ -75,6 +96,7 @@ export async function POST(req: Request) {
             Authorization: userAuthHeader,
           },
           body: JSON.stringify({ title: feed.category }),
+          signal: AbortSignal.timeout(FEED_TIMEOUT_MS),
         });
         
         if (catRes.ok) {
@@ -96,30 +118,46 @@ export async function POST(req: Request) {
       }
 
       // Add feed
-      if (categoryMap[feed.category]) {
-        try {
-          await fetch(`${MINIFLUX_API_URL}/feeds`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: userAuthHeader,
-            },
-            body: JSON.stringify({
-              feed_url: feed.url,
-              category_id: categoryMap[feed.category],
-            }),
-          });
-        } catch (e) {
-          console.error(`Failed to add feed ${feed.url}:`, e);
+      if (!categoryMap[feed.category]) {
+        results.push({ url: feed.url, reason: `category ${feed.category} could not be created` });
+        continue;
+      }
+
+      try {
+        const feedRes = await fetch(`${MINIFLUX_API_URL}/feeds`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: userAuthHeader,
+          },
+          body: JSON.stringify({
+            feed_url: feed.url,
+            category_id: categoryMap[feed.category],
+          }),
+          signal: AbortSignal.timeout(FEED_TIMEOUT_MS),
+        });
+        if (!feedRes.ok) {
+          // Miniflux answers 500 for "this feed is unreachable", so a non-2xx here is the normal way
+          // a dead starter feed shows up. It was being thrown away: fetch only rejects on transport
+          // errors, so the old `try/catch` never saw it.
+          const detail = await feedRes.text().catch(() => "");
+          results.push({ url: feed.url, reason: `HTTP ${feedRes.status} ${detail.slice(0, 200)}`.trim() });
+          console.error(`Failed to add feed ${feed.url}: HTTP ${feedRes.status}`);
+          continue;
         }
+        results.push({ url: feed.url });
+      } catch (e) {
+        results.push({ url: feed.url, reason: describeError(e) });
+        console.error(`Failed to add feed ${feed.url}:`, e);
       }
     }
 
-    // 3. Send Telegram Notification
+    const summary = formatOnboardingSummary(email, results);
+    console.log(`Onboarding finished: ${results.filter((r) => !r.reason).length}/${results.length} feeds added for ${email}`);
+
+    // 3. Send Telegram Notification - now carrying the outcome, not just the fact of a signup.
     try {
       const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
-      const chatId = "1517743559";
-      const message = `🎉 YEEHAW! A new reader just joined Panfleto! 🎉\n\nEmail: ${email}\n\nKeep on pushing, Panflo! 🚀`;
 
       if (telegramToken) {
         await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
@@ -128,15 +166,17 @@ export async function POST(req: Request) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            chat_id: chatId,
-            text: message,
+            chat_id: TELEGRAM_CHAT_ID,
+            text: summary,
           }),
+          signal: AbortSignal.timeout(NOTIFY_TIMEOUT_MS),
         });
       } else {
         console.warn("TELEGRAM_BOT_TOKEN is not set in environment variables");
       }
     } catch (tgError) {
-      console.error("Failed to send Telegram notification:", tgError);
+      // The bot token is in the URL, so never log the error object itself (AGENTS.md rule 4).
+      console.error("Failed to send Telegram notification:", describeError(tgError).replaceAll(process.env.TELEGRAM_BOT_TOKEN ?? "\u0000", "<redacted>"));
     }
 
     // 4. Send Welcome Email via Resend
@@ -150,7 +190,7 @@ export async function POST(req: Request) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            from: "Panflo <hello@panfleto.win>",
+            from: EMAIL_FROM,
             to: [email],
             subject: "Welcome to Panfleto! 📰",
             html: `
@@ -183,12 +223,13 @@ export async function POST(req: Request) {
               </div>
             `,
           }),
+          signal: AbortSignal.timeout(NOTIFY_TIMEOUT_MS),
         });
       } else {
          console.warn("RESEND_API_KEY is not set in environment variables");
       }
     } catch (emailError) {
-      console.error("Failed to send Welcome email:", emailError);
+      console.error("Failed to send Welcome email:", describeError(emailError));
     }
 
     return NextResponse.json({ success: true, userId: user.id }, { status: 200 });

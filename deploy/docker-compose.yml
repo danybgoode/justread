@@ -84,6 +84,15 @@ services:
       FETCH_THIN_CONTENT_THRESHOLD: ${FETCH_THIN_CONTENT_THRESHOLD:-2000}
       PREFETCH_WORKERS: ${PREFETCH_WORKERS:-2}
       PREFETCH_HOST_DELAY: ${PREFETCH_HOST_DELAY:-2}
+      # Starter-feed onboarding runs INSIDE this container on the Auth0 signup path
+      # (internal/ui/user_onboarding.go, from oauth2_callback.go). These two were passed only to
+      # `landing`, so the notification code ran and silently did nothing on every SSO signup - the
+      # bug Roadmap/02-onboarding-and-signup/onboarding-provisioning-reliability starts from.
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      # Both were hardcoded in the Go and the TypeScript. Unset = the values that were compiled in.
+      PANFLETO_TELEGRAM_CHAT_ID: ${PANFLETO_TELEGRAM_CHAT_ID:-}
+      PANFLETO_EMAIL_FROM: ${PANFLETO_EMAIL_FROM:-}
     # Auth0 SSO is opt-in and lives in its own file. Miniflux rejects
     # OAUTH2_PROVIDER when it is set but empty - not just when it is invalid -
     # so the variable has to be genuinely absent, which `environment:` cannot
@@ -107,5 +116,7 @@ services:
       MINIFLUX_ADMIN_PASSWORD: ${ADMIN_PASSWORD:?}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      PANFLETO_TELEGRAM_CHAT_ID: ${PANFLETO_TELEGRAM_CHAT_ID:-}
+      PANFLETO_EMAIL_FROM: ${PANFLETO_EMAIL_FROM:-}
       NODE_ENV: production
       PORT: "3000"

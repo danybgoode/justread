@@ -1,0 +1,89 @@
+# panfleto: is every starter feed still alive?
+#
+# A new panfleto account opens onto the starter feeds in feeds.json — that "no empty screen" promise
+# is the whole of onboarding. When one of those feeds dies, nobody finds out until a new user lands
+# on an empty category; the repo's history literally contains a commit called "Replace three starter
+# feeds that no longer work." This job gets there first.
+# See Roadmap/02-onboarding-and-signup/onboarding-provisioning-reliability, story 1.2 / D3.
+#
+# It reports by opening (and updating) ONE issue rather than pinging the product owner's Telegram
+# channel. That is a deliberate deviation from the story: a Telegram ping from CI would mean putting
+# the bot token in a second credential store, and AGENTS.md rule 4 keeps credentials on the host.
+# `node scripts/starter-feed-health.mjs --telegram` is the host-side mode, where the token already is.
+#
+# The issue is reused, not spammed: one open issue at a time, updated by comment while feeds stay
+# broken, closed automatically when they all come back.
+
+name: starter feed health
+
+on:
+  schedule:
+    - cron: '23 7 * * 1' # Mondays, an hour after the upstream sync so two reports don't collide
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/starter-feed-health.mjs'
+      - 'scripts/starter-feed-health.test.mjs'
+      - '.github/workflows/starter-feed-health.yml'
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: starter-feed-health
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true # feeds.json lives in the panfleto-core submodule
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Check every starter feed
+        id: check
+        run: |
+          set +e
+          node scripts/starter-feed-health.mjs > report.txt 2>&1
+          rc=$?
+          set -e
+          if [ "$rc" -eq 0 ]; then echo "healthy=true" >> "$GITHUB_OUTPUT"; else echo "healthy=false" >> "$GITHUB_OUTPUT"; fi
+          cat report.txt | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # On a PR the job is only proving the script still runs; never open an issue from one.
+      - name: Report
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          HEALTHY: ${{ steps.check.outputs.healthy }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="Starter feeds: one or more are broken"
+          existing=$(gh issue list --state open --search "$title in:title" --json number -q '.[0].number')
+
+          if [ "$HEALTHY" = "true" ]; then
+            if [ -n "$existing" ]; then
+              gh issue comment "$existing" --body "All starter feeds are answering again. Closing. ([run]($RUN_URL))"
+              gh issue close "$existing"
+            fi
+            echo "All starter feeds healthy; nothing to report."
+            exit 0
+          fi
+
+          {
+            cat report.txt
+            echo
+            echo "_[Workflow run]($RUN_URL) · reported by \`scripts/starter-feed-health.mjs\`_"
+          } > body.md
+
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file body.md
+          else
+            gh issue create --title "$title" --body-file body.md
+          fi

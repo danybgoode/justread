@@ -24,7 +24,7 @@ on:
       - 'scripts/**'
       - 'e2e/**'
       - 'panfleto-core'           # the submodule pin: feeds-json.test.mjs guards what it points at
-      - 'landing-page/src/app/api/register/**'
+      - 'landing-page/src/**'
       - 'playwright.config.ts'
       # Deliberately NOT here: panfleto-core/** and deploy/**. The reader is built and tested
       # locally (there is no per-branch preview to build against — WAYS-OF-WORKING § Deploy rail),
@@ -46,7 +46,9 @@ jobs:
           submodules: true # public fork; scripts/feeds-json.test.mjs reads it (no Go build here)
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          # 24, not 22: landing-page's pure-logic tests are .mjs importing a .ts module, and Node 24
+          # strips the types without a build step or a flag.
+          node-version: '24'
 
       - name: Detect changed areas
         id: areas
@@ -55,6 +57,7 @@ jobs:
           changed=$(git diff --name-only "$base"...HEAD)
           echo "roadmap=$(echo "$changed" | grep -qE '^(Roadmap/|scripts/(build-order|roadmap-to-notion)\.mjs)' && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "scripts=$(echo "$changed" | grep -qE '^scripts/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "landing=$(echo "$changed" | grep -qE '^landing-page/src/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
       - name: build-order — status board is fresh
         if: steps.areas.outputs.roadmap == 'true'
@@ -63,6 +66,17 @@ jobs:
       - name: scripts/ — no script writes entries.content (AGENTS.md rule 2)
         if: steps.areas.outputs.scripts == 'true'
         run: node scripts/content-write-guard.mjs
+
+      - name: landing-page/ — pure-logic node:test
+        if: steps.areas.outputs.landing == 'true'
+        run: |
+          shopt -s nullglob
+          files=(landing-page/src/lib/*.test.mjs)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No landing-page pure-logic tests yet — nothing to run."
+            exit 0
+          fi
+          node --test "${files[@]}"
 
       - name: scripts/ — CLI/tooling node:test
         if: steps.areas.outputs.scripts == 'true'
