@@ -44,9 +44,23 @@ services:
       retries: 10
 
   miniflux:
-    build:
-      context: ../panfleto-core
-      dockerfile: packaging/docker/alpine/Dockerfile
+    # Built in CI, not here (Roadmap/09-platform-infra/ci-build-pipeline). update.sh writes
+    # MINIFLUX_IMAGE into deploy/.env from the panfleto-core submodule pin, so every DEPLOY runs
+    # exactly the commit `main` points at; deploy/.env may also pin it by hand to roll back (D8).
+    #
+    # The fallback is the moving branch tag, and it is not decoration: compose interpolates this file
+    # for almost every subcommand, so a hard `:?` here would break `docker compose exec`, `logs`, and
+    # with them backup.sh's nightly pg_dump - the only recovery path on this host - for anyone who
+    # ran a compose command before the first update.sh. The fallback keeps those working; update.sh
+    # always overrides it with an exact SHA, and warns if the reader reports a different version.
+    image: ${MINIFLUX_IMAGE:-ghcr.io/danybgoode/panfleto-core:panfleto}
+    # Emergency local build. The registry path has to fail at 3am exactly once for this to earn its
+    # keep: uncomment these three lines, comment out `image:` above, then `docker compose build
+    # miniflux && docker compose up -d miniflux`. Delete this block once a pull-based deploy has
+    # succeeded twice (ci-build-pipeline's Rollback section).
+    #build:
+    #  context: ../panfleto-core
+    #  dockerfile: packaging/docker/alpine/Dockerfile
     restart: unless-stopped
     depends_on:
       postgres:

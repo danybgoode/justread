@@ -16,6 +16,10 @@ to point the harness at, so:
 
 - Pre-merge, the `api` project runs against **`http://localhost:8080`** (a local `docker compose up`
   of the reader) or against nothing at all for a docs-only change. That is the gate.
+  - Since `09-platform-infra/ci-build-pipeline`, the local stack **pulls** the reader rather than
+    building it, so it needs `MINIFLUX_IMAGE` set and an **arm64** host (the published image is
+    arm64-only). On amd64, or with no Docker at all, that local run is unavailable — say so in the
+    PR rather than implying the gate ran, and lean on the post-deploy run against production.
 - Post-merge and post-`update.sh`, the same specs run against **`https://app.panfleto.win`** as the
   live confirmation. That split is stated in every PR body — it is the rail's real shape, not a gap.
 

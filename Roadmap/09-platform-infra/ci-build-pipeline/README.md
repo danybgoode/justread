@@ -1,5 +1,5 @@
 ---
-status: scaffolded
+status: in-progress
 slug: ci-build-pipeline
 build_order: 8
 ---
@@ -50,17 +50,33 @@ as-is (`AGENTS.md` rule 1 — nothing added to the fork).
 - `deploy/update.sh` — the entry point, kept; its body changes
 - `.github/workflows/guards.yml` — the consolidated-job pattern to copy for minute efficiency
 
-## Architecture decisions — to be LOCKED before any builder starts
+## Architecture decisions — LOCKED 2026-09-15 (against the live repos, before the builder started)
 
-| # | Decision | State |
+**The cost question is answered: both repos are PUBLIC** (`gh repo view danybgoode/justread --json isPrivate`
+→ `false`; same for `danybgoode/panfleto-core`). GitHub Actions minutes are metered only for private
+repos, so this epic is the cheap version of itself: unlimited free minutes, build-on-merge is
+affordable, and no narrowing to build-on-tag is needed.
+
+| # | Decision | Locked answer |
 |---|---|---|
-| **D1** | Registry: GHCR | **To lock** — GHCR is the obvious default (same auth as the repo, free for public), but confirm the VM can pull from it with the credentials it has |
-| **D2** | Tagging: commit SHA **and** a moving `main` tag | **To lock** — the SHA tag is what makes rollback possible; the moving tag is what makes `update.sh` simple. Both, not one |
-| **D3** | Build trigger: on merge to `main`, or on tag | **To lock** — depends on the private/public answer above |
-| **D4** | Native arm64 runner vs QEMU | **To lock** — measure in S1 |
-| **D5** | Which repo owns the image build | **Decided 2026-09-15** — the resync shipped, `panfleto-core` **is** a submodule (`.gitmodules`, branch `panfleto`). The image build therefore belongs on **`danybgoode/panfleto-core`**, alongside its existing `panfleto upstream sync` workflow, not in this repo. This repo only moves the pin |
-| **D6** | Living with the fork repo's inherited workflows | **To lock** — the fork inherits upstream's `dependabot` (weekly bump PRs that should be closed; bumps arrive through the rebase) and upstream's `stale.yml` (no owner guard). Adding a build workflow means sharing Actions with those. The resync retro flagged both as unresolved |
-| **D7** | Version reporting | **To lock** — the resync found `/about` **cannot** report a version from a git-less Docker build (its D9). If the deploy check wants a version string, this epic is where the build can inject one via ldflags |
+| **D1** | Registry | **GHCR — `ghcr.io/danybgoode/panfleto-core`.** Same auth as the repo; `GITHUB_TOKEN` with `packages: write` pushes it. Because the repo is public the **package is made public**, so the VM pulls anonymously and **no registry credential lands on the host at all** (`AGENTS.md` rule 4 stays trivially satisfied). Package visibility is not automatic — it is set once, by hand, after the first push |
+| **D2** | Tagging | **Both, as the story says.** `:<full-commit-sha>` is the immutable rollback handle; `:panfleto` is the moving tag that tracks the fork's default branch (the fork's `main` is called `panfleto`). `update.sh` resolves the **SHA**, not the moving tag — see D8 |
+| **D3** | Build trigger | **On push to `panfleto`** (the fork's default branch) plus `workflow_dispatch`. Public repo ⇒ free. Path-filtered so a docs-only commit doesn't build |
+| **D4** | Runner | **Native arm64 — `ubuntu-24.04-arm`**, free for public repos, no QEMU. Measured in story 1.2 |
+| **D5** | Which repo owns the build | **`danybgoode/panfleto-core`** (decided 2026-09-15, unchanged). This repo only moves the pin |
+| **D6** | Inherited workflows | **Leave upstream's `dependabot.yml` and `stale.yml` untouched — do not delete them.** Both are upstream-owned files; deleting one is a permanent modify/delete rebase conflict, i.e. exactly the tax `AGENTS.md` rule 1 exists to avoid. Confirmed live: Dependabot **has** already opened PR danybgoode/panfleto-core#14 (`bump the gomod group with 7 updates`, 2026-09-15). The standing answer is **close such PRs unreviewed** — the bumps arrive through the weekly rebase — and, if it gets noisy, disable Dependabot in the fork's repo settings, which is a GitHub-side toggle with **zero repo delta**. `docker.yml` and `codeberg_mirror.yml` are already inert on the fork (`if: github.repository_owner == 'miniflux'` / skipped), so the new workflow shares Actions only with `stale.yml`, `tests.yml` and `linters.yml` |
+| **D7** | Version reporting | **Inject it without touching the Dockerfile.** `Makefile` line 3 is `VERSION := $(shell git describe --tags --exact-match)`, the build context has no `.dockerignore` so `.git` is copied in, and the alpine build stage already installs `git`. So the *workflow* creates a lightweight local tag on the checked-out commit before `docker build`, and the existing Makefile turns it into `-X internal/version.Version=…` with **no change to `packaging/docker/alpine/Dockerfile` and no new fork delta** — which is what the resync's D9 ("`/about` can't report a version from a git-less Docker build") was actually missing. `/about` shows `panfleto-<short-sha>` |
+| **D8** | *(new)* How the VM knows **which** image to run | **The submodule pin is the version.** `update.sh` resolves `ghcr.io/danybgoode/panfleto-core:$(git -C panfleto-core rev-parse HEAD)` after `git submodule update`, so the image can never drift from the pin `main` says to run — and `git revert` of a pin bump is automatically a rollback to the matching image. A `MINIFLUX_IMAGE` line in `deploy/.env` overrides it for a deliberate out-of-band rollback (story 2.2). The moving `:panfleto` tag exists for humans and for `docker pull` by hand; the deploy never uses it |
+| **D9** | *(new)* Where the new workflow lives in the fork's history | **Amended into the existing topic commit `panfleto: weekly upstream sync workflow`**, not stacked on top — `AGENTS.md` rule 1. The fork's delta stays at **eight topic commits**; the file count goes 27 → 28 (`.github/workflows/panfleto-image.yml`), which is the honest cost of this epic and is paid in a directory upstream rarely touches for this fork |
+
+### Deviations from the scaffolded scope, decided here
+
+- **The `landing` service keeps building on the VM.** This epic's Why is entirely about *Go* compiling
+  next to Postgres; the Next.js image is a fraction of the cost and lives in this repo, not the fork,
+  so moving it is a different build with a different trigger. Out of scope, named here rather than
+  discovered later.
+- **Story 1.2's private-repo arithmetic does not apply** (public repo). It is answered with the
+  measured wall-clock numbers and the D4 verdict, and the minutes-per-month sum is recorded as N/A.
 
 ## Rollback
 

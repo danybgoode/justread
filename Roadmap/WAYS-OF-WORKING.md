@@ -83,13 +83,18 @@ Plan → Branch + scaffold docs → Build story → Verify → QA/smoke-test (pr
 
    > ⚠️ **On panfleto, merging to `main` is NOT the production deploy.** There is no CD. Production
    > changes only when a human SSHes to the Oracle VM and runs `/opt/panfleto/deploy/update.sh`,
-   > which pulls `main`, rebuilds the images **on the VM** and restarts the stack. So the step after
-   > merge is a real, named step — not a wait. Every PR body says who runs it and when, and a story
-   > is not done until the behaviour has been confirmed live (see *Definition of Done*, and
-   > `AGENTS.md` rule 5). Two things follow from compiling on the production host: a build failure
-   > takes the reader down, and there is no previous artifact to roll back to — rollback is
-   > `git revert` on `main` plus another slow rebuild. Removing that property is tracked as
-   > `00-ideas/seeds/ci-build-pipeline.md`.
+   > which pulls `main`, resolves the reader image from the `panfleto-core` submodule pin and pulls
+   > it from GHCR. So the step after merge is a real, named step — not a wait. Every PR body says
+   > who runs it and when, and a story is not done until the behaviour has been confirmed live (see
+   > *Definition of Done*, and `AGENTS.md` rule 5).
+   >
+   > **The reader is no longer compiled on the production host** (`09-platform-infra/ci-build-pipeline`,
+   > shipped 2026-09-16), and the two consequences that used to follow are gone with it: a bad commit
+   > can no longer take the reader down at build time — a missing or failed image aborts the deploy
+   > and leaves the running container serving — and rollback is now pinning a previous image tag and
+   > restarting, not `git revert` plus a slow rebuild. What remains true: the small `landing` image
+   > is still built on the VM, and **a `panfleto-core` change is not deployable until its image is
+   > built**, so a pin must point at a commit with a green `panfleto image` run.
 8. **Continue / close.** Roll into the next story. At **sprint close**, emit the sprint-wrap terminal
    summary (`SESSION-KICKOFFS.md` §7) — a thin pointer to the sprint doc + what's owed/next, never a
    re-summary. At **epic close**, do the epic Definition of Done (below) — including updating the

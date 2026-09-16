@@ -47,8 +47,12 @@ ssh -i ~/.ssh/panfleto_oci ubuntu@<reserved-ip>
 cd /opt/panfleto/deploy
 cp .env.example .env && vi .env        # fill in every value
 sudo ./install-host.sh                 # permissions + nightly backup timer
-docker compose up -d
+../deploy/update.sh                    # pulls the reader image and starts everything
 ```
+
+`update.sh` is the entry point even on a first install: it is what writes `MINIFLUX_IMAGE` into
+`.env`. A bare `docker compose up -d` also works (compose falls back to the moving `:panfleto` tag),
+but it does not pin the commit.
 
 Optional Auth0 SSO: `cp oauth.env.example oauth.env`, fill it in, then
 `docker compose up -d miniflux`. Skip the file entirely for password login.
@@ -70,11 +74,79 @@ rate-limited, wait it out rather than restarting Caddy in a loop.
 ## Operations
 
 ```bash
-/opt/panfleto/deploy/update.sh     # pull main, rebuild, restart
+/opt/panfleto/deploy/update.sh     # pull main, pull the reader image, restart
 /opt/panfleto/deploy/backup.sh     # manual backup (also runs nightly 04:30 UTC)
 ./deploy/allow-my-ip.sh            # from your workstation, when your IP rotates
 docker compose logs -f miniflux
 ```
+
+### How a deploy works now — the reader is pulled, not compiled
+
+The reader used to be compiled **on this VM**, next to the Postgres it shares 2 OCPU with: a broken
+commit took the reader down, and a rollback was another slow rebuild. Since
+`Roadmap/09-platform-infra/ci-build-pipeline`, the image is built for `linux/arm64` by the
+`panfleto image` workflow on `danybgoode/panfleto-core` and pushed to GHCR before it ever reaches
+here.
+
+- **The submodule pin is the version.** `update.sh` reads `git -C panfleto-core rev-parse HEAD` and
+  deploys `ghcr.io/danybgoode/panfleto-core:<that sha>`. The running container therefore cannot be a
+  different commit from the one `main` says to run.
+- **The package is public**, so the VM pulls anonymously — there is no registry credential on this
+  host, and there must not be one.
+- **`landing` is still built here.** It is a small Next.js image and it lives in this repo, not in
+  the fork.
+- **The reader image is arm64-only** — the VM is Ampere, and the workflow builds one architecture on
+  purpose. An amd64 workstation cannot run the reader from the registry; uncomment the `build:` block
+  in `docker-compose.yml` to build it locally instead.
+- **`update.sh` keeps one `.env.bak`** next to `.env`, written just before it rewrites the managed
+  `MINIFLUX_IMAGE` line. It is the only copy of this host's secrets other than `.env` itself —
+  `backup.sh` backs up the database, not the environment.
+- **`/about` now reports a version** (`panfleto-<short-sha>`), stamped by the workflow.
+- **When a commit changes `update.sh` itself**, bash keeps reading the replaced inode and you get the
+  *old* script. Reset first, then invoke the new one:
+
+  ```bash
+  cd /opt/panfleto && git fetch origin && git reset --hard origin/main \
+    && git submodule update --init --recursive --force && ./deploy/update.sh
+  ```
+
+### Rolling back the reader
+
+Every commit CI built has an immutable image tag, so a rollback is a restart, not a rebuild.
+
+**Find the target in the registry, not in `git log`.** Not every commit has an image: the workflow
+only exists from the ci-build-pipeline commit onwards, and it skips docs-only pushes. `git log` will
+happily show you a commit that was never built, and the deploy will abort on `manifest unknown`.
+
+```bash
+# 1. List the images that actually exist.
+#    https://github.com/danybgoode/panfleto-core/pkgs/container/panfleto-core
+#    or the green runs at https://github.com/danybgoode/panfleto-core/actions
+
+# 2. Pin it, in deploy/.env (the line wins over the submodule pin).
+echo 'MINIFLUX_IMAGE_PIN=ghcr.io/danybgoode/panfleto-core:<previous-sha>' >> /opt/panfleto/deploy/.env
+
+# 3. Deploy it.
+/opt/panfleto/deploy/update.sh
+
+# 4. Confirm what is actually running.
+curl -s https://app.panfleto.win/healthcheck
+docker compose -f /opt/panfleto/deploy/docker-compose.yml exec -T miniflux miniflux -version
+
+# 5. To roll forward again: delete the MINIFLUX_IMAGE_PIN line and re-run update.sh.
+sed -i '/^MINIFLUX_IMAGE_PIN=/d' /opt/panfleto/deploy/.env && /opt/panfleto/deploy/update.sh
+```
+
+A rollback across an **upstream sync** is not just an image swap, and **nothing stops you**:
+`IsSchemaUpToDate` only errors when the database is *behind* the binary, and `Migrate` no-ops when the
+database is ahead — so an older image boots happily on a migrated database and can then fail on
+writes (a rebuilt unique index makes `ON CONFLICT` fail while the healthcheck stays green). See
+`Roadmap/LEARNINGS.md` § *Working with a vendored fork* before rolling back over a sync, and judge it
+by the log after the next real write cycle, not by a 200.
+
+**If GHCR itself is unreachable**, `deploy/docker-compose.yml` still carries the old `build:` block,
+commented out directly under `image:`. Uncomment it, comment out `image:`, and
+`docker compose build miniflux && docker compose up -d miniflux` compiles here exactly as before.
 
 **Article autofetch kill switches** (`Roadmap/01-reading-experience/article-autofetch`, D4). Add the line to
 `deploy/.env`, then run `docker compose up -d miniflux`. That's a restart, not a rebuild:
