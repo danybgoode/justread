@@ -64,10 +64,13 @@ export const AGENT_BIN = { codex: 'codex', antigravity: 'agy', vibe: 'vibe', cla
 // Harmless here since AGY_MODEL/AGY_FALLBACK_MODEL below are always valid, listed model names (checked via
 // `agy models`), but it means a future typo in either constant would silently review with the WRONG model
 // instead of failing loud — watch for that if either constant is ever edited.
-// agy-doctor: last verified 2026-09-14 against 1.2.3 (Gemini probe interrupted; GPT-OSS fallback PROBE-OK).
+// agy-doctor: last verified 2026-09-16 against 1.2.4 by hand (scripts/agy-doctor.mjs does not exist in this
+// repo - the pin message names it, but it was never ported here). `agy --help` still documents -p/--print and
+// --model with the same meaning, and BOTH models answered a live probe with PROBE_OK, so the print contract is
+// unchanged. Previously: 2026-09-14 against 1.2.3 (Gemini probe interrupted; GPT-OSS fallback PROBE-OK).
 //   ^ machine-managed marker — `node scripts/agy-doctor.mjs --fix` rewrites it (with the constant
 //   below) after a green live contract probe. Don't hand-edit the marker's shape.
-export const AGY_PINNED = '1.2.3';
+export const AGY_PINNED = '1.2.4';
 
 // agy's `--print` mode prints NOTHING unless `--model` names a model — and, crucially, it ALSO prints
 // nothing (exit 0, empty stdout — the error lands only in agy's log, see --log-file) when the model is
