@@ -1,10 +1,22 @@
 # Your own feeds, as a newspaper — Sprint 1: The reader is recognised at editorial
 
-**Status:** ⬜ not started
+**Status:** ✅ shipped 2026-09-16, merged dark: `editorial-panfleto` `6119f5e` (+ review fixes `b3bc8d0`), PR #12, merge `84225f4`, production deployment `o3j9jzobf`
 
 > **This sprint defines the contract the other two import.** It is the HIGH-risk one and the one that
 > can eat the wave. The architect locks the session mechanism against live code before any builder
 > starts; a builder must not invent it.
+
+## Build contract (locked by the architect before the builder started)
+- **D4** is the mechanism: token connect → `/v1/me` → sealed `httpOnly` cookie. No Auth0 app, no Go.
+- Seams: `src/lib/miniflux/client.ts` gains a per-call key (`minifluxFetchAs`), and the existing env-key
+  exports keep working for the anonymous importer. `src/lib/personalized/session.ts` seals and opens.
+  `src/lib/personalized/resolver.ts` is the one resolver (D7).
+- Story 1.1's "sign in with panfleto credentials" is met by the reader's own token (D4). There is no
+  redirect, so the smoke's "you land back" becomes "you are sent to your edition".
+- Story 1.3: nothing under `src/collections`, `src/access` or `payload.config.ts` changes. The proxy
+  matcher covers only `/` with the session cookie, so `/admin` and `/api` never pass through it.
+- Specs (`tests/int/personalized/`): seal/open/tamper/expiry; resolver anonymous → `null`; the
+  identity call splits 401 from outage; a malformed token is refused before any `fetch`.
 
 ## Stories
 
@@ -45,21 +57,36 @@ no Payload role, collection or access rule changed.
 - **Merge:** HIGH tier ⇒ **the product owner merges**, and the fresh reviewer subagent is mandatory on
   top of the two cross-family passes (`node scripts/review-route.mjs --builder claude --tier high <PR#>`).
 
+## Live confirmation (2026-09-16)
+These ran on a preview deployment with the flag switched on **for that one deployment only**
+(`vercel deploy --env`; project settings untouched), using two disposable panfleto readers (users 7 and 8,
+both deleted afterwards). They were then repeated on the review-fixed commit.
+- **Sign in (1.1):**
+  - A malformed token and a wrong token each get their own message, and no cookie is set.
+  - Each reader's real token lands on their own edition.
+  - The cookie is `httpOnly`, `Secure` and `Lax`, and does not contain the key.
+  - Sign-out returns to the curated page and removes the cookie.
+- **Key stays server-side (1.2):**
+  - The key appeared in **no** response body, none of the 12 JS chunks, and none of ~300 request URLs per reader.
+  - The only place it travels is the reader's own form POST.
+  - Every card on each edition came from that reader's own feeds.
+- **Revocation:** a token revoked in panfleto was refused **12 s** after its edition was built (`307 → /tu-edicion/salir → reconnect`).
+- **Staff unaffected (1.3):** production `/admin` login renders, and nothing under `src/collections`, `src/access` or `payload.config.ts` changed.
+
 ## Sprint 1 — Smoke walkthrough (do these in order)
-Env: production · https://editorial.panfleto.win (preview URL while pre-merge)
+Env: production · https://editorial-panfleto.vercel.app
 
-> ⚠️ Do **not** use an ordinary Vercel preview deploy for this project without reading the spike's D1b
-> note: Preview shares production's `DATABASE_URL` and the build command runs `pnpm payload migrate`.
+> Steps 2–5 need the flag **on** (Sprint 3, step 2). Until then, step 1 is all production shows, which is the point.
 
-1. Open https://editorial.panfleto.win in a private window, signed out.
-   → The current curated front page loads, exactly as it does today.
-2. Sign in with your panfleto account. **(auth path — owed to the product owner)**
-   → You land back on the editorial site, shown as signed in, with no second signup and no second password.
-3. Open devtools → Network, reload, and search the responses and the JS bundle for your API key.
-   → It appears nowhere. No request URL contains a token.
-4. Sign out.
-   → You are back to the anonymous edition of step 1.
-5. Sign in as a **second** test reader with different feeds. **(auth path — owed to the product owner)**
-   → The session resolves to that reader, not the first one.
+1. Open https://editorial-panfleto.vercel.app in a private window.
+   → The curated front page, exactly as before.
+2. Open https://editorial-panfleto.vercel.app/tu-edicion/conectar, and in another tab open https://app.panfleto.win/integrations. Generate (or copy) your token there and paste it here. **(auth path — owed to the product owner)**
+   → You land on "Tu edición", shown as "Conectado como <your account>". No signup, no new password.
+3. Open devtools → Application → Cookies.
+   → `panfleto_edicion` is HttpOnly and Secure, and its value is not your token. Search the Network tab's responses for your token: it isn't there.
+4. Press **Salir**.
+   → The curated front page of step 1.
+5. Connect with a **second** account's token. **(auth path — owed to the product owner)**
+   → "Conectado como" shows the second account, and the stories come from its feeds.
 
 If any step fails, note the step number + what you saw — that's the bug report.
