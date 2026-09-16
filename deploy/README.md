@@ -47,8 +47,12 @@ ssh -i ~/.ssh/panfleto_oci ubuntu@<reserved-ip>
 cd /opt/panfleto/deploy
 cp .env.example .env && vi .env        # fill in every value
 sudo ./install-host.sh                 # permissions + nightly backup timer
-docker compose up -d
+../deploy/update.sh                    # pulls the reader image and starts everything
 ```
+
+`update.sh` is the entry point even on a first install: it is what writes `MINIFLUX_IMAGE` into
+`.env`. A bare `docker compose up -d` also works (compose falls back to the moving `:panfleto` tag),
+but it does not pin the commit.
 
 Optional Auth0 SSO: `cp oauth.env.example oauth.env`, fill it in, then
 `docker compose up -d miniflux`. Skip the file entirely for password login.
@@ -91,6 +95,12 @@ here.
   host, and there must not be one.
 - **`landing` is still built here.** It is a small Next.js image and it lives in this repo, not in
   the fork.
+- **The reader image is arm64-only** — the VM is Ampere, and the workflow builds one architecture on
+  purpose. An amd64 workstation cannot run the reader from the registry; uncomment the `build:` block
+  in `docker-compose.yml` to build it locally instead.
+- **`update.sh` keeps one `.env.bak`** next to `.env`, written just before it rewrites the managed
+  `MINIFLUX_IMAGE` line. It is the only copy of this host's secrets other than `.env` itself —
+  `backup.sh` backs up the database, not the environment.
 - **`/about` now reports a version** (`panfleto-<short-sha>`), stamped by the workflow.
 - **When a commit changes `update.sh` itself**, bash keeps reading the replaced inode and you get the
   *old* script. Reset first, then invoke the new one:
@@ -104,9 +114,14 @@ here.
 
 Every commit CI built has an immutable image tag, so a rollback is a restart, not a rebuild.
 
+**Find the target in the registry, not in `git log`.** Not every commit has an image: the workflow
+only exists from the ci-build-pipeline commit onwards, and it skips docs-only pushes. `git log` will
+happily show you a commit that was never built, and the deploy will abort on `manifest unknown`.
+
 ```bash
-# 1. Find the commit you want to go back to.
-git -C /opt/panfleto/panfleto-core log --oneline
+# 1. List the images that actually exist.
+#    https://github.com/danybgoode/panfleto-core/pkgs/container/panfleto-core
+#    or the green runs at https://github.com/danybgoode/panfleto-core/actions
 
 # 2. Pin it, in deploy/.env (the line wins over the submodule pin).
 echo 'MINIFLUX_IMAGE_PIN=ghcr.io/danybgoode/panfleto-core:<previous-sha>' >> /opt/panfleto/deploy/.env
@@ -122,9 +137,12 @@ docker compose -f /opt/panfleto/deploy/docker-compose.yml exec -T miniflux minif
 sed -i '/^MINIFLUX_IMAGE_PIN=/d' /opt/panfleto/deploy/.env && /opt/panfleto/deploy/update.sh
 ```
 
-A rollback across an **upstream sync** is not just an image swap — Miniflux refuses an older schema
-and a migrated database can break the old binary's writes. See `Roadmap/LEARNINGS.md` § *Working with
-a vendored fork* before rolling back over a sync.
+A rollback across an **upstream sync** is not just an image swap, and **nothing stops you**:
+`IsSchemaUpToDate` only errors when the database is *behind* the binary, and `Migrate` no-ops when the
+database is ahead — so an older image boots happily on a migrated database and can then fail on
+writes (a rebuilt unique index makes `ON CONFLICT` fail while the healthcheck stays green). See
+`Roadmap/LEARNINGS.md` § *Working with a vendored fork* before rolling back over a sync, and judge it
+by the log after the next real write cycle, not by a 200.
 
 **If GHCR itself is unreachable**, `deploy/docker-compose.yml` still carries the old `build:` block,
 commented out directly under `image:`. Uncomment it, comment out `image:`, and

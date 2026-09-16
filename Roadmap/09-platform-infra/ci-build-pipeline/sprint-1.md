@@ -1,6 +1,6 @@
 # Stop compiling Go on the production VM — Sprint 1: Build the image in CI
 
-**Status:** ✅ shipped — `panfleto-image.yml` amended into the fork's CI topic commit (`danybgoode/panfleto-core@9cd35eef`), pin moved here
+**Status:** ✅ shipped — `panfleto-image.yml` amended into the fork's CI topic commit; pin moved here to `danybgoode/panfleto-core@fdf2916d`
 
 > **Build contract (locked by the architect before the builder started)**
 >
@@ -56,6 +56,7 @@ not surprised by a quota email.
 | [35049301731](https://github.com/danybgoode/panfleto-core/actions/runs/35049301731) | push | **35 s** | 43 s |
 | [35049677945](https://github.com/danybgoode/panfleto-core/actions/runs/35049677945) | dispatch | **32 s** | 42 s |
 | [35049763832](https://github.com/danybgoode/panfleto-core/actions/runs/35049763832) | dispatch | **34 s** | 45 s |
+| [35051157446](https://github.com/danybgoode/panfleto-core/actions/runs/35051157446) | push (review hardening) | **33 s** | 43 s |
 
 **Cost: free.** Both repos are public (`gh repo view danybgoode/justread --json isPrivate` → `false`),
 so Actions minutes are unmetered and the minutes-per-month arithmetic the story asks for is **N/A**.
@@ -71,10 +72,30 @@ cold builder, `docker compose build miniflux` took **76 s** of its 2 OCPU — sh
 serving readers. The same artifact now reaches the VM as a **2.2 s `docker pull`**. CI spends 34 s of
 somebody else's CPU so production spends two seconds of its own.
 
+#### Sharp edges found in review, and what was done about them
+
+- **Not every commit has an image, so `git log` is the wrong place to pick a rollback target.** The
+  workflow only exists from this commit onwards, and it skips docs-only pushes — so the registry's
+  tag list (or the Actions run list) is the authoritative set of rollback targets. `deploy/README.md`
+  and `.env.example` say so, and `update.sh`'s failure message names `gh workflow run … --ref <sha>`
+  as the remedy for a pin that has no image.
+- **A missing image aborts the deploy; it never takes the reader down.** `update.sh` pulls *before*
+  it touches `.env`, so a pin CI hasn't built yet (or a GHCR outage) leaves the running container
+  serving and `.env` naming the image that is actually running.
+- **`cancel-in-progress: false` protects a running build, not a pending one.** GitHub keeps only the
+  most recent *pending* run per concurrency group, so three pushes inside one 33 s build can still
+  leave the middle SHA unbuilt. The workflow comment now says this instead of over-claiming.
+- **`persist-credentials: false`** on the checkout: there is deliberately no `.dockerignore` (D7
+  needs `.git` in the build context) and the Dockerfile does `ADD . /go/src/app`, so the default
+  credential helper would bake a live `GITHUB_TOKEN` into the build stage. It never reached GHCR —
+  only the compiled binary is copied into the final stage and no cache is exported — but one
+  `--target build` would have published it.
+
 #### Verification log
 
-- **GHCR push** — `ghcr.io/danybgoode/panfleto-core`, tagged `:9cd35eef…` (full SHA) **and**
-  `:panfleto` (moving), per D2.
+- **GHCR push** — `ghcr.io/danybgoode/panfleto-core`, tagged with the full commit SHA **and**
+  `:panfleto` (moving), per D2. Two SHA tags exist (`9cd35eef…`, `fdf2916d…`), which is what makes
+  sprint 2's rollback drill possible at all — see the sharp edge below.
 - **The package is public, so the pull is anonymous.** Proven without the VM's credentials: an
   anonymous `ghcr.io/token` grant fetches the manifest with HTTP 200. **No registry credential exists
   on the production host, and `.env.example` therefore documents none** — the best possible answer to
@@ -86,7 +107,7 @@ somebody else's CPU so production spends two seconds of its own.
   reset. (PRs cannot trigger it at all — the workflow has no `pull_request` trigger.)
 - **D7 is proven, with no fork delta**: the workflow tags the commit locally, the existing
   `Makefile`'s `git describe` picks it up, and `miniflux -version` inside the built image prints
-  `panfleto-9cd35eef`. `packaging/docker/alpine/Dockerfile` is untouched.
+  `panfleto-<short sha>`. `packaging/docker/alpine/Dockerfile` is untouched.
 - **D6 in practice**: Dependabot's inherited config had already opened
   [danybgoode/panfleto-core#14](https://github.com/danybgoode/panfleto-core/pull/14); closed
   unreviewed, since gomod bumps arrive through the weekly rebase. `docker.yml` and

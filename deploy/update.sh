@@ -57,16 +57,27 @@ if ! docker pull "$image"; then
   echo "" >&2
   echo "==> Could not pull $image. Nothing has changed; the reader is still serving." >&2
   echo "    Check https://github.com/danybgoode/panfleto-core/actions - the image is built on push," >&2
-  echo "    so a commit whose workflow is still running (or failed) has no image yet." >&2
+  echo "    so a commit whose workflow is still running (or failed) has no image yet. A docs-only" >&2
+  echo "    commit is skipped by the workflow's path filter and never gets one at all; build it with" >&2
+  echo "        gh workflow run 'panfleto image' --repo danybgoode/panfleto-core --ref $pinned_sha" >&2
   exit 1
 fi
 
-# Rewrite the managed MINIFLUX_IMAGE line in place, preserving the file's mode.
-tmp=$(mktemp)
-grep -v '^[[:space:]]*MINIFLUX_IMAGE=' .env > "$tmp" || true
+# Rewrite the managed MINIFLUX_IMAGE line. This file is the host's ONLY copy of the production
+# secrets - it is git-ignored by AGENTS.md rule 4 and backup.sh does not back it up - so: build the
+# new contents in a 600 temp file, refuse to proceed unless they still look like the real .env, keep
+# a .env.bak of what was there, and only then truncate.
+tmp=$(mktemp)   # mktemp is 600; the redirections below do not change an existing file's mode
+trap 'rm -f "$tmp"' EXIT
+grep -v '^[[:space:]]*MINIFLUX_IMAGE=' .env > "$tmp" || true   # 1 = every line matched; not an error
 printf 'MINIFLUX_IMAGE=%s\n' "$image" >> "$tmp"
+if ! grep -q '^[[:space:]]*POSTGRES_PASSWORD=' "$tmp"; then
+  echo "==> Refusing to write deploy/.env: the rewritten copy has no POSTGRES_PASSWORD line." >&2
+  echo "    .env is untouched. Check /tmp for space and re-run." >&2
+  exit 1
+fi
+cp -p .env .env.bak        # `cp -p` keeps 600; .env.bak is git-ignored by the same `.env*` rule
 cat "$tmp" > .env          # `cat >` keeps .env's own inode, owner and 600 mode
-rm -f "$tmp"
 
 # The reader is already pulled; only the landing page is built here.
 docker compose build landing
@@ -80,3 +91,17 @@ for _ in 1 2 3 4 5; do
   sleep 2
 done
 echo "==> running: ${running:-(version unavailable - check docker compose logs miniflux)}"
+
+# Did we get what we asked for? The version stamp is `panfleto-<short sha>`, so this catches both a
+# restart that silently kept the old container and a forgotten rollback pin still in force.
+expected="panfleto-$(printf '%s' "${image##*:}" | cut -c1-8)"
+if [ -n "${running:-}" ] && [ "$running" != "$expected" ] && [ -z "$override" ]; then
+  echo "==> WARNING: expected $expected but the reader reports $running." >&2
+fi
+if [ -n "$override" ]; then
+  echo ""
+  echo "==> ***  deploy/.env still pins MINIFLUX_IMAGE_PIN=$override  ***"
+  echo "==>      Until that line is removed, EVERY future update.sh deploys this image and ignores"
+  echo "==>      what main says to run (submodule pin: $pinned_sha). To roll forward:"
+  echo "==>          sed -i '/^MINIFLUX_IMAGE_PIN=/d' /opt/panfleto/deploy/.env && /opt/panfleto/deploy/update.sh"
+fi

@@ -28,9 +28,11 @@ fluxonline/                  ← git remote is danybgoode/justread; the product 
 `main`. Roll back a bad merge with `git revert` on `main`.
 
 > ⚠️ **On panfleto, merging to `main` is NOT the deploy.** There is no CD. Production updates when a
-> human runs `/opt/panfleto/deploy/update.sh` on the VM, which pulls `main` and rebuilds in place.
-> See rule 5 below — this changes what "done" means, and it is the most common way a panfleto PR
-> gets called finished when it isn't.
+> human runs `/opt/panfleto/deploy/update.sh` on the VM, which pulls `main`, resolves the reader
+> image from the submodule pin and **pulls it from GHCR** (since
+> `Roadmap/09-platform-infra/ci-build-pipeline`; the reader is no longer compiled on the VM, though
+> the small `landing` image still is). See rule 5 below — this changes what "done" means, and it is
+> the most common way a panfleto PR gets called finished when it isn't.
 
 ## Start here (orientation for any agent)
 
@@ -51,13 +53,16 @@ Before planning or building, read these — they are the source of truth and cha
 
 ### 1. Upstream Miniflux owns the reader. The fork's delta is a budget, not a canvas.
 `panfleto-core` tracks `miniflux/v2` and is rebased onto upstream `main` — weekly, by the
-`panfleto upstream sync` workflow on the fork. As of 2026-09-15 the delta is **eight topic commits**
-touching **27 code and template files**, plus `internal/ui/static/bin/feeds.json` (the one list of recommended
-feeds), that workflow, and 17 branding icons — and that number is the budget. It was 12 until
+`panfleto upstream sync` workflow on the fork. As of 2026-09-16 the delta is **eight topic commits**
+touching **28 code and template files**, plus `internal/ui/static/bin/feeds.json` (the one list of recommended
+feeds), **two** workflows, and 17 branding icons — and that number is the budget. It was 12 until
 `article-autofetch` and `inline-comments` added two genuinely new capabilities: 9 new panfleto-owned files
 (`internal/reader/{autofetch,prefetch,comments}/`, `internal/ui/entry_comments.go`) and 6 upstream files
 touched for the first time (`cli/daemon.go`, `config/options.go`, `reader/handler/handler.go`,
 `reader/processor/processor.go`, `ui/ui.go`, `ui/static/js/app.js`). The upstream-owned ones are the rebase risk.
+`ci-build-pipeline` then added the 28th, `.github/workflows/panfleto-image.yml` — deliberately a
+panfleto-owned file in a directory upstream's own workflows also live in, and the *cheapest* way to
+move the reader's build off the production VM: `packaging/docker/alpine/Dockerfile` is untouched.
 `git -C panfleto-core fetch -q https://github.com/miniflux/v2 main && git -C panfleto-core diff --stat FETCH_HEAD...HEAD`
 shows it (three dots: only panfleto's side, however far upstream has moved). Every file you add to the fork is
 rebase tax paid at every future sync, forever.
@@ -72,8 +77,8 @@ Before changing a file under `panfleto-core/`, exhaust these in order:
 | An **upstream PR** to `miniflux/v2` | Carrying a patch forever |
 
 If you must patch, keep it to a file the fork already owns, and put it in the topic commit it belongs
-to, never a new one on top. Say in the PR body which of the 27 it touches — or that the delta just grew
-to 28 and why that was worth it.
+to, never a new one on top. Say in the PR body which of the 28 it touches — or that the delta just grew
+to 29 and why that was worth it.
 
 ### 2. Never mutate `entries.content` from outside Miniflux.
 The reader owns article content. **Presentation** belongs in a template
@@ -107,6 +112,11 @@ Merging to `main` changes nothing in production. A story is done when the change
 VM has been updated, and the behaviour has been confirmed against `https://app.panfleto.win`. A PR
 that says "ready to deploy" is an unfinished PR — say who runs `update.sh` and when, in the PR body.
 
+**A change to `panfleto-core` is not deployable until CI has built its image.** The deploy resolves
+`ghcr.io/danybgoode/panfleto-core:<the submodule pin>`; if the `panfleto image` workflow has not
+finished (or the pinned commit was docs-only and skipped), `update.sh` aborts and the old reader
+keeps serving. Move the pin to a commit that has a green run.
+
 ---
 
 ## Context routing — read only what you need
@@ -136,7 +146,10 @@ npm run build
 npx tsc --noEmit
 
 # Whole stack, locally
-docker compose -f deploy/docker-compose.yml up --build
+# Needs MINIFLUX_IMAGE (or compose falls back to the moving :panfleto tag) and an arm64 host - the
+# published reader image is arm64-only. On amd64, uncomment docker-compose.yml's `build:` block.
+MINIFLUX_IMAGE=ghcr.io/danybgoode/panfleto-core:panfleto \
+  docker compose -f deploy/docker-compose.yml up -d
 
 # The deterministic gate
 npm run test:e2e                     # Playwright api project (see e2e/README.md)
@@ -144,7 +157,7 @@ node scripts/build-order.mjs --check # the roadmap board is fresh
 
 # Production (a human runs this, on the VM)
 ssh -i ~/.ssh/panfleto_oci ubuntu@<ip>
-/opt/panfleto/deploy/update.sh       # pull main, rebuild, restart
+/opt/panfleto/deploy/update.sh       # pull main, pull the reader image, restart
 /opt/panfleto/deploy/backup.sh       # manual backup (also nightly 04:30 UTC)
 ```
 
