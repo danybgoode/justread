@@ -57,13 +57,13 @@ independently shippable slice of value.
 - ✅ **Comments** — a Hacker News article opens its thread inside the reader: lazy, nested 5 deep, sanitized, cached 10 minutes. Other sites keep the outbound link, and Reddit was cut (it blocks panfleto's IP)
 - ✅ The entry page says when an article is still being fetched ("Loading…"), or when automatic fetching found nothing and the paywall rail is the way in
 
-- 🚧 **A personalized newspaper edition — built and in production, switched off.** A reader connects once
+- ✅ **A personalized newspaper edition — on in production since 2026-09-16.** A reader connects once
   with their own panfleto token at `editorial-panfleto.vercel.app/tu-edicion/conectar`. After that, the
   newspaper's front page is built from their feeds: stories several of their publishers ran go on top,
   each card says why it's there, and one reader's edition can't reach another. The key never reaches
   the browser in readable form, and a revoked token stops working within 10 minutes. Behind
-  `EDITORIAL_PERSONALIZED_ENABLED`, `false` everywhere, until the product owner turns it on. Nothing
-  links to it yet. Ranking tuning is wave 3
+  `EDITORIAL_PERSONALIZED_ENABLED`: `true` in Production since 2026-09-16, `false` in Preview and
+  Development. Nothing links to it yet. Ranking tuning is wave 3
 
 ### 02 · Onboarding & signup
 - ✅ Landing page and one-click signup at `panfleto.win`

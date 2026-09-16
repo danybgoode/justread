@@ -120,6 +120,11 @@ a deliberate, separate act after a real account has been verified.
 - [x] **Kill-switch:** `EDITORIAL_PERSONALIZED_ENABLED` exists in Production, Preview and Development, created
       `false` (enablement polarity). Checked by value where readable (Development: `"false"`) and by
       behaviour in Production (`/tu-edicion/conectar` → 404). One resolver reads it.
+      **Turned on in Production by the product owner's instruction, 2026-09-16**: set `true`, then
+      redeployed as `oct5722u6`. After that, `/tu-edicion/conectar` → 200 and anonymous `/` was still a
+      cache `HIT` with the curated page. A well-formed wrong token got `?error=token`, not `?error=config`,
+      which proves the Production session secret is usable and `/v1/me` is reachable from production.
+      Preview and Development stay `false`.
 - [x] Feature branch deleted; frontmatter `status: shipped`
 - **Review, as the product owner set it for this run:** one fresh-reviewer subagent (Opus) plus one external
   pass. Codex's login was revoked, so the external pass fell back to Antigravity. That is one
