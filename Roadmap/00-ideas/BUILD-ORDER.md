@@ -10,14 +10,13 @@
 > funnel), then run `node scripts/build-order.mjs`. This board and the Notion "Marketplace Roadmap"
 > DB are both *derived views* — never hand-edit the board.
 
-## 🏗️ Building now (0)
+## 🏗️ Building now (1)
 
-_None._
+- [MCP tokens shouldn't travel in query strings](../../03-agent-surface/mcp-token-handling/README.md) — 03 Agent surface · 0/4 stories · risk: High
 
-## 📋 Ready to build (scaffolded, not started) (2)
+## 📋 Ready to build (scaffolded, not started) (1)
 
 - [Your own feeds, as a newspaper](../../01-reading-experience/personalized-edition/README.md) — 01 Reading experience · 0/9 stories · risk: High
-- [MCP tokens shouldn't travel in query strings](../../03-agent-surface/mcp-token-handling/README.md) — 03 Agent surface · 0/4 stories · risk: High
 
 ## ✅ Shipped (9)
 
@@ -35,5 +34,15 @@ _None._
 
 - [An edition, not a river with quotas](seeds/editorial-ranking-tuning.md) — Ready · Feature · appetite M
 
+## ⚠️ Status drift — README frontmatter vs sprint/retro-derived (1)
+
+These epics’ authoritative README-frontmatter `status:` disagrees with what the sprint/retro
+derivation infers. The board trusts the **frontmatter**; a mismatch usually means a close-out
+forgot to set `status:` (or the README is stale). Reconcile the README, then this advisory clears.
+
+| Epic | frontmatter (used) | sprint/retro-derived |
+|---|---|---|
+| MCP tokens shouldn't travel in query strings | In progress | Scaffolded |
+
 ---
-_Epics: 11 · seeds in funnel: 1 · status drift: 0. Regenerate with `node scripts/build-order.mjs`._
+_Epics: 11 · seeds in funnel: 1 · status drift: 1. Regenerate with `node scripts/build-order.mjs`._
