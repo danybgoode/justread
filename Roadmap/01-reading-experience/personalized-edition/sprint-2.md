@@ -6,6 +6,18 @@
 > two requests, 759 ms p50** from Vercel — and `limit=100` covers only **2 h 7 min** of it. A render
 > cannot fetch a day inline. See the spike's D1b.
 
+## Build contract (locked by the architect before the builder started)
+- **D5** (Upstash, `pe:v1:<env>:edition:<userId>`, gzip JSON, 48 h TTL) and **D6** (10 min fresh, SWR in
+  `after()` behind an NX lock, incremental on `after_entry_id`, full rebuild past 6 h).
+- **Deviation from 2.2's wording, decided:** the delta is "entries *stored* since the last build"
+  (`after_entry_id`), not "*published* since" (`published_after`). Live data had 90 late arrivals in one
+  day, and `published_after` would miss every one of them. The max-age fallback covers edits and
+  removals, not late arrivals.
+- Seam: `src/lib/personalized/edition.ts` takes its store, fetcher and clock as arguments, so the specs
+  run it without network.
+- Specs: two readers never share a key or an edition; a fresh view makes no fetch; a stale view returns
+  immediately and its refresh requests only `after_entry_id=<newest>`.
+
 ## Stories
 
 ### Story 2.1 — A reader's day is built once and reused

@@ -6,6 +6,18 @@
 > can eat the wave. The architect locks the session mechanism against live code before any builder
 > starts; a builder must not invent it.
 
+## Build contract (locked by the architect before the builder started)
+- **D4** is the mechanism: token connect → `/v1/me` → sealed `httpOnly` cookie. No Auth0 app, no Go.
+- Seams: `src/lib/miniflux/client.ts` gains a per-call key (`minifluxFetchAs`), and the existing env-key
+  exports keep working for the anonymous importer. `src/lib/personalized/session.ts` seals and opens.
+  `src/lib/personalized/resolver.ts` is the one resolver (D7).
+- Story 1.1's "sign in with panfleto credentials" is met by the reader's own token (D4). There is no
+  redirect, so the smoke's "you land back" becomes "you are sent to your edition".
+- Story 1.3: nothing under `src/collections`, `src/access` or `payload.config.ts` changes. The proxy
+  matcher covers only `/` with the session cookie, so `/admin` and `/api` never pass through it.
+- Specs (`tests/int/personalized/`): seal/open/tamper/expiry; resolver anonymous → `null`; the
+  identity call splits 401 from outage; a malformed token is refused before any `fetch`.
+
 ## Stories
 
 ### Story 1.1 — A reader can sign in at the editorial app

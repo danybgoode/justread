@@ -6,6 +6,14 @@
 > that tuning is wave 3 (`editorial-ranking-tuning`). Pulling it forward here is how this M becomes an
 > L. If the page looks wrong while building, write it down for wave 3 — don't fix it in this sprint.
 
+## Build contract (locked by the architect before the builder started)
+- **D8** ranking port, **D9** surface, **D7** flag + resolver. The flag is `EDITORIAL_PERSONALIZED_ENABLED`,
+  a Vercel env var, `false` in Production, Preview and Development.
+- 3.2 is held by construction: `src/app/(frontend)/page.tsx` is not edited, and the proxy never runs for
+  a request without the session cookie.
+- Specs: publisher-not-feed corroboration on a two-BBC-feeds fixture; quotas; flag off ⇒ a valid session
+  resolves to `null` and the edition loader makes no fetch and no store write.
+
 ## Stories
 
 ### Story 3.1 — The ranked edition renders in the newspaper layout
