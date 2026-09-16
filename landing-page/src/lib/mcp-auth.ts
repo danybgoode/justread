@@ -31,6 +31,23 @@ export type ResolvedToken = {
  * with no scheme is NOT accepted: quietly honouring `Authorization: <token>` would mean a client that
  * mis-configures the scheme keeps working here and breaks against every other server.
  */
+/**
+ * Does this even look like a panfleto credential?
+ *
+ * Every Miniflux API key is `GenerateRandomStringHex(32)` — 64 hex characters — so anything carrying
+ * whitespace, a control character or a newline is not a token and must never be handed to `fetch`.
+ * Node puts a rejected header's VALUE in its exception message, so without this a caller-supplied
+ * string reaches a log line, and an embedded CRLF forges a second one.
+ */
+export function looksLikeToken(value: string): boolean {
+  return /^[A-Za-z0-9._~+/=-]{1,512}$/.test(value);
+}
+
+/** Make any string safe to put in a single log line: no newlines, bounded length. */
+export function logSafe(value: string, max = 200): string {
+  return value.replace(/[\r\n\t]/g, " ").slice(0, max);
+}
+
 export function resolveToken(authorizationHeader: string | null, queryToken: string | null): ResolvedToken {
   const header = bearerToken(authorizationHeader);
   const query = queryToken?.trim() ? queryToken.trim() : null;
@@ -64,7 +81,7 @@ export function legacyUseLogLine(userAgent: string | null): string {
 // legacy traffic is one stale connector or everybody. Newlines are stripped so a hostile value cannot
 // forge a second log line, and the length is capped.
 function clientOf(userAgent: string | null): string {
-  return (userAgent ?? "unknown").replace(/[\r\n]/g, " ").slice(0, 120);
+  return logSafe(userAgent ?? "unknown", 120);
 }
 
 /** A client sending both forms is mid-migration - distinguishable from one that only knows the old way. */

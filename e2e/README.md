@@ -14,6 +14,12 @@ Two Playwright projects, matching `Roadmap/WAYS-OF-WORKING.md` § *Automated QA*
 panfleto has **no per-branch preview** (see WAYS-OF-WORKING § *Deploy rail*). There is no preview URL
 to point the harness at, so:
 
+- **`mcp-auth.spec.ts` is the exception to the base-URL rule.** The MCP server lives on the *landing*
+  origin, not the reader's, so that spec targets `https://panfleto.win/api/mcp` and ignores
+  `PLAYWRIGHT_BASE_URL`. Point it at a local stack with `PANFLETO_MCP_URL=http://localhost:3000/api/mcp`.
+  Without that variable it always talks to production — which means that, on a change to the MCP
+  endpoint, **the pre-merge run asserts the OLD deployed behaviour and is expected to be red**; the
+  post-deploy run is the real gate. Say so in the PR rather than letting a red gate read as a bug.
 - Pre-merge, the `api` project runs against **`http://localhost:8080`** (a local `docker compose up`
   of the reader) or against nothing at all for a docs-only change. That is the gate.
   - Since `09-platform-infra/ci-build-pipeline`, the local stack **pulls** the reader rather than

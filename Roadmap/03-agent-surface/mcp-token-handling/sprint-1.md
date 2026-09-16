@@ -55,7 +55,14 @@ isn't permanent.
   restates it. A prefetching browser cannot destroy a credential, because there is no link to prefetch
   — the render test asserts that too.
 - **D4 as decided: the old key is deleted, then the new one created.** No grace period; a token you
-  rotate is a token you believe has leaked.
+  rotate is a token you believe has leaked. **The window is real and is named here rather than
+  hidden:** `api_keys` has `unique (user_id, description)`, so two rows with this description cannot
+  coexist and delete-first is forced by the schema. If the create then fails the user momentarily has
+  no token — so it retries once, and if that also fails they land back on the panel showing its
+  Generate button, which is a visible and recoverable state rather than a silent one.
+- **Generating twice is not an error.** Two tabs or a fast double-click both see "no key" and both
+  insert; the unique constraint rejects the loser. That is our race, not the user's, so a lost race
+  whose outcome is "you now have exactly one token" redirects normally instead of showing a 500.
 - **The old token genuinely stops authenticating — and that needed a second fix.** `/api/mcp` only
   touched Miniflux on a *tool call*, so `initialize` and `tools/list` answered any string at all. A
   rotated token would have kept *looking* like it worked until the first real request. Every POST now

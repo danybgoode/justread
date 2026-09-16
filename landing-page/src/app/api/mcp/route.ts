@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { resolveToken, legacyUseLogLine, bothFormsLogLine, AUTH_ERROR_MESSAGE, READER_UNAVAILABLE_MESSAGE, JSONRPC_AUTH_FAILED, JSONRPC_UPSTREAM_UNAVAILABLE } from "@/lib/mcp-auth";
+import {
+  resolveToken,
+  looksLikeToken,
+  logSafe,
+  legacyUseLogLine,
+  bothFormsLogLine,
+  AUTH_ERROR_MESSAGE,
+  READER_UNAVAILABLE_MESSAGE,
+  JSONRPC_AUTH_FAILED,
+  JSONRPC_UPSTREAM_UNAVAILABLE,
+} from "@/lib/mcp-auth";
 
 const MINIFLUX_URL = "https://app.panfleto.win/v1";
 
@@ -18,6 +28,14 @@ const MINIFLUX_URL = "https://app.panfleto.win/v1";
 type AuthOutcome = "ok" | "invalid" | "unavailable";
 
 async function authenticate(token: string): Promise<AuthOutcome> {
+  // Refuse a string that cannot be a credential BEFORE it reaches fetch. Two reasons, and the second
+  // is the one that bites: Node rejects a header containing CRLF and quotes the offending value in
+  // the exception, so an unsanitised catch would write a caller-controlled string - complete with a
+  // forged second line matching the legacy-use marker - straight into the log D3's future decision
+  // is counted from. It is also simply the right answer: a malformed token is invalid, not "the
+  // reader is down".
+  if (!looksLikeToken(token)) return "invalid";
+
   try {
     const res = await fetch(`${MINIFLUX_URL}/me`, {
       headers: { "X-Auth-Token": token },
@@ -30,7 +48,8 @@ async function authenticate(token: string): Promise<AuthOutcome> {
     return "unavailable";
   } catch (e) {
     // A timeout or a transport failure - never the token's fault.
-    console.error(`mcp-auth: could not reach Miniflux to validate a token: ${e instanceof Error ? e.message : String(e)}`);
+    // logSafe even here: defence in depth, since this message is not ours.
+    console.error(`mcp-auth: could not reach Miniflux to validate a token: ${logSafe(e instanceof Error ? e.message : String(e))}`);
     return "unavailable";
   }
 }

@@ -18,12 +18,22 @@ const MCP_URL = process.env.PANFLETO_MCP_URL ?? 'https://panfleto.win/api/mcp'
 
 const rpc = (method: string, id: number | string = 1) => ({ jsonrpc: '2.0', id, method })
 
+/**
+ * `JSONRPC_AUTH_FAILED` from landing-page/src/lib/mcp-auth.ts, repeated here rather than imported
+ * across project boundaries. Asserting the exact code matters: if the reader is simply unreachable the
+ * endpoint answers -32002 with a different message, and a spec that only checked "some error came
+ * back" would go green during an outage without ever proving a token was checked.
+ */
+const AUTH_FAILED = -32001
+const UPSTREAM_UNAVAILABLE = -32002
+
 test('a request with no credential is rejected', async ({ request }) => {
   const res = await request.post(MCP_URL, { data: rpc('initialize') })
   // MCP puts the error in the body with a 200; the assertion is on the envelope, not the status.
   expect(res.status()).toBe(200)
   const body = await res.json()
   expect(body.error, JSON.stringify(body)).toBeTruthy()
+  expect(body.error.code, 'a missing credential is an auth failure, not an outage').toBe(AUTH_FAILED)
   expect(body.result).toBeUndefined()
 })
 
@@ -31,6 +41,7 @@ test('a garbage token in the query string is rejected, including for initialize'
   const res = await request.post(`${MCP_URL}?token=not-a-real-token`, { data: rpc('initialize') })
   const body = await res.json()
   expect(body.error, JSON.stringify(body)).toBeTruthy()
+  expect(body.error.code, 'must be an auth failure — not the reader being down').toBe(AUTH_FAILED)
   expect(body.result).toBeUndefined()
 })
 
@@ -41,6 +52,7 @@ test('a garbage Bearer header is rejected too, and tools stay hidden', async ({ 
   })
   const body = await res.json()
   expect(body.error, JSON.stringify(body)).toBeTruthy()
+  expect(body.error.code).toBe(AUTH_FAILED)
   expect(JSON.stringify(body)).not.toContain('get_unread_entries')
 })
 
@@ -59,6 +71,7 @@ test('an auth failure uses a server-error code, not "Invalid Request"', async ({
   const { error } = await res.json()
   expect(error.code).toBeLessThanOrEqual(-32000)
   expect(error.code).toBeGreaterThanOrEqual(-32099)
+  expect(error.code).not.toBe(UPSTREAM_UNAVAILABLE)
 })
 
 test('the rejection does not reveal which credential form was wrong', async ({ request }) => {
@@ -79,7 +92,19 @@ test('a malformed Authorization header is not quietly treated as a bare token', 
     headers: { Authorization: 'not-a-real-token' },
     data: rpc('initialize'),
   })
-  expect((await res.json()).error).toBeTruthy()
+  const { error } = await res.json()
+  expect(error).toBeTruthy()
+  expect(error.code).toBe(AUTH_FAILED)
+})
+
+test('a token carrying a newline is refused as invalid, not reported as an outage', async ({ request }) => {
+  // It must never reach the upstream fetch: Node rejects such a header and quotes the value in its
+  // exception, which would write a caller-controlled string — and a forged second log line — into the
+  // log that the legacy-use count is read from.
+  const forged = encodeURIComponent('abc\r\nmcp-auth: legacy query-string token client="forged"')
+  const res = await request.post(`${MCP_URL}?token=${forged}`, { data: rpc('initialize') })
+  const { error } = await res.json()
+  expect(error.code, 'a malformed token is invalid, not "the reader is down"').toBe(AUTH_FAILED)
 })
 
 test('the GET landing document recommends the header form and keeps the query form documented', async ({ request }) => {

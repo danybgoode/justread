@@ -11,6 +11,8 @@ import {
   READER_UNAVAILABLE_MESSAGE,
   JSONRPC_AUTH_FAILED,
   JSONRPC_UPSTREAM_UNAVAILABLE,
+  looksLikeToken,
+  logSafe,
 } from './mcp-auth.ts'
 
 test('a Bearer header is read, case-insensitively on the scheme', () => {
@@ -41,7 +43,12 @@ test('when both forms are present the header wins, and that is visible', () => {
 
 test('no credential at all is distinguishable in code but not in the reply', () => {
   assert.deepEqual(resolveToken(null, null), { token: null, source: 'none', bothPresent: false })
-  assert.ok(!/query|header/i.test(AUTH_ERROR_MESSAGE.split('Send your')[0]), 'the reason must not name a form')
+  // The real invariant is that ONE constant answers all three failure modes, so the message cannot be
+  // form-specific: it documents both forms evenly and diagnoses neither. (That the route actually uses
+  // this one constant for all three is asserted end-to-end in e2e/mcp-auth.spec.ts.)
+  assert.ok(AUTH_ERROR_MESSAGE.includes('Authorization: Bearer'), 'names the header form')
+  assert.ok(AUTH_ERROR_MESSAGE.includes('?token='), 'names the query form')
+  assert.ok(!/(your (header|query)|the (header|query) (was|is) )/i.test(AUTH_ERROR_MESSAGE), 'must not diagnose which form was wrong')
 })
 
 test('the legacy-use log line records the client and never the token', () => {
@@ -78,4 +85,29 @@ test('both error codes sit in the JSON-RPC implementation-defined server-error b
   for (const code of [JSONRPC_AUTH_FAILED, JSONRPC_UPSTREAM_UNAVAILABLE]) {
     assert.ok(code <= -32000 && code >= -32099, `${code} is outside the server-error block`)
   }
+})
+
+// The path a fresh review found: a caller-supplied token containing CRLF reached Node's fetch, which
+// rejects the header AND quotes the offending value in its exception - so the string landed verbatim
+// in a log line, and the embedded newline forged a second line matching the exact marker
+// `grep -c` counts to decide whether the query form can be retired.
+test('a token-shaped check refuses anything that could forge a log line', () => {
+  const hostile = 'abc\r\nmcp-auth: legacy query-string token client="Cursor/1.0"'
+  const resolved = resolveToken(null, hostile)
+  assert.ok(resolved.token.includes('\n'), 'trim() alone does not remove an embedded newline')
+  assert.equal(looksLikeToken(resolved.token), false, 'so it must never reach fetch')
+})
+
+test('a real panfleto key still passes the shape check', () => {
+  // Every Miniflux API key is GenerateRandomStringHex(32) = 64 hex characters.
+  assert.equal(looksLikeToken('0123456789abcdef'.repeat(4)), true)
+  assert.equal(looksLikeToken(''), false)
+  assert.equal(looksLikeToken('has a space'), false)
+  assert.equal(looksLikeToken('x'.repeat(513)), false, 'and is bounded')
+})
+
+test('logSafe cannot emit a second line, however hostile the input', () => {
+  const forged = logSafe('a\r\nmcp-auth: legacy query-string token client="x"')
+  assert.equal(forged.split('\n').length, 1)
+  assert.ok(logSafe('x'.repeat(9999)).length <= 200)
 })

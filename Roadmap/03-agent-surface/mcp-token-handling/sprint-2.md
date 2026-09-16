@@ -42,8 +42,20 @@ appearing in proxy logs, browser history and referrer headers.
 - **A bare `Authorization: <token>` with no scheme is rejected**, deliberately. Honouring it would keep
   a misconfigured client working against panfleto and broken against every other MCP server.
 - **One rejection for every failure.** No credential, wrong credential, wrong form — the same
-  `AUTH_ERROR_MESSAGE`, so nothing here can be used to probe which part was wrong. `e2e/mcp-auth.spec.ts`
-  asserts the three messages are byte-identical.
+  `AUTH_ERROR_MESSAGE` and the same code, so nothing here can be used to probe which part was wrong.
+  `e2e/mcp-auth.spec.ts` asserts the three messages are byte-identical **and** that the code is
+  `-32001` specifically: a spec that accepted "some error came back" would go green during an outage
+  without ever proving a token was checked.
+- **"The reader is down" is a different answer from "your token is wrong"** (`-32002`, and the message
+  says *do not rotate it*). On this epic that distinction has teeth: the panel now has a Rotate
+  button, so telling someone their credential is bad when the reader is merely unreachable would make
+  them destroy a working one during somebody else's outage.
+- **A token that cannot be a token never reaches the network.** Miniflux keys are 64 hex characters;
+  anything with whitespace or a control character is refused up front. That closes a real hole a
+  review found: Node quotes a rejected header's *value* in its exception, so a caller-supplied string
+  containing CRLF was landing verbatim in the log **and forging a second line matching the
+  legacy-use marker below** — letting an anonymous caller inflate the very number the retirement
+  decision is meant to rest on.
 - **The GET document leads with the header form** and keeps the query form documented as fully
   supported, not as legacy — see the panel note in 2.2 for why that wording is deliberate.
 - **"Verified against at least two real clients" is OWED**, and cannot be closed by an agent: it means
