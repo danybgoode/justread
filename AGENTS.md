@@ -170,7 +170,8 @@ ssh -i ~/.ssh/panfleto_oci ubuntu@<ip>
 | `BASE_URL` | miniflux | `https://app.panfleto.win` |
 | `POLLING_FREQUENCY` / `BATCH_SIZE` | miniflux | `60` / `100` — retune together, they interact |
 | `OAUTH2_*` | `oauth.env` | Auth0 SSO; the file must be **absent**, not empty, to fall back to password login |
-| `RESEND_API_KEY` / `TELEGRAM_BOT_TOKEN` | landing | onboarding notifications; optional |
+| `RESEND_API_KEY` / `TELEGRAM_BOT_TOKEN` | landing **and miniflux** | onboarding notifications; optional. Both containers, since 2026-09-16 — `/api/register` (password signup) is in `landing`, `provisionUserOnboarding` (Auth0 signup) is in `miniflux`, and passing them to only one is what made every SSO signup notify nobody |
+| `PANFLETO_TELEGRAM_CHAT_ID` / `PANFLETO_EMAIL_FROM` | landing + miniflux | optional; default to the values that used to be hardcoded |
 | `MINIFLUX_URL` / `MINIFLUX_API_KEY` | `scripts/*.js` | generated at Settings → API Keys |
 
 **Key seams** — reuse these instead of reinventing:
