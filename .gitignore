@@ -13,3 +13,4 @@ playwright-report/
 .vercel
 .env*
 Claude outputs/
+references/
