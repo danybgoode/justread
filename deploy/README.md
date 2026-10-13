@@ -176,6 +176,12 @@ caches successful fallback results for one hour, spaces requests, and backs off 
 Set `FETCH_FALLBACK_CHAIN=unwall` and restart to disable Wallhop immediately. Never send private
 feed URLs or articles containing credentials to an external fallback.
 
+The `panfleto core pin` workflow checks for a successful arm64 image at the accepted fork tip,
+opens a pin-only PR, runs the feed guard, and merges the pin into `main`. Its repository Actions
+setting **Allow GitHub Actions to create and approve pull requests** must stay enabled; default
+workflow permissions can remain read-only because this workflow requests its own three scopes.
+The workflow does not run `update.sh` on the VM.
+
 Backups go to the `panfleto-backups` bucket under `db/`, authenticated by the
 instance principal — there are no API keys on the host. Objects expire after 30
 days via a bucket lifecycle policy.

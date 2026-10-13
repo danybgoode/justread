@@ -1,6 +1,8 @@
 # Move the superproject's submodule pin after the fork accepts a green upstream sync.
 # The fork's sync workflow auto-accepts only small changes; substantial changes stay in a PR and
 # ping the owner. This job never deploys the VM; deploy/update.sh remains the production step.
+# Repository Actions setting: allow GitHub Actions to create and approve pull requests. Keep default
+# GITHUB_TOKEN permissions read-only; this workflow requests only its three needed scopes below.
 name: panfleto core pin
 
 on:
