@@ -77,9 +77,10 @@ services:
       BATCH_SIZE: "100"
       # Article autofetch (Roadmap/01-reading-experience/article-autofetch, D4). On by default here and
       # killed in deploy/.env, then `docker compose up -d miniflux`: FORCE_CRAWLER=0 stops new feeds
-      # crawling, FETCH_FALLBACK_CHAIN= (empty) stops calling unwall.app, PREFETCH_WORKERS=0 puts
+      # crawling, FETCH_FALLBACK_CHAIN= (empty) stops external fallbacks, PREFETCH_WORKERS=0 puts
       # scraping back on the poll path. Every one of them at 0/empty is upstream Miniflux's behaviour.
       FORCE_CRAWLER: ${FORCE_CRAWLER:-1}
+      # Wallhop is opt-in until its API is probed from this VM: set unwall,wallhop in deploy/.env.
       FETCH_FALLBACK_CHAIN: ${FETCH_FALLBACK_CHAIN-unwall}
       FETCH_THIN_CONTENT_THRESHOLD: ${FETCH_THIN_CONTENT_THRESHOLD:-2000}
       PREFETCH_WORKERS: ${PREFETCH_WORKERS:-2}
