@@ -1,0 +1,92 @@
+# Move the superproject's submodule pin after the fork accepts a green upstream sync.
+# The fork's sync workflow auto-accepts only small changes; substantial changes stay in a PR and
+# ping the owner. This job never deploys the VM; deploy/update.sh remains the production step.
+name: panfleto core pin
+
+on:
+  schedule:
+    - cron: '43 7 * * 2'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+concurrency:
+  group: panfleto-core-pin
+  cancel-in-progress: false
+
+jobs:
+  pin:
+    if: github.repository == 'danybgoode/justread'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - name: Find accepted fork tip and its built image
+        id: tip
+        run: |
+          current="$(git ls-tree HEAD panfleto-core | awk '{print $3}')"
+          target="$(git ls-remote https://github.com/danybgoode/panfleto-core.git refs/heads/panfleto | awk '{print $1}')"
+          test -n "$target"
+          if [ "$current" = "$target" ]; then
+            echo "Already pinned to $target." >> "$GITHUB_STEP_SUMMARY"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          image_run="$(gh run list --repo danybgoode/panfleto-core --workflow 'panfleto image' --commit "$target" --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty')"
+          if [ -z "$image_run" ]; then
+            echo "::warning::Accepted fork tip $target has no green image run yet; leaving the existing production pin intact."
+            exit 0
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "target=$target" >> "$GITHUB_OUTPUT"
+          echo "short=${target:0:8}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        if: steps.tip.outputs.changed == 'true'
+        with:
+          node-version: '24'
+
+      - name: Open pin-only PR
+        id: pr
+        if: steps.tip.outputs.changed == 'true'
+        env:
+          TARGET: ${{ steps.tip.outputs.target }}
+          SHORT: ${{ steps.tip.outputs.short }}
+        run: |
+          branch="chore/panfleto-core-pin-$SHORT"
+          git config user.name "panfleto core pin"
+          git config user.email "actions@users.noreply.github.com"
+          git switch -c "$branch"
+          git -C panfleto-core fetch origin panfleto
+          git -C panfleto-core checkout --detach "$TARGET"
+          git add panfleto-core
+          test "$(git diff --cached --name-only)" = "panfleto-core"
+          # A GITHUB_TOKEN-created PR does not start pull_request workflows. Run its pin-specific
+          # guard here before creating or merging the PR.
+          node --test scripts/feeds-json.test.mjs
+          git commit -m "chore: pin panfleto-core $SHORT"
+          # A previous run may have opened this PR but failed before merge. Keep the run resumable.
+          git push --force-with-lease origin "$branch"
+          pr="$(gh pr list --head "$branch" --base main --state open --json url --jq '.[0].url // empty')"
+          if [ -z "$pr" ]; then
+            pr="$(gh pr create --head "$branch" --base main --title "Pin tested panfleto-core $SHORT" --body "Accepted fork tip \`$TARGET\` has a successful \`panfleto image\` run. This PR changes only the submodule pin. Merging does not deploy the VM; run \`/opt/panfleto/deploy/update.sh\` and confirm the reader afterward.")"
+          fi
+          echo "url=$pr" >> "$GITHUB_OUTPUT"
+
+      - name: Merge tested pin PR
+        if: steps.tip.outputs.changed == 'true'
+        env:
+          PR_URL: ${{ steps.pr.outputs.url }}
+          SHORT: ${{ steps.tip.outputs.short }}
+        run: |
+          gh pr merge "$PR_URL" --squash --delete-branch
+          echo "Merged tested submodule pin $SHORT. The VM still needs update.sh." >> "$GITHUB_STEP_SUMMARY"

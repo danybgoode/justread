@@ -158,6 +158,24 @@ PREFETCH_WORKERS=0       # scrape inline during the poll again (upstream behavio
 docker compose logs miniflux | grep -E "Prefetch|Fetch fallback" | tail   # what it is doing
 ```
 
+### Wallhop fallback
+
+The reader can try Wallhop after the existing unwall fallback. This is opt in because its public
+`/api/` endpoint returns HTML from another host and no service capacity is guaranteed. Before enabling
+it, test from the VM with a public, non-sensitive article URL:
+
+```bash
+curl --fail --max-time 15 --silent --show-error \
+  'https://wallhop.io/api/https://example.com/' | head -c 300
+```
+
+If the VM gets a valid JSON response with a `body` field, set
+`FETCH_FALLBACK_CHAIN=unwall,wallhop` in `deploy/.env` and run
+`docker compose up -d miniflux`. The reader extracts and sanitizes that body before storing it,
+caches successful fallback results for one hour, spaces requests, and backs off after errors.
+Set `FETCH_FALLBACK_CHAIN=unwall` and restart to disable Wallhop immediately. Never send private
+feed URLs or articles containing credentials to an external fallback.
+
 Backups go to the `panfleto-backups` bucket under `db/`, authenticated by the
 instance principal — there are no API keys on the host. Objects expire after 30
 days via a bucket lifecycle policy.
