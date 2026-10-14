@@ -9,6 +9,9 @@ services:
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
+    networks:
+      - default
+      - aomx_proxy
     ports:
       - "80:80"
       - "443:443"
@@ -121,3 +124,7 @@ services:
       PANFLETO_EMAIL_FROM: ${PANFLETO_EMAIL_FROM:-}
       NODE_ENV: production
       PORT: "3000"
+
+networks:
+  aomx_proxy:
+    external: true
