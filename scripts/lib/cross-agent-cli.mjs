@@ -64,13 +64,10 @@ export const AGENT_BIN = { codex: 'codex', antigravity: 'agy', vibe: 'vibe', cla
 // Harmless here since AGY_MODEL/AGY_FALLBACK_MODEL below are always valid, listed model names (checked via
 // `agy models`), but it means a future typo in either constant would silently review with the WRONG model
 // instead of failing loud — watch for that if either constant is ever edited.
-// agy-doctor: last verified 2026-09-16 against 1.2.4 by hand (scripts/agy-doctor.mjs does not exist in this
-// repo - the pin message names it, but it was never ported here). `agy --help` still documents -p/--print and
-// --model with the same meaning, and BOTH models answered a live probe with PROBE_OK, so the print contract is
-// unchanged. Previously: 2026-09-14 against 1.2.3 (Gemini probe interrupted; GPT-OSS fallback PROBE-OK).
-//   ^ machine-managed marker — `node scripts/agy-doctor.mjs --fix` rewrites it (with the constant
-//   below) after a green live contract probe. Don't hand-edit the marker's shape.
-export const AGY_PINNED = '1.2.4';
+// Verified 2026-10-15 against 1.3.6 by hand: `agy --help` still documents -p/--print and --model,
+// `agy models` lists the names below, and the exact print invocation for each returned PROBE_OK.
+// scripts/agy-doctor.mjs is not installed in this repository, so the manual pin path was used.
+export const AGY_PINNED = '1.3.6';
 
 // agy's `--print` mode prints NOTHING unless `--model` names a model — and, crucially, it ALSO prints
 // nothing (exit 0, empty stdout — the error lands only in agy's log, see --log-file) when the model is
@@ -79,7 +76,7 @@ export const AGY_PINNED = '1.2.4';
 // ("RESOURCE_EXHAUSTED 429: Individual quota reached"), so runAntigravity AUTO-FALLS-BACK to
 // AGY_FALLBACK_MODEL (GPT-OSS, a separate quota pool that worked on the dev machine) when the primary yields
 // empty. Override either via env.
-export const AGY_MODEL = process.env.AGY_MODEL || 'Gemini 3.1 Pro (High)';
+export const AGY_MODEL = process.env.AGY_MODEL || 'Gemini 3.8 Flash (High)';
 export const AGY_FALLBACK_MODEL = process.env.AGY_FALLBACK_MODEL || 'GPT-OSS 120B (Medium)';
 
 // agy takes the prompt+context as a single `-p` argv string (stdin is not the prompt). Guard well under the
@@ -335,9 +332,8 @@ export function checkAgyVersion(deps = {}) {
   if (m[0] !== pinned)
     return failFn(
       `agy ${m[0]} != pinned ${pinned} — the print/--model contract may have shifted. ` +
-        `Run \`node scripts/agy-doctor.mjs --fix\` (authorized for agents: it re-verifies the live ` +
-        `contract and bumps the pin only on a green probe), then commit the bump. ` +
-        `Manual path: re-verify runAntigravity() against \`agy --help\`, then bump AGY_PINNED to ${m[0]}.`
+        `Re-verify runAntigravity() against \`agy --help\`, list valid models, probe both with ` +
+        `the exact print invocation, then bump AGY_PINNED to ${m[0]} and commit the change.`
     );
 }
 

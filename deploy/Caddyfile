@@ -22,3 +22,14 @@ app.panfleto.win {
 		X-Content-Type-Options "nosniff"
 	}
 }
+
+# aomx internal alpha probe, restricted to the current operator workstation.
+# The aomx ingest container is attached only to its separate aomx_proxy network.
+alpha-api.159.54.158.4.sslip.io {
+	@alpha_operator remote_ip 201.137.118.191/32
+	handle @alpha_operator {
+		encode zstd gzip
+		reverse_proxy aomx-ingest:8787
+	}
+	respond "Forbidden" 403
+}
