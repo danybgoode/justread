@@ -33,3 +33,6 @@ alpha-api.159.54.158.4.sslip.io {
 	}
 	respond "Forbidden" 403
 }
+
+# Other tenants of this VM (see the caddy service in docker-compose.yml). Must stay LAST.
+import /etc/caddy/sites/*.caddy
