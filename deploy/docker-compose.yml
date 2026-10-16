@@ -9,9 +9,17 @@ services:
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
+    # This Caddy is the box's ONE public entrypoint, shared with the other tenants of this VM. They can plug
+    # in WITHOUT editing this repo: drop a site file into /opt/edge/sites (imported at the bottom of the
+    # Caddyfile) and put the upstream on the external `edge` network. A route hand-added to the Caddyfile on
+    # the host is erased by update.sh's hard reset to origin/main. First such tenant: Miyagi Sánchez
+    # (danybgoode/miyagi-product-management infra/oci/).
+    # A tenant site file must NAME its hosts: a catch-all (`https://`, `:443`) becomes a matcher-less TLS
+    # policy that serves the tenant's certificate for panfleto's own hosts (reproduced with openssl).
     networks:
       - default
       - aomx_proxy
+      - edge
     ports:
       - "80:80"
       - "443:443"
@@ -19,6 +27,8 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - /data/panfleto/caddy/data:/data
       - /data/panfleto/caddy/config:/config
+      - /opt/edge/sites:/etc/caddy/sites:ro
+      - /opt/edge/certs:/etc/caddy/certs:ro
     depends_on:
       - miniflux
       - landing
@@ -127,4 +137,7 @@ services:
 
 networks:
   aomx_proxy:
+    external: true
+  # Shared with the box's other tenants; update.sh creates it when missing.
+  edge:
     external: true

@@ -37,6 +37,11 @@ git submodule update --init --recursive --force
 cd deploy
 [ -f .env ] || { echo "deploy/.env is missing - see .env.example" >&2; exit 1; }
 
+# Caddy joins the external `edge` network the VM's other tenants share (docker-compose.yml). Create it if no
+# tenant has yet, so this deploy never depends on another project's installer having run first. (The
+# /opt/edge/* bind-mount folders need no such step: Docker creates a missing bind source itself.)
+docker network inspect edge >/dev/null 2>&1 || docker network create edge >/dev/null
+
 # Which image? A hand-set MINIFLUX_IMAGE_PIN (a deliberate rollback) beats the submodule pin.
 # Tolerate the shapes a human actually types into a .env at 3am: surrounding quotes, trailing spaces,
 # a trailing \r from an editor that saved CRLF.
