@@ -36,6 +36,26 @@ reserved public IP ─► VM ─► caddy :80/:443 (Let's Encrypt)
 Only Caddy publishes ports. Postgres and both apps are reachable solely on the
 internal compose network.
 
+## Other tenants on this VM
+
+This VM is shared, and **this repo's Caddy is the only public entrypoint for all of it**. Restarting or
+breaking `deploy-caddy-1` takes every tenant offline, not just panfleto.
+
+| Tenant | Lives in | Joins Caddy via | Notes |
+|---|---|---|---|
+| panfleto | `/opt/panfleto` (this repo) | the compose network | owns Caddy and its `Caddyfile` |
+| aomx | its own compose project | the `aomx_proxy` network | |
+| **Miyagi Sánchez** (since 2026-10-16) | `/opt/miyagi/infra/oci` ([miyagi-product-management](https://github.com/danybgoode/miyagi-product-management/tree/main/infra/oci)) | the `edge` network plus `/opt/edge/sites/miyagi.caddy`, which the Caddyfile imports | Medusa, the storefront, Postgres and Redis; capped at ≤ 5 GB RAM and ≤ 1.75 CPU in total. TLS uses the Cloudflare Origin certs in `/opt/edge/certs`. Deploy with `/opt/miyagi/infra/oci/update.sh` |
+
+Rules that keep tenants from hurting each other:
+
+- **A tenant's site file names every host it serves.** A catch-all (`https://`, `:443`, `*`) becomes a TLS
+  policy with no host matcher and serves that tenant's certificate for *every* host on the box. This was
+  reproduced: panfleto.win was served `CN=miyagisanchez.com`.
+- `update.sh` here creates the `edge` network if it is missing. Do not remove it from the Caddy service.
+- Nightly jobs are staggered: panfleto's backup runs at 04:30 UTC and Miyagi's at 04:45 UTC, and Miyagi's
+  `miyagi-cron-*` timers run at 06:00–10:00 UTC.
+
 ## First deploy
 
 ```bash
