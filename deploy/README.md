@@ -44,7 +44,7 @@ breaking `deploy-caddy-1` takes every tenant offline, not just panfleto.
 | Tenant | Lives in | Joins Caddy via | Notes |
 |---|---|---|---|
 | panfleto | `/opt/panfleto` (this repo) | the compose network | owns Caddy and its `Caddyfile` |
-| aomx | its own compose project | the `aomx_proxy` network | |
+| aomx | its own compose project | the `aomx_proxy` network | `/v1/match/*` reaches the separate invite-gated match host; ingest routes retain the operator allowlist. The aomx match service must be healthy before a Caddy reload or this path returns 502. |
 | **Miyagi Sánchez** (since 2026-10-16) | `/opt/miyagi/infra/oci` ([miyagi-product-management](https://github.com/danybgoode/miyagi-product-management/tree/main/infra/oci)) | the `edge` network plus `/opt/edge/sites/miyagi.caddy`, which the Caddyfile imports | Medusa, the storefront, Postgres and Redis; capped at ≤ 5 GB RAM and ≤ 1.75 CPU in total. TLS uses the Cloudflare Origin certs in `/opt/edge/certs`. Deploy with `/opt/miyagi/infra/oci/update.sh` |
 
 Rules that keep tenants from hurting each other:

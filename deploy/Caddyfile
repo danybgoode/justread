@@ -23,9 +23,15 @@ app.panfleto.win {
 	}
 }
 
-# aomx internal alpha probe, restricted to the current operator workstation.
-# The aomx ingest container is attached only to its separate aomx_proxy network.
+# aomx alpha ingress: private-match requests use individual invite codes and
+# the server-side Golden Frijoles admission flag. Ingest stays operator-only.
+# Both aomx containers are attached only to the separate aomx_proxy network.
 alpha-api.159.54.158.4.sslip.io {
+	handle /v1/match/* {
+		reverse_proxy aomx-match:8790 {
+			header_up X-Aomx-Client-IP {remote_host}
+		}
+	}
 	@alpha_operator remote_ip 187.168.160.163/32
 	handle @alpha_operator {
 		encode zstd gzip
