@@ -32,7 +32,7 @@ alpha-api.159.54.158.4.sslip.io {
 			header_up X-Aomx-Client-IP {remote_host}
 		}
 	}
-	@alpha_operator remote_ip 187.168.160.163/32
+	@alpha_operator remote_ip 189.139.219.135/32
 	handle @alpha_operator {
 		encode zstd gzip
 		reverse_proxy aomx-ingest:8787
