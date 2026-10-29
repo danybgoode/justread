@@ -1,0 +1,9 @@
+[Unit]
+Description=panfleto weekly restore drill of the newest database dump (deploy/restore-drill.sh)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/panfleto/deploy/restore-drill.sh
+TimeoutStartSec=3600
