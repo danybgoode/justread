@@ -110,8 +110,10 @@ here.
   different commit from the one `main` says to run.
 - **The package is public**, so the VM pulls anonymously — there is no registry credential on this
   host, and there must not be one.
-- **`landing` is still built here.** It is a small Next.js image and it lives in this repo, not in
-  the fork.
+- **`landing` is pulled too** (since 2026-10-29). `.github/workflows/landing-image.yml` builds
+  `ghcr.io/danybgoode/panfleto-landing:<sha>`, where `<sha>` is the last commit that touched `landing-page/` or
+  `deploy/landing.Dockerfile`; `update.sh` derives the same SHA. Roll back with `LANDING_IMAGE_PIN=<image>` in
+  `deploy/.env`. Before this it was compiled on the VM, next to every tenant's production.
 - **The reader image is arm64-only** — the VM is Ampere, and the workflow builds one architecture on
   purpose. An amd64 workstation cannot run the reader from the registry; uncomment the `build:` block
   in `docker-compose.yml` to build it locally instead.

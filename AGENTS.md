@@ -30,8 +30,8 @@ fluxonline/                  ← git remote is danybgoode/justread; the product 
 > ⚠️ **On panfleto, merging to `main` is NOT the deploy.** There is no CD. Production updates when a
 > human runs `/opt/panfleto/deploy/update.sh` on the VM, which pulls `main`, resolves the reader
 > image from the submodule pin and **pulls it from GHCR** (since
-> `Roadmap/09-platform-infra/ci-build-pipeline`; the reader is no longer compiled on the VM, though
-> the small `landing` image still is). See rule 5 below — this changes what "done" means, and it is
+> `Roadmap/09-platform-infra/ci-build-pipeline`; since 2026-10-29 the `landing` image is pulled from GHCR too,
+> built by `.github/workflows/landing-image.yml`, so nothing is compiled on the VM). See rule 5 below — this changes what "done" means, and it is
 > the most common way a panfleto PR gets called finished when it isn't.
 
 ## Start here (orientation for any agent)

@@ -1,0 +1,46 @@
+name: landing image
+# Builds the landing page for the Oracle VM (linux/arm64) and pushes ghcr.io/danybgoode/panfleto-landing:<sha>.
+# Until 2026-10-29 deploy/update.sh compiled it ON the VM, competing with every tenant for 2 CPUs.
+#
+# The tag is the last commit that touched the landing code, NOT the commit being built. deploy/update.sh derives the
+# same SHA with the same `git log -- <paths>`, so the two can never disagree, and a Go-only or docs-only commit
+# deploys the landing image that already exists. Keep the two path lists identical.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'landing-page/**'
+      - 'deploy/landing.Dockerfile'
+      - '.github/workflows/landing-image.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # the tag comes from `git log -- <paths>`
+      - name: Tag
+        id: tag
+        run: echo "sha=$(git log -1 --format=%H -- landing-page deploy/landing.Dockerfile)" >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: landing-page
+          file: deploy/landing.Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: ghcr.io/danybgoode/panfleto-landing:${{ steps.tag.outputs.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/danybgoode/justread
+            org.opencontainers.image.revision=${{ steps.tag.outputs.sha }}
