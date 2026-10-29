@@ -37,9 +37,8 @@ git submodule update --init --recursive --force
 cd deploy
 [ -f .env ] || { echo "deploy/.env is missing - see .env.example" >&2; exit 1; }
 
-# Caddy joins the external `edge` network the VM's other tenants share (docker-compose.yml). Create it if no
-# tenant has yet, so this deploy never depends on another project's installer having run first. (The
-# /opt/edge/* bind-mount folders need no such step: Docker creates a missing bind source itself.)
+# landing and miniflux join the external `edge` network the VM's shared proxy reads from (docker-compose.yml).
+# Create it if nothing has yet, so this deploy never depends on another project's installer having run first.
 docker network inspect edge >/dev/null 2>&1 || docker network create edge >/dev/null
 
 # Which image? A hand-set MINIFLUX_IMAGE_PIN (a deliberate rollback) beats the submodule pin.
@@ -86,9 +85,34 @@ cat "$tmp" > .env          # `cat >` keeps .env's own inode, owner and 600 mode
 
 # The reader is already pulled; only the landing page is built here.
 docker compose build landing
-docker compose up -d
-docker image prune -f          # dangling layers only - every SHA tag stays, which is what makes
-                               # a rollback a restart instead of a rebuild
+# --remove-orphans: the `caddy` service left this file on 2026-10-29 (it is edge-caddy in danybgoode/oracle-edge now).
+docker compose up -d --remove-orphans
+
+# Publish panfleto's site file to the shared proxy, the way every tenant does: install it, validate the WHOLE proxy
+# config (every tenant's file is behind the same process), reload, and put the old file back if Caddy says no.
+SITE=/opt/edge/sites/panfleto.caddy
+if docker inspect edge-caddy >/dev/null 2>&1; then
+  prev=$(mktemp); had_prev=0
+  [ -f "$SITE" ] && { cp -p "$SITE" "$prev"; had_prev=1; }
+  install -m 0644 panfleto.caddy "$SITE"
+  if ! docker exec edge-caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null 2>&1 \
+     || ! docker exec edge-caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null 2>&1; then
+    if [ "$had_prev" = 1 ]; then cp -p "$prev" "$SITE"; else rm -f "$SITE"; fi
+    rm -f "$prev"
+    echo "==> Caddy rejected panfleto.caddy - the previous site file is back and the proxy is unchanged." >&2
+    exit 1
+  fi
+  rm -f "$prev"
+  echo "==> panfleto.caddy validated and the shared proxy reloaded"
+else
+  echo "==> WARNING: edge-caddy is not running, so panfleto.win is not being served. Deploy it from" >&2
+  echo "    danybgoode/oracle-edge: /opt/edge/platform/ops/deploy-edge.sh" >&2
+fi
+docker image prune -f          # dangling layers only
+# Keep the newest three reader images (the running one and two rollback targets); older SHA tags only fill the boot
+# disk, which reached 97% on 2026-10-29. Any commit CI built can still be pulled again from GHCR to roll back further.
+docker images "$REGISTRY_IMAGE" --format '{{.Tag}}' | tail -n +4 \
+  | while read -r t; do [ "$REGISTRY_IMAGE:$t" = "$image" ] || docker rmi "$REGISTRY_IMAGE:$t" >/dev/null 2>&1 || true; done
 
 docker compose ps
 for _ in 1 2 3 4 5; do

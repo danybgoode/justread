@@ -24,43 +24,40 @@ so nothing is reclaimed when the 30-day trial expires.
 
 ```
 Cloudflare (proxied, SSL mode: Full (Strict))
-   │  panfleto.win, www.panfleto.win   →  landing
-   │  app.panfleto.win                 →  miniflux
+   │  panfleto.win, www.panfleto.win   →  panfleto-landing
+   │  app.panfleto.win                 →  panfleto-miniflux
    ▼
-reserved public IP ─► VM ─► caddy :80/:443 (Let's Encrypt)
-                              ├── landing   :3000   Next.js, unmodified
-                              ├── miniflux  :8080   built from ../panfleto-core
-                              └── postgres          /data/panfleto/postgres
+reserved public IP ─► VM ─► edge-caddy :80/:443   (danybgoode/oracle-edge, shared by every tenant)
+                              │  network `edge`
+                              ├── landing   :3000   Next.js
+                              ├── miniflux  :8080   pulled from GHCR
+                              └── postgres          /data/panfleto/postgres  (this project's network only)
 ```
 
-Only Caddy publishes ports. Postgres and both apps are reachable solely on the
-internal compose network.
+Nothing in this compose project publishes a port. panfleto's hosts are declared in `deploy/panfleto.caddy`;
+`update.sh` installs it to `/opt/edge/sites/`, validates the shared proxy's whole config, and reloads it.
 
-## Other tenants on this VM
+## The VM is shared
 
-This VM is shared, and **this repo's Caddy is the only public entrypoint for all of it**. Restarting or
-breaking `deploy-caddy-1` takes every tenant offline, not just panfleto.
+This VM also runs aomx and Miyagi Sánchez. Everything they share lives in
+**[danybgoode/oracle-edge](https://github.com/danybgoode/oracle-edge)** since 2026-10-29: the proxy (`edge-caddy`),
+the host baseline, the watchdog, OCI provisioning and `allow-my-ip.sh`. Its `TENANTS.md` lists who runs what.
+Until then the proxy was a service in this repo's compose file, so a panfleto deploy could restart every
+tenant's front door, and aomx's operator IP was a hard-coded line in this repo's `Caddyfile`.
 
-| Tenant | Lives in | Joins Caddy via | Notes |
-|---|---|---|---|
-| panfleto | `/opt/panfleto` (this repo) | the compose network | owns Caddy and its `Caddyfile` |
-| aomx | its own compose project | the `aomx_proxy` network | `/v1/match/*` reaches the separate invite-gated match host; ingest routes retain the operator allowlist. The aomx match service must be healthy before a Caddy reload or this path returns 502. |
-| **Miyagi Sánchez** (since 2026-10-16) | `/opt/miyagi/infra/oci` ([miyagi-product-management](https://github.com/danybgoode/miyagi-product-management/tree/main/infra/oci)) | the `edge` network plus `/opt/edge/sites/miyagi.caddy`, which the Caddyfile imports | Medusa, the storefront, Postgres and Redis; capped at ≤ 5 GB RAM and ≤ 1.75 CPU in total. TLS uses the Cloudflare Origin certs in `/opt/edge/certs`. Deploy with `/opt/miyagi/infra/oci/update.sh` |
+What still applies here:
 
-Rules that keep tenants from hurting each other:
-
-- **A tenant's site file names every host it serves.** A catch-all (`https://`, `:443`, `*`) becomes a TLS
-  policy with no host matcher and serves that tenant's certificate for *every* host on the box. This was
-  reproduced: panfleto.win was served `CN=miyagisanchez.com`.
-- `update.sh` here creates the `edge` network if it is missing. Do not remove it from the Caddy service.
-- Nightly jobs are staggered: panfleto's backup runs at 04:30 UTC and Miyagi's at 04:45 UTC, and Miyagi's
-  `miyagi-cron-*` timers run at 06:00–10:00 UTC.
+- **`panfleto.caddy` names every host.** A catch-all (`https://`, `:443`, `*`) serves panfleto's certificate for
+  every other tenant's hosts. This was reproduced: panfleto.win was once served `CN=miyagisanchez.com`.
+- Nightly jobs are staggered: panfleto's backup runs at 04:30 UTC (see oracle-edge `TENANTS.md` for the rest).
+- Every service here has a CPU and memory cap. Postgres's 4 GB leaves room above its deliberate 3 GB of
+  shared buffers.
 
 ## First deploy
 
 ```bash
 # 1. From your workstation - creates every OCI resource. Safe to re-run.
-./deploy/provision.sh
+../oracle-edge/ops/provision.sh   # then follow oracle-edge's README to install the host baseline and edge-caddy
 
 # 2. On the VM.
 ssh -i ~/.ssh/panfleto_oci ubuntu@<reserved-ip>
@@ -85,7 +82,7 @@ validate against Cloudflare's edge rather than this host.
 
 1. In Cloudflare, point `panfleto.win`, `www`, and `app` at the reserved IP as
    **DNS-only** A records.
-2. `docker compose logs -f caddy` until all three certificates are issued.
+2. `docker logs -f edge-caddy` until all three certificates are issued.
 3. Switch the records to proxied and set SSL/TLS mode to **Full (Strict)**.
 
 Let's Encrypt allows 5 failed validations per hostname per hour. If you get
@@ -96,7 +93,7 @@ rate-limited, wait it out rather than restarting Caddy in a loop.
 ```bash
 /opt/panfleto/deploy/update.sh     # pull main, pull the reader image, restart
 /opt/panfleto/deploy/backup.sh     # manual backup (also runs nightly 04:30 UTC)
-./deploy/allow-my-ip.sh            # from your workstation, when your IP rotates
+../oracle-edge/ops/allow-my-ip.sh  # from your workstation, when your IP rotates
 docker compose logs -f miniflux
 ```
 

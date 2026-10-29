@@ -100,7 +100,8 @@ Infrastructure and the full runbook live in **[`deploy/README.md`](deploy/README
 The short version:
 
 ```bash
-./deploy/provision.sh                    # creates every OCI resource; idempotent
+# The VM and everything its tenants share (proxy, host baseline, OCI access) live in danybgoode/oracle-edge.
+../oracle-edge/ops/provision.sh          # creates every OCI resource; idempotent
 
 ssh -i ~/.ssh/panfleto_oci ubuntu@<ip>
 cd /opt/panfleto/deploy
@@ -117,7 +118,7 @@ it, panfleto runs on password login.
 ```bash
 /opt/panfleto/deploy/update.sh     # pull main, rebuild, restart
 /opt/panfleto/deploy/backup.sh     # manual backup (also nightly at 04:30 UTC)
-./deploy/allow-my-ip.sh            # re-point the SSH rule when your IP rotates
+../oracle-edge/ops/allow-my-ip.sh  # re-point SSH + the operator allowlist when your IP rotates
 ```
 
 Backups land in the `panfleto-backups` bucket under `db/`, authenticated by the
