@@ -110,9 +110,14 @@ services:
           memory: 512M
 
   landing:
-    build:
-      context: ../landing-page
-      dockerfile: ../deploy/landing.Dockerfile
+    # Built by CI (.github/workflows/landing-image.yml) and pulled; update.sh writes LANDING_IMAGE into deploy/.env.
+    # The fallback is the last locally built tag, so `compose logs/exec` keep working before the first update.sh,
+    # the same reason miniflux has one. Emergency local build: uncomment `build:` and run
+    # `docker compose build landing && docker compose up -d landing`.
+    image: ${LANDING_IMAGE:-deploy-landing}
+    #build:
+    #  context: ../landing-page
+    #  dockerfile: ../deploy/landing.Dockerfile
     restart: unless-stopped
     depends_on:
       - miniflux

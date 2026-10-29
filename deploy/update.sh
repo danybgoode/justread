@@ -12,7 +12,7 @@
 # Delete that line and re-run to roll forward. MINIFLUX_IMAGE_PIN always wins over the submodule pin;
 # MINIFLUX_IMAGE below is a managed line and is rewritten on every run.
 #
-# `landing` is still built here: it is a small Next.js image in this repo, not Go next to Postgres.
+# `landing` is built by CI as well (.github/workflows/landing-image.yml) and pulled; nothing compiles here.
 #
 # NOTE, when a commit changes THIS script: bash keeps reading the replaced inode, so a plain run
 # executes the old script. Reset first, then invoke the new one:
@@ -21,6 +21,7 @@
 set -euo pipefail
 
 REGISTRY_IMAGE=ghcr.io/danybgoode/panfleto-core
+LANDING_REGISTRY_IMAGE=ghcr.io/danybgoode/panfleto-landing
 cd /opt/panfleto
 git fetch origin
 git reset --hard origin/main
@@ -67,14 +68,28 @@ if ! docker pull "$image"; then
   exit 1
 fi
 
-# Rewrite the managed MINIFLUX_IMAGE line. This file is the host's ONLY copy of the production
+# The landing page, built by CI too since 2026-10-29 (.github/workflows/landing-image.yml) instead of on this VM.
+# Its tag is the last commit that touched the landing code, which the workflow computes the same way, so a commit
+# that only changed Go or docs reuses the landing image that already exists. LANDING_IMAGE_PIN in .env rolls back.
+landing_sha=$(git -C .. log -1 --format=%H -- landing-page deploy/landing.Dockerfile)
+landing_override=$(sed -n 's/^[[:space:]]*LANDING_IMAGE_PIN=//p' .env | tail -n1 \
+  | tr -d '\r' | sed -e 's/[[:space:]]*$//' -e 's/^["'"'"']//' -e 's/["'"'"']$//' -e 's/[[:space:]]*$//')
+landing_image=${landing_override:-$LANDING_REGISTRY_IMAGE:$landing_sha}
+echo "==> landing $landing_image${landing_override:+ (LANDING_IMAGE_PIN)}"
+if ! docker pull -q "$landing_image" >/dev/null; then
+  echo "==> Could not pull $landing_image. Nothing has changed; the site is still serving." >&2
+  echo "    Build it: gh workflow run 'landing image' --repo danybgoode/justread --ref main" >&2
+  exit 1
+fi
+
+# Rewrite the managed MINIFLUX_IMAGE and LANDING_IMAGE lines. This file is the host's ONLY copy of the production
 # secrets - it is git-ignored by AGENTS.md rule 4 and backup.sh does not back it up - so: build the
 # new contents in a 600 temp file, refuse to proceed unless they still look like the real .env, keep
 # a .env.bak of what was there, and only then truncate.
 tmp=$(mktemp)   # mktemp is 600; the redirections below do not change an existing file's mode
 trap 'rm -f "$tmp"' EXIT
-grep -v '^[[:space:]]*MINIFLUX_IMAGE=' .env > "$tmp" || true   # 1 = every line matched; not an error
-printf 'MINIFLUX_IMAGE=%s\n' "$image" >> "$tmp"
+grep -v -e '^[[:space:]]*MINIFLUX_IMAGE=' -e '^[[:space:]]*LANDING_IMAGE=' .env > "$tmp" || true   # 1 = every line matched
+printf 'MINIFLUX_IMAGE=%s\nLANDING_IMAGE=%s\n' "$image" "$landing_image" >> "$tmp"
 if ! grep -q '^[[:space:]]*POSTGRES_PASSWORD=' "$tmp"; then
   echo "==> Refusing to write deploy/.env: the rewritten copy has no POSTGRES_PASSWORD line." >&2
   echo "    .env is untouched. Check /tmp for space and re-run." >&2
@@ -83,8 +98,7 @@ fi
 cp -p .env .env.bak        # `cp -p` keeps 600; .env.bak is git-ignored by the same `.env*` rule
 cat "$tmp" > .env          # `cat >` keeps .env's own inode, owner and 600 mode
 
-# The reader is already pulled; only the landing page is built here.
-docker compose build landing
+# Both images are already pulled. Nothing is compiled on this VM: it shares 2 CPUs with every tenant.
 # --remove-orphans: the `caddy` service left this file on 2026-10-29 (it is edge-caddy in danybgoode/oracle-edge now).
 docker compose up -d --remove-orphans
 
@@ -113,6 +127,8 @@ docker image prune -f          # dangling layers only
 # disk, which reached 97% on 2026-10-29. Any commit CI built can still be pulled again from GHCR to roll back further.
 docker images "$REGISTRY_IMAGE" --format '{{.Tag}}' | tail -n +4 \
   | while read -r t; do [ "$REGISTRY_IMAGE:$t" = "$image" ] || docker rmi "$REGISTRY_IMAGE:$t" >/dev/null 2>&1 || true; done
+docker images "$LANDING_REGISTRY_IMAGE" --format '{{.Tag}}' | tail -n +4 \
+  | while read -r t; do [ "$LANDING_REGISTRY_IMAGE:$t" = "$landing_image" ] || docker rmi "$LANDING_REGISTRY_IMAGE:$t" >/dev/null 2>&1 || true; done
 
 docker compose ps
 for _ in 1 2 3 4 5; do
