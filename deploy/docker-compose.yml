@@ -1,38 +1,11 @@
 # panfleto production stack.
 #
-# Everything is bound to the internal compose network except Caddy - Postgres
-# and both apps are unreachable from the internet regardless of the host
-# firewall. State lives on /data (the block volume), so the instance itself
+# Nothing here publishes a port. The VM's shared proxy (edge-caddy, danybgoode/oracle-edge) reaches
+# landing and miniflux over the external `edge` network as panfleto-landing / panfleto-miniflux; Postgres is
+# only on this project's own network. Until 2026-10-29 Caddy was a service in this file. State lives on /data (the block volume), so the instance itself
 # stays disposable.
 
 services:
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    # This Caddy is the box's ONE public entrypoint, shared with the other tenants of this VM. They can plug
-    # in WITHOUT editing this repo: drop a site file into /opt/edge/sites (imported at the bottom of the
-    # Caddyfile) and put the upstream on the external `edge` network. A route hand-added to the Caddyfile on
-    # the host is erased by update.sh's hard reset to origin/main. First such tenant: Miyagi Sánchez
-    # (danybgoode/miyagi-product-management infra/oci/).
-    # A tenant site file must NAME its hosts: a catch-all (`https://`, `:443`) becomes a matcher-less TLS
-    # policy that serves the tenant's certificate for panfleto's own hosts (reproduced with openssl).
-    networks:
-      - default
-      - aomx_proxy
-      - edge
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - /data/panfleto/caddy/data:/data
-      - /data/panfleto/caddy/config:/config
-      - /opt/edge/sites:/etc/caddy/sites:ro
-      - /opt/edge/certs:/etc/caddy/certs:ro
-    depends_on:
-      - miniflux
-      - landing
-
   postgres:
     image: postgres:17-alpine
     restart: unless-stopped
@@ -50,6 +23,13 @@ services:
       -c shared_buffers=3GB
       -c effective_cache_size=6GB
       -c max_connections=50
+    # The cap leaves headroom above the deliberate 3 GB of shared_buffers. The VM is shared by three tenants
+    # (oracle-edge TENANTS.md); an uncapped tenant is the one the kernel's OOM killer can take everyone down with.
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 4G
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U miniflux"]
       interval: 10s
@@ -114,6 +94,20 @@ services:
     env_file:
       - path: ./oauth.env
         required: false
+    networks:
+      default:
+      edge:
+        aliases: [panfleto-miniflux]
+    healthcheck:
+      test: ["CMD", "/usr/bin/miniflux", "-healthcheck", "auto"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.75"
+          memory: 512M
 
   landing:
     build:
@@ -134,10 +128,22 @@ services:
       PANFLETO_EMAIL_FROM: ${PANFLETO_EMAIL_FROM:-}
       NODE_ENV: production
       PORT: "3000"
+    networks:
+      default:
+      edge:
+        aliases: [panfleto-landing]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
 
 networks:
-  aomx_proxy:
-    external: true
-  # Shared with the box's other tenants; update.sh creates it when missing.
+  # The shared proxy's network (danybgoode/oracle-edge). update.sh creates it when missing.
   edge:
     external: true

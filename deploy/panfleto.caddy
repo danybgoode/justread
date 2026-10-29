@@ -1,0 +1,27 @@
+# panfleto's public sites. update.sh installs this to /opt/edge/sites/panfleto.caddy, which the shared proxy imports.
+# The proxy itself (edge-caddy) and its Caddyfile live in danybgoode/oracle-edge since 2026-10-29; until then
+# they were part of this repo, and a panfleto deploy could restart the front door of every tenant on the VM.
+#
+# Name every host: a catch-all address serves panfleto's certificate for every other tenant's hosts.
+# Certificates are Let's Encrypt, issued by edge-caddy and kept in /data/edge/caddy.
+
+# Landing page + registration/MCP API routes.
+panfleto.win, www.panfleto.win {
+	encode zstd gzip
+	reverse_proxy panfleto-landing:3000
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+}
+
+# Miniflux itself.
+app.panfleto.win {
+	encode zstd gzip
+	reverse_proxy panfleto-miniflux:8080
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+	}
+}
