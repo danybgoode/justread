@@ -9,10 +9,10 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 chmod 600 .env
 [ -f oauth.env ] && chmod 600 oauth.env
 
-install -m 0644 panfleto-backup.service /etc/systemd/system/
-install -m 0644 panfleto-backup.timer   /etc/systemd/system/
+install -m 0644 panfleto-backup.service panfleto-backup.timer \
+  panfleto-restore-drill.service panfleto-restore-drill.timer /etc/systemd/system/
 systemctl daemon-reload
-systemctl enable --now panfleto-backup.timer
+systemctl enable --now panfleto-backup.timer panfleto-restore-drill.timer
 
-echo "backup timer installed:"
-systemctl list-timers panfleto-backup.timer --no-pager
+echo "backup and restore-drill timers installed:"
+systemctl list-timers 'panfleto-*' --no-pager
